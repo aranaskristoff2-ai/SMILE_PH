@@ -465,3 +465,18 @@ body.has-cam { overflow: hidden; }
 .input-with-btn .btn { flex: none; padding: 10px 14px; border-radius: 14px; min-height: 48px; }
 .photo-picker > .btn { flex: 1 1 150px; }
 .proof-preview--selfie { max-height: 420px; object-fit: contain; background: var(--cream); }
+
+/* ---------- shop (pasalubong & souvenirs) ---------- */
+.shop-card { display: flex; flex-direction: column; gap: 10px; }
+.chip--sm { padding: 2px 9px; font-size: 11px; }
+.shop-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.shop-item { background: var(--cream); border-radius: 14px; padding: 10px 12px; }
+.shop-item p { margin: 2px 0 0; }
+.shop-item__head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.shop-item__price { flex: none; font-weight: 900; color: var(--pink); font-size: 14px; }
+.shop-card__actions { margin-top: auto; }
+.shop-card__actions > .btn { flex: 1 1 110px; }
+.sell-item { border: 2px dashed var(--line); border-radius: 16px; padding: 12px; display: grid; gap: 8px; }
+.sell-item legend { padding: 0 6px; }
+.sell-item__grid { display: grid; grid-template-columns: 1fr 120px; gap: 8px; }
+.sell-items__title { font-size: 18px; margin: 6px 0 0; }

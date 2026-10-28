@@ -17,6 +17,8 @@
  *  merchant(name, raw)                     merchant           { listing }
  *  insights(q)                             insights           { insights }
  *  leaderboard()                           leaderboard        { board: [{name, stamps, rank}] }
+ *  shops()                                 shops              { shops: [{shop_id, name, type, barangay, desc, contact, maps_url, items:[...]}] }
+ *  shopSubmit(user, shop, items)           shop_submit        { shop_id, status:'pending' }
  *  photobooth({...})                       photobooth         { image, place }
  *
  * Request strategy (Apps Script web apps cannot answer CORS preflight requests):
@@ -102,7 +104,7 @@
 
   window.SmileApi = {
     ACTIONS: ['places', 'recommend', 'accept_challenge', 'vision', 'checkin', 'mail_postcard', 'adopt_postcard',
-      'track_postcard', 'caption', 'merchant', 'insights', 'leaderboard', 'photobooth'],
+      'track_postcard', 'caption', 'merchant', 'insights', 'leaderboard', 'photobooth', 'shops', 'shop_submit'],
     TIMEOUTS: TIMEOUTS,
     isConfigured: isConfigured,
     friendly: function (err) {
@@ -124,6 +126,8 @@
     merchant: function (name, raw) { return post('merchant', { merchant: name, raw: raw }, TIMEOUTS.ai); },
     insights: function (q) { return post('insights', { q: q }, TIMEOUTS.ai); },
     leaderboard: function () { return post('leaderboard', {}, TIMEOUTS.read); },
+    shops: function () { return post('shops', {}, TIMEOUTS.read); },
+    shopSubmit: function (user, shop, items) { return post('shop_submit', { user: user, shop: shop, items: items }, TIMEOUTS.write); },
     photobooth: function (o) {
       return post('photobooth', { user: o.user, place_id: o.placeId, mode: 'ai', outfit: o.outfit, image: o.image, mime: o.mime }, TIMEOUTS.photobooth);
     }

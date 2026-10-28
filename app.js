@@ -40,7 +40,8 @@
     { id: 'gigantes', name: 'Islas de Gigantes', cat: 'stay', barangay: 'Carles', desc: 'Island hopping & scallops.', points: 20, lat: 11.5867, lng: 123.1767 },
     { id: 'garin-farm', name: 'Garin Farm', cat: 'nature', barangay: 'San Joaquin', desc: 'White cross pilgrimage.', points: 15, lat: 10.5978, lng: 122.0983 },
     { id: 'chicken-inasal', name: 'Chicken Inasal at Fort in the City', cat: 'food', barangay: 'Iloilo Central Market', desc: 'Charcoal-grilled Ilonggo inasal with garlic rice and chicken oil at Fort in the City.', points: 5, lat: 10.6965, lng: 122.5684, maps_url: 'https://www.google.com/maps/search/?api=1&query=Fort+in+the+City+Iloilo+Central+Market' },
-    { id: 'seafoods', name: 'Seafood Feast in Arevalo', cat: 'food', barangay: 'Villa Arevalo', desc: 'Fresh crabs, prawns, scallops and mussels by the sea.', points: 5, lat: 10.6877, lng: 122.5135, maps_url: 'https://www.google.com/maps/search/?api=1&query=Seafood+restaurant+Villa+Arevalo+Iloilo' }
+    { id: 'seafoods', name: 'Seafood Feast in Arevalo', cat: 'food', barangay: 'Villa Arevalo', desc: 'Fresh crabs, prawns, scallops and mussels by the sea.', points: 5, lat: 10.6877, lng: 122.5135, maps_url: 'https://www.google.com/maps/search/?api=1&query=Seafood+restaurant+Villa+Arevalo+Iloilo' },
+    { id: 'robertos-siopao', name: "Queen Siopao at Roberto's", cat: 'food', barangay: 'J.M. Basa St, City Proper', desc: "Roberto's famous giant Queen siopao, stuffed with chicken and pork adobo. Go late morning before it sells out.", points: 5, lat: 10.6935, lng: 122.5718, maps_url: 'https://www.google.com/maps/search/?api=1&query=Roberto%27s+Siopao+J.M.+Basa+Street+Iloilo+City' }
   ];
 
   var CATS = {
@@ -521,7 +522,7 @@
     { key: 'explore', href: '#/explore', text: 'Explore', icon: 'map' },
     { key: 'checkin', href: '#/checkin', text: 'Check-In', icon: 'postcard' },
     { key: 'isidro', href: '#/isidro', text: 'Isidro', icon: 'compass', main: true },
-    { key: 'tools', href: '#/tools', text: 'Sell', icon: 'shop' },
+    { key: 'shop', href: '#/shop', text: 'Shop', icon: 'shop' },
     { key: 'ranks', href: '#/ranks', text: 'Ranks', icon: 'trophy' }
   ];
 
@@ -769,7 +770,8 @@
           feature('qr', '#00A651', 'One-use QR check-in', 'Scan your SMILE postcard at the place to collect a stamp and points.', '#/checkin', 2),
           feature('camera', '#7B2CBF', 'AI Photobooth', 'Turn a selfie into a "CONQUERED" postcard, with your outfit or an AI one.', '#/explore', 3),
           feature('mailbox', '#0057D9', 'Mail across PH', 'Add 2 stamps and drop your postcard. It travels to another destination.', '#/postcards', 4),
-          feature('star', '#FDB603', 'Rank E to SSS', 'Every stamp counts. Climb the leaderboard with fellow explorers.', '#/ranks', 5)
+          feature('star', '#FDB603', 'Rank E to SSS', 'Every stamp counts. Climb the leaderboard with fellow explorers.', '#/ranks', 5),
+          feature('shop', '#02A04F', 'Pasalubong & souvenirs', 'Biscocho, butterscotch, shirts and crafts from local stores and nano entrepreneurs.', '#/shop', 6)
         ])
       ]),
 
@@ -1154,6 +1156,191 @@
     ]);
     return form;
   }
+
+  // ---------------------------------------------------------------------------
+  // Shop: pasalubong stores + nano entrepreneurs (souvenirs, clothing, crafts)
+  //  - Shops come from the backend "Shops" + "ShopItems" sheets (only "approved" rows).
+  //  - "Sell on SMILE" sends a new shop as "pending"; the SMILE team approves it in the sheet.
+  // ---------------------------------------------------------------------------
+
+  var SHOP_TYPES = {
+    pasalubong: { label: 'Pasalubong', icon: 'food', color: '#FF6A03' },
+    souvenir: { label: 'Souvenirs', icon: 'star', color: '#7B2CBF' },
+    clothing: { label: 'Clothing', icon: 'shop', color: '#0057D9' },
+    crafts: { label: 'Crafts', icon: 'heart', color: '#ED0460' },
+    food: { label: 'Food', icon: 'food', color: '#02A04F' },
+    other: { label: 'Other', icon: 'shop', color: '#5B6478' }
+  };
+
+  var SHOPS_FALLBACK = [
+    { shop_id: 'biscocho-haus', name: 'Original Biscocho Haus', type: 'pasalubong', barangay: 'Lopez Jaena St, Jaro',
+      desc: 'Iloilo’s classic pasalubong bakery, famous for biscocho and butterscotch.', contact: '',
+      maps_url: 'https://www.google.com/maps/search/?api=1&query=Original+Biscocho+Haus+Jaro+Iloilo+City',
+      items: [
+        { item_id: 'bh-biscocho', name: 'Biscocho', price: '', desc: 'Twice-baked bread toasted with butter and sugar. The Iloilo classic.' },
+        { item_id: 'bh-butterscotch', name: 'Butterscotch', price: '', desc: 'Chewy, buttery bars: the original flavor, plus versions with dried fruits.' },
+        { item_id: 'bh-barquillos', name: 'Barquillos', price: '', desc: 'Crisp rolled wafers, an Ilonggo favorite.' }
+      ] }
+  ];
+  State.shops = SHOPS_FALLBACK.slice();
+  State.shopsLoaded = false;
+
+  function loadShops() {
+    if (State.shopsLoaded || State.demo) return Promise.resolve(State.shops);
+    return Api.shops().then(function (r) {
+      if (r && Array.isArray(r.shops) && r.shops.length) State.shops = r.shops.filter(function (s) { return s && s.name; });
+      State.shopsLoaded = true;
+      return State.shops;
+    }, function () { return State.shops; });
+  }
+
+  /** Safe contact link: only https links, phone numbers or emails become links. */
+  function contactNode(contact) {
+    var c = String(contact || '').trim();
+    if (!c) return null;
+    var href = null, label = c, ic = 'send';
+    if (/^https:\/\/\S+$/i.test(c)) { href = c; label = c.replace(/^https:\/\/(www\.)?/i, '').slice(0, 40); ic = 'globe'; }
+    else if (/^(www\.|fb\.com\/|facebook\.com\/)\S+$/i.test(c)) { href = 'https://' + c; label = c.slice(0, 40); ic = 'globe'; }
+    else if (/^[+0-9][0-9 ()-]{6,}$/.test(c)) { href = 'tel:' + c.replace(/[^+0-9]/g, ''); ic = 'send'; }
+    else if (/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(c)) { href = 'mailto:' + c; ic = 'send'; }
+    return href ? button(label, ic, { variant: 'light', small: true, href: href, target: /^https/.test(href) ? '_blank' : null })
+      : el('p', { class: 'muted small', text: 'Contact: ' + c });
+  }
+
+  function shopCard(s, i) {
+    var t = SHOP_TYPES[s.type] || SHOP_TYPES.other;
+    var items = Array.isArray(s.items) ? s.items : [];
+    return el('article', { class: 'card shop-card reveal', style: '--d:' + Math.min(i, 10) * 60 + 'ms' }, [
+      el('div', { class: 'place-card__top' }, [
+        el('span', { class: 'card-icon', style: 'background:' + t.color }, icon(t.icon)),
+        el('div', null, [
+          el('h3', { class: 'place-card__name', text: s.name }),
+          el('p', { class: 'place-card__meta' }, [el('span', { class: 'chip chip--sm', style: '--c:' + t.color, text: t.label }), s.barangay ? el('span', { text: s.barangay }) : null])
+        ])
+      ]),
+      s.desc ? el('p', { class: 'place-card__desc', text: s.desc }) : null,
+      items.length ? el('ul', { class: 'shop-items' }, items.map(function (x) {
+        return el('li', { class: 'shop-item' }, [
+          el('div', { class: 'shop-item__head' }, [el('b', { text: x.name }), el('span', { class: 'shop-item__price', text: x.price ? String(x.price) : 'Price in store' })]),
+          x.desc ? el('p', { class: 'muted small', text: x.desc }) : null
+        ]);
+      })) : null,
+      el('div', { class: 'btn-row shop-card__actions' }, [
+        button('Directions', 'map', { variant: 'blue', small: true, href: s.maps_url || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' Iloilo')), target: '_blank' }),
+        contactNode(s.contact),
+        button('Share', 'share', { variant: 'light', small: true, onclick: function () {
+          var text = s.name + ' (' + t.label + ', Iloilo): ' + items.map(function (x) { return x.name; }).join(', ') + ' #SMILEIloilo';
+          if (navigator.share) navigator.share({ title: s.name, text: text, url: location.origin + location.pathname + '#/shop' }).catch(function () { /* cancelled */ });
+          else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast('Copied!'); });
+        } })
+      ])
+    ]);
+  }
+
+  function renderShop(token, query) {
+    var filter = { type: query.type || 'all', q: '' };
+    var grid = el('div', { class: 'grid' });
+    var count = el('p', { class: 'muted small', role: 'status' });
+    var paint = function () {
+      var q = filter.q.toLowerCase();
+      var list = State.shops.filter(function (s) {
+        var hay = (s.name + ' ' + (s.barangay || '') + ' ' + (s.desc || '') + ' ' + (s.items || []).map(function (x) { return x.name + ' ' + (x.desc || ''); }).join(' ')).toLowerCase();
+        return (filter.type === 'all' || s.type === filter.type) && (!q || hay.indexOf(q) !== -1);
+      });
+      grid.textContent = '';
+      appendChildren(grid, list.length ? list.map(shopCard) : el('p', { class: 'empty', text: 'No shops match yet. Be the first to sell here!' }));
+      count.textContent = list.length + ' shop' + (list.length === 1 ? '' : 's');
+      Motion.reveal(view());
+    };
+    var chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Shop type' },
+      [['all', { label: 'All', icon: 'shop', color: '#14213d' }]].concat(Object.keys(SHOP_TYPES).map(function (k) { return [k, SHOP_TYPES[k]]; })).map(function (pair) {
+        return el('button', { type: 'button', class: 'chip-btn', 'aria-pressed': String(filter.type === pair[0]), style: '--c:' + pair[1].color, onclick: function (e) {
+          filter.type = pair[0];
+          chips.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+          e.currentTarget.setAttribute('aria-pressed', 'true');
+          paint();
+        } }, [icon(pair[1].icon), pair[1].label]);
+      }));
+    var search = el('input', { type: 'search', id: 'shop-search', placeholder: 'Search biscocho, piaya, shirts…', autocomplete: 'off' });
+    search.addEventListener('input', function () { filter.q = search.value.trim(); paint(); });
+
+    setView([
+      el('section', { class: 'section' }, [
+        pageHead('shop', '#FF6A03', 'Pasalubong & Souvenirs', 'Take home a taste of Iloilo. Buy from pasalubong stores and local nano entrepreneurs.'),
+        el('div', { class: 'toolbar' }, [el('label', { class: 'searchbox' }, [icon('search'), el('span', { class: 'sr-only', text: 'Search shops' }), search]), chips]),
+        count,
+        grid
+      ]),
+      sellForm(token)
+    ]);
+    paint();
+    focusHeading();
+    loadShops().then(function () { if (token === renderToken) paint(); });
+  }
+
+  /** "Sell on SMILE" sign-up for nano entrepreneurs and pasalubong stores. */
+  function sellForm(token) {
+    var name = el('input', { id: 'sell-name', type: 'text', maxlength: '80', placeholder: 'e.g. Lola’s Piaya House' });
+    var type = el('select', { id: 'sell-type' }, Object.keys(SHOP_TYPES).map(function (k) { return el('option', { value: k, text: SHOP_TYPES[k].label }); }));
+    var area = el('input', { id: 'sell-area', type: 'text', maxlength: '80', placeholder: 'Barangay / street, e.g. Molo Plaza' });
+    var desc = el('textarea', { id: 'sell-desc', rows: '2', maxlength: '400', placeholder: 'What makes your shop special?' });
+    var contact = el('input', { id: 'sell-contact', type: 'text', maxlength: '120', placeholder: 'Facebook page link, mobile number or email' });
+    var itemsBox = el('div', { class: 'stack' });
+    var rows = [];
+    var addItem = function () {
+      if (rows.length >= 12) { toast('Up to 12 products per sign-up.'); return; }
+      var n = rows.length + 1;
+      var iName = el('input', { type: 'text', maxlength: '80', placeholder: 'Product name', 'aria-label': 'Product ' + n + ' name' });
+      var iPrice = el('input', { type: 'text', maxlength: '30', placeholder: 'Price, e.g. ₱150', 'aria-label': 'Product ' + n + ' price' });
+      var iDesc = el('textarea', { rows: '2', maxlength: '400', placeholder: 'Short description', 'aria-label': 'Product ' + n + ' description' });
+      var aiBtn = button('Write with AI', 'sparkle', { small: true, variant: 'light', onclick: function () {
+        if (!iName.value.trim()) { toast('Type the product name first.'); iName.focus(); return; }
+        setBusy(aiBtn, true, 'Writing…');
+        Api.merchant(name.value.trim(), iName.value.trim() + ' ' + iPrice.value.trim() + ' ' + iDesc.value.trim()).then(function (r) {
+          iDesc.value = String(r.listing || '').slice(0, 400);
+        }, function (err) { toast(friendlyError(err)); }).then(function () { setBusy(aiBtn, false); });
+      } });
+      var row = el('fieldset', { class: 'sell-item' }, [
+        el('legend', { class: 'field__label', text: 'Product ' + n }),
+        el('div', { class: 'sell-item__grid' }, [iName, iPrice]),
+        iDesc,
+        el('div', { class: 'btn-row' }, [aiBtn, n > 1 ? button('Remove', 'close', { small: true, variant: 'light', onclick: function () { row.remove(); rows = rows.filter(function (r) { return r.row !== row; }); } }) : null])
+      ]);
+      rows.push({ row: row, name: iName, price: iPrice, desc: iDesc });
+      itemsBox.appendChild(row);
+    };
+    addItem();
+    var out = outputBox();
+    var submit = button('Send my shop for review', 'send', { type: 'submit', block: true, variant: 'green' });
+    var form = el('form', { class: 'card stack', onsubmit: function (e) {
+      e.preventDefault();
+      if (!name.value.trim()) { toast('Type your shop name.'); name.focus(); return; }
+      if (!contact.value.trim()) { toast('Add a contact so tourists can reach you.'); contact.focus(); return; }
+      var items = rows.map(function (r) { return { name: r.name.value.trim(), price: r.price.value.trim(), desc: r.desc.value.trim(), category: type.value }; }).filter(function (x) { return x.name; });
+      if (!items.length) { toast('Add at least one product.'); return; }
+      setBusy(submit, true, 'Sending…');
+      out.loading('Sending your shop…');
+      Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim() }, items).then(function (r) {
+        out.show(r.message || 'Salamat! Your shop was sent for review.', 'ok');
+        form.reset(); itemsBox.textContent = ''; rows = []; addItem();
+      }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(submit, false); });
+    } }, [
+      el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#02A04F' }, icon('shop')), 'Sell on SMILE']),
+      el('p', { class: 'muted', text: 'For nano entrepreneurs and pasalubong stores in Iloilo. Free to join. The SMILE team checks each shop before it appears here.' }),
+      formField('sell-name', 'Shop name', name),
+      formField('sell-type', 'What do you sell?', type),
+      formField('sell-area', 'Where are you?', area),
+      formField('sell-desc', 'About your shop', desc),
+      formField('sell-contact', 'Contact for buyers', contact, 'Shown publicly so tourists can order or visit.'),
+      el('h3', { class: 'sell-items__title', text: 'Products' }),
+      itemsBox,
+      button('Add another product', 'plusSquare', { variant: 'light', onclick: addItem }),
+      submit, out,
+      el('p', { class: 'muted small' }, ['Need captions or listings for social media? ', el('a', { href: '#/tools', text: 'Open merchant tools' }), '.'])
+    ]);
+    return el('section', { class: 'section section--narrow', id: 'sell' }, form);
+  }
+
 
   function renderTools() {
     var capPlace = el('select', { id: 'cap-place' }, State.places.map(function (p) { return el('option', { text: p.name }); }));
@@ -1689,7 +1876,7 @@
   }
 
   // Old one-page anchors (#isidro, #checkin, #board…) → new pages.
-  var LEGACY = { home: '', passport: 'ranks', isidro: 'isidro', places: 'explore', myChallenges: 'explore', checkin: 'checkin', mailSec: 'checkin', adoptSec: 'postcards', captionSec: 'tools', merchantSec: 'tools', lguSec: 'tools', board: 'ranks' };
+  var LEGACY = { home: '', passport: 'ranks', isidro: 'isidro', places: 'explore', myChallenges: 'explore', checkin: 'checkin', mailSec: 'checkin', adoptSec: 'postcards', captionSec: 'tools', merchantSec: 'shop', shop: 'shop', merchandise: 'shop', lguSec: 'tools', board: 'ranks' };
 
   var ROUTES = {
     '': renderHome,
@@ -1698,6 +1885,7 @@
     checkin: renderCheckin,
     postcards: renderPostcards,
     tools: renderTools,
+    shop: renderShop,
     ranks: renderRanks
   };
 
