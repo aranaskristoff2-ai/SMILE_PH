@@ -1,5 +1,5 @@
 /*
- * SMILE Iloilo: frontend application (vanilla JS, GitHub Pages).
+ * SMILE (See More of Islands' Landmarks and Events): frontend application (vanilla JS, GitHub Pages).
  *
  * Files: config.js (API URL) → api.js (window.SmileApi, the only backend client) → app.js (this file).
  *
@@ -28,20 +28,56 @@
   // ---------------------------------------------------------------------------
 
   var FALLBACK = [
-    { id: 'molo-church', name: 'Molo Church', cat: 'landmark', barangay: 'Molo', desc: 'Gothic church, all-female saints.', points: 10, lat: 10.6974, lng: 122.5441 },
-    { id: 'jaro-cathedral', name: 'Jaro Cathedral', cat: 'landmark', barangay: 'Jaro', desc: 'Our Lady of Candles shrine.', points: 10, lat: 10.724, lng: 122.5563 },
-    { id: 'miagao-church', name: 'Miagao Church UNESCO', cat: 'landmark', barangay: 'Miagao', desc: 'World Heritage fortress church.', points: 20, lat: 10.642, lng: 122.2358 },
-    { id: 'calle-real', name: 'Calle Real', cat: 'heritage', barangay: 'City Proper', desc: 'Heritage walk + coffee.', points: 10, lat: 10.6938, lng: 122.5742 },
-    { id: 'esplanade', name: 'Iloilo Esplanade', cat: 'nature', barangay: 'Mandurriao', desc: 'Sunset riverside.', points: 5, lat: 10.7085, lng: 122.5488 },
-    { id: 'lapaz-batchoy', name: "Netong's Batchoy", cat: 'food', barangay: 'La Paz', desc: 'Original La Paz Batchoy.', points: 5, lat: 10.7118, lng: 122.569 },
-    { id: 'pancit-molo', name: "Pancit Molo at Kap Esing's", cat: 'food', barangay: 'Iloilo Central Market', desc: "Kap Esing's classic Ilonggo pancit molo: pork dumplings in garlicky chicken broth.", points: 5, lat: 10.6965, lng: 122.5684, maps_url: 'https://www.google.com/maps/search/?api=1&query=Kap+Esing%27s+Pancit+Molo+Iloilo+Central+Market' },
-    { id: 'dinagyang', name: 'Dinagyang Festival', cat: 'festival', barangay: 'City Proper', desc: 'Ati warriors, Jan.', points: 25, lat: 10.693, lng: 122.572 },
-    { id: 'iloilo-capitol', name: 'Iloilo Provincial Capitol', cat: 'heritage', barangay: 'City Proper', desc: 'Iconic capitol.', points: 10, lat: 10.702, lng: 122.5685 },
-    { id: 'gigantes', name: 'Islas de Gigantes', cat: 'stay', barangay: 'Carles', desc: 'Island hopping & scallops.', points: 20, lat: 11.5867, lng: 123.1767 },
-    { id: 'garin-farm', name: 'Garin Farm', cat: 'nature', barangay: 'San Joaquin', desc: 'White cross pilgrimage.', points: 15, lat: 10.5978, lng: 122.0983 },
-    { id: 'chicken-inasal', name: 'Chicken Inasal at Fort in the City', cat: 'food', barangay: 'Iloilo Central Market', desc: 'Charcoal-grilled Ilonggo inasal with garlic rice and chicken oil at Fort in the City.', points: 5, lat: 10.6965, lng: 122.5684, maps_url: 'https://www.google.com/maps/search/?api=1&query=Fort+in+the+City+Iloilo+Central+Market' },
-    { id: 'seafoods', name: 'Seafood Feast in Arevalo', cat: 'food', barangay: 'Villa Arevalo', desc: 'Fresh crabs, prawns, scallops and mussels by the sea.', points: 5, lat: 10.6877, lng: 122.5135, maps_url: 'https://www.google.com/maps/search/?api=1&query=Seafood+restaurant+Villa+Arevalo+Iloilo' },
-    { id: 'robertos-siopao', name: "Queen Siopao at Roberto's", cat: 'food', barangay: 'J.M. Basa St, City Proper', desc: "Roberto's famous giant Queen siopao, stuffed with chicken and pork adobo. Go late morning before it sells out.", points: 5, lat: 10.6935, lng: 122.5718, maps_url: 'https://www.google.com/maps/search/?api=1&query=Roberto%27s+Siopao+J.M.+Basa+Street+Iloilo+City' }
+    { province: 'iloilo', id: 'molo-church', name: 'Molo Church', cat: 'landmark', barangay: 'Molo', desc: 'Gothic church, all-female saints.', points: 10, lat: 10.6974, lng: 122.5441 },
+    { province: 'iloilo', id: 'jaro-cathedral', name: 'Jaro Cathedral', cat: 'landmark', barangay: 'Jaro', desc: 'Our Lady of Candles shrine.', points: 10, lat: 10.724, lng: 122.5563 },
+    { province: 'iloilo', id: 'miagao-church', name: 'Miagao Church UNESCO', cat: 'landmark', barangay: 'Miagao', desc: 'World Heritage fortress church.', points: 20, lat: 10.642, lng: 122.2358 },
+    { province: 'iloilo', id: 'calle-real', name: 'Calle Real', cat: 'heritage', barangay: 'City Proper', desc: 'Heritage walk + coffee.', points: 10, lat: 10.6938, lng: 122.5742 },
+    { province: 'iloilo', id: 'esplanade', name: 'Iloilo Esplanade', cat: 'nature', barangay: 'Mandurriao', desc: 'Sunset riverside.', points: 5, lat: 10.7085, lng: 122.5488 },
+    { province: 'iloilo', id: 'lapaz-batchoy', name: "Netong's Batchoy", cat: 'food', barangay: 'La Paz', desc: 'Original La Paz Batchoy.', points: 5, lat: 10.7118, lng: 122.569 },
+    { province: 'iloilo', id: 'pancit-molo', name: "Pancit Molo at Kap Esing's", cat: 'food', barangay: 'Iloilo Central Market', desc: "Kap Esing's classic Ilonggo pancit molo: pork dumplings in garlicky chicken broth.", points: 5, lat: 10.6965, lng: 122.5684, maps_url: 'https://www.google.com/maps/search/?api=1&query=Kap+Esing%27s+Pancit+Molo+Iloilo+Central+Market' },
+    { province: 'iloilo', id: 'dinagyang', name: 'Dinagyang Festival', cat: 'festival', barangay: 'City Proper', desc: 'Ati warriors, Jan.', points: 25, lat: 10.693, lng: 122.572 },
+    { province: 'iloilo', id: 'iloilo-capitol', name: 'Iloilo Provincial Capitol', cat: 'heritage', barangay: 'City Proper', desc: 'Iconic capitol.', points: 10, lat: 10.702, lng: 122.5685 },
+    { province: 'iloilo', id: 'gigantes', name: 'Islas de Gigantes', cat: 'stay', barangay: 'Carles', desc: 'Island hopping & scallops.', points: 20, lat: 11.5867, lng: 123.1767 },
+    { province: 'iloilo', id: 'garin-farm', name: 'Garin Farm', cat: 'nature', barangay: 'San Joaquin', desc: 'White cross pilgrimage.', points: 15, lat: 10.5978, lng: 122.0983 },
+    { province: 'iloilo', id: 'chicken-inasal', name: 'Chicken Inasal at Fort in the City', cat: 'food', barangay: 'Iloilo Central Market', desc: 'Charcoal-grilled Ilonggo inasal with garlic rice and chicken oil at Fort in the City.', points: 5, lat: 10.6965, lng: 122.5684, maps_url: 'https://www.google.com/maps/search/?api=1&query=Fort+in+the+City+Iloilo+Central+Market' },
+    { province: 'iloilo', id: 'seafoods', name: 'Seafood Feast in Arevalo', cat: 'food', barangay: 'Villa Arevalo', desc: 'Fresh crabs, prawns, scallops and mussels by the sea.', points: 5, lat: 10.6877, lng: 122.5135, maps_url: 'https://www.google.com/maps/search/?api=1&query=Seafood+restaurant+Villa+Arevalo+Iloilo' },
+    { province: 'iloilo', id: 'robertos-siopao', name: "Queen Siopao at Roberto's", cat: 'food', barangay: 'J.M. Basa St, City Proper', desc: "Roberto's famous giant Queen siopao, stuffed with chicken and pork adobo. Go late morning before it sells out.", points: 5, lat: 10.6935, lng: 122.5718, maps_url: 'https://www.google.com/maps/search/?api=1&query=Roberto%27s+Siopao+J.M.+Basa+Street+Iloilo+City' },
+    {"id": "boracay-white-beach", "province": "aklan", "name": "White Beach, Boracay", "cat": "stay", "barangay": "Balabag, Boracay", "desc": "Boracay's famous powdery white-sand beach. Stay for the sunset and the paraw sailboats.", "points": 20, "lat": 11.9674, "lng": 121.9248, "maps_url": "https://www.google.com/maps/search/?api=1&query=White+Beach+Boracay"},
+    {"id": "puka-beach", "province": "aklan", "name": "Puka Shell Beach", "cat": "nature", "barangay": "Yapak, Boracay", "desc": "Quieter northern beach with shell sand and clear blue water.", "points": 15, "lat": 11.9945, "lng": 121.9175, "maps_url": "https://www.google.com/maps/search/?api=1&query=Puka+Shell+Beach+Boracay"},
+    {"id": "ati-atihan", "province": "aklan", "name": "Ati-Atihan Festival", "cat": "festival", "barangay": "Kalibo", "desc": "Kalibo's street festival for the Santo Niño every January. Paint your face and dance to the drums.", "points": 25, "lat": 11.7071, "lng": 122.3647, "maps_url": "https://www.google.com/maps/search/?api=1&query=Ati-Atihan+Festival+Kalibo"},
+    {"id": "bakhawan-eco-park", "province": "aklan", "name": "Bakhawan Eco-Park", "cat": "nature", "barangay": "New Buswang, Kalibo", "desc": "Bamboo boardwalk through a planted mangrove forest out to the sea.", "points": 10, "lat": 11.7183, "lng": 122.3797, "maps_url": "https://www.google.com/maps/search/?api=1&query=Bakhawan+Eco-Park+Kalibo"},
+    {"id": "real-coffee-boracay", "province": "aklan", "name": "Calamansi Muffins at Real Coffee", "cat": "food", "barangay": "Balabag, Boracay", "desc": "Boracay's famous calamansi muffins. Grab a few before the beach.", "points": 5, "lat": 11.9625, "lng": 121.9255, "maps_url": "https://www.google.com/maps/search/?api=1&query=Real+Coffee+and+Tea+Cafe+Boracay"},
+    {"id": "mararison-island", "province": "antique", "name": "Mararison Island", "cat": "stay", "barangay": "Culasi", "desc": "Rolling green hills and white sandbars off the town of Culasi.", "points": 20, "lat": 11.414, "lng": 121.962, "maps_url": "https://www.google.com/maps/search/?api=1&query=Mararison+Island+Culasi+Antique"},
+    {"id": "tibiao-kawa", "province": "antique", "name": "Kawa Hot Bath in Tibiao", "cat": "nature", "barangay": "Tibiao", "desc": "Soak in a giant cauldron (kawa) of warm water and herbs beside the river.", "points": 15, "lat": 11.29, "lng": 122.035, "maps_url": "https://www.google.com/maps/search/?api=1&query=Kawa+Hot+Bath+Tibiao+Antique"},
+    {"id": "binirayan", "province": "antique", "name": "Binirayan Festival", "cat": "festival", "barangay": "San Jose de Buenavista", "desc": "Antique's festival recalling the landing of the ten Bornean datus.", "points": 25, "lat": 10.744, "lng": 121.941, "maps_url": "https://www.google.com/maps/search/?api=1&query=Binirayan+Festival+San+Jose+de+Buenavista+Antique"},
+    {"id": "bagtason-patadyong", "province": "antique", "name": "Patadyong Weavers of Bagtason", "cat": "heritage", "barangay": "Bagtason, Bugasong", "desc": "See the hand-woven checkered patadyong cloth, Antique's pride, made on wooden looms.", "points": 10, "lat": 11.045, "lng": 122.065, "maps_url": "https://www.google.com/maps/search/?api=1&query=Bagtason+Loom+Weavers+Bugasong+Antique"},
+    {"id": "panay-church", "province": "capiz", "name": "Santa Monica Church, Panay", "cat": "landmark", "barangay": "Panay", "desc": "Coral-stone church that houses one of the largest church bells in Asia.", "points": 15, "lat": 11.556, "lng": 122.794, "maps_url": "https://www.google.com/maps/search/?api=1&query=Santa+Monica+Parish+Church+Panay+Capiz"},
+    {"id": "roxas-seafood", "province": "capiz", "name": "Seafood at Baybay, Roxas City", "cat": "food", "barangay": "Baybay, Roxas City", "desc": "Fresh scallops, oysters and crabs by the beach in the Seafood Capital of the Philippines.", "points": 5, "lat": 11.606, "lng": 122.738, "maps_url": "https://www.google.com/maps/search/?api=1&query=Baybay+Beach+seafood+Roxas+City"},
+    {"id": "sinadya", "province": "capiz", "name": "Sinadya sa Halaran Festival", "cat": "festival", "barangay": "Roxas City", "desc": "Roxas City's December thanksgiving festival with river and street parades.", "points": 25, "lat": 11.5853, "lng": 122.7511, "maps_url": "https://www.google.com/maps/search/?api=1&query=Sinadya+sa+Halaran+Roxas+City"},
+    {"id": "guimaras-mango-pizza", "province": "guimaras", "name": "Mango Pizza at The Pitstop", "cat": "food", "barangay": "San Miguel, Jordan", "desc": "Guimaras' famous pizza topped with sweet Guimaras mangoes.", "points": 5, "lat": 10.587, "lng": 122.596, "maps_url": "https://www.google.com/maps/search/?api=1&query=The+Pitstop+Guimaras+mango+pizza"},
+    {"id": "trappist-monastery", "province": "guimaras", "name": "Trappist Monastery", "cat": "landmark", "barangay": "Jordan", "desc": "Peaceful abbey of Trappist monks. Their shop sells mango jams and other pasalubong.", "points": 10, "lat": 10.629, "lng": 122.607, "maps_url": "https://www.google.com/maps/search/?api=1&query=Trappist+Monastery+Guimaras"},
+    {"id": "manggahan", "province": "guimaras", "name": "Manggahan Festival", "cat": "festival", "barangay": "Jordan", "desc": "Guimaras celebrates its famous sweet mangoes every May.", "points": 25, "lat": 10.658, "lng": 122.596, "maps_url": "https://www.google.com/maps/search/?api=1&query=Manggahan+Festival+Guimaras"},
+    {"id": "guisi-lighthouse", "province": "guimaras", "name": "Guisi Lighthouse", "cat": "heritage", "barangay": "Dolores, Nueva Valencia", "desc": "Ruins of a Spanish-era lighthouse above a quiet beach.", "points": 15, "lat": 10.445, "lng": 122.62, "maps_url": "https://www.google.com/maps/search/?api=1&query=Guisi+Lighthouse+Guimaras"},
+    {"id": "alubihod-beach", "province": "guimaras", "name": "Alubihod Beach", "cat": "stay", "barangay": "Nueva Valencia", "desc": "White-sand cove for swimming and island hopping.", "points": 15, "lat": 10.495, "lng": 122.58, "maps_url": "https://www.google.com/maps/search/?api=1&query=Alubihod+Beach+Guimaras"},
+    {"id": "the-ruins", "province": "negros-occidental", "name": "The Ruins", "cat": "heritage", "barangay": "Talisay City", "desc": "Mansion ruins of a sugar baron, glowing at sunset: the Taj Mahal of Negros.", "points": 15, "lat": 10.679, "lng": 122.96, "maps_url": "https://www.google.com/maps/search/?api=1&query=The+Ruins+Talisay+Negros+Occidental"},
+    {"id": "masskara", "province": "negros-occidental", "name": "MassKara Festival", "cat": "festival", "barangay": "Bacolod City", "desc": "Bacolod's smiling masks and street dancing every October.", "points": 25, "lat": 10.6765, "lng": 122.9509, "maps_url": "https://www.google.com/maps/search/?api=1&query=MassKara+Festival+Bacolod"},
+    {"id": "san-sebastian-cathedral", "province": "negros-occidental", "name": "San Sebastian Cathedral", "cat": "landmark", "barangay": "Bacolod City", "desc": "Coral-stone cathedral facing the Bacolod public plaza.", "points": 10, "lat": 10.67, "lng": 122.947, "maps_url": "https://www.google.com/maps/search/?api=1&query=San+Sebastian+Cathedral+Bacolod"},
+    {"id": "bacolod-inasal", "province": "negros-occidental", "name": "Bacolod Chicken Inasal", "cat": "food", "barangay": "Bacolod City", "desc": "Bacolod's own charcoal-grilled inasal with chicken oil and garlic rice.", "points": 5, "lat": 10.67, "lng": 122.95, "maps_url": "https://www.google.com/maps/search/?api=1&query=chicken+inasal+Bacolod+City"},
+    {"id": "calea", "province": "negros-occidental", "name": "Cakes at Calea", "cat": "food", "barangay": "Bacolod City", "desc": "Bacolod's famous cake and coffee shop. Come for a slice, leave with a box.", "points": 5, "lat": 10.68, "lng": 122.955, "maps_url": "https://www.google.com/maps/search/?api=1&query=Calea+Pastries+and+Coffee+Bacolod"},
+    {"id": "balay-negrense", "province": "negros-occidental", "name": "Balay Negrense, Silay", "cat": "heritage", "barangay": "Silay City", "desc": "Sugar-era ancestral house museum in Silay's heritage district.", "points": 10, "lat": 10.797, "lng": 122.974, "maps_url": "https://www.google.com/maps/search/?api=1&query=Balay+Negrense+Silay+City"},
+    {"id": "mambukal", "province": "negros-occidental", "name": "Mambukal Resort", "cat": "nature", "barangay": "Murcia", "desc": "Mountain resort with hot springs, waterfalls and forest trails.", "points": 15, "lat": 10.517, "lng": 123.105, "maps_url": "https://www.google.com/maps/search/?api=1&query=Mambukal+Mountain+Resort+Murcia"},
+    {"id": "rizal-boulevard", "province": "negros-oriental", "name": "Rizal Boulevard, Dumaguete", "cat": "nature", "barangay": "Dumaguete City", "desc": "Seaside promenade lined with acacia trees. Best for an evening walk and street food.", "points": 10, "lat": 9.309, "lng": 123.309, "maps_url": "https://www.google.com/maps/search/?api=1&query=Rizal+Boulevard+Dumaguete"},
+    {"id": "silliman-hall", "province": "negros-oriental", "name": "Silliman Hall", "cat": "heritage", "barangay": "Silliman University, Dumaguete City", "desc": "American-era Victorian building, the oldest on the Silliman University campus.", "points": 10, "lat": 9.311, "lng": 123.308, "maps_url": "https://www.google.com/maps/search/?api=1&query=Silliman+Hall+Dumaguete"},
+    {"id": "apo-island", "province": "negros-oriental", "name": "Apo Island", "cat": "stay", "barangay": "Dauin", "desc": "Marine sanctuary famous for snorkeling with sea turtles.", "points": 20, "lat": 9.075, "lng": 123.269, "maps_url": "https://www.google.com/maps/search/?api=1&query=Apo+Island+Negros+Oriental"},
+    {"id": "manjuyod-sandbar", "province": "negros-oriental", "name": "Manjuyod Sandbar", "cat": "nature", "barangay": "Manjuyod", "desc": "White sandbar that appears at low tide, with cottages on stilts and dolphin watching in Tañon Strait.", "points": 15, "lat": 9.715, "lng": 123.219, "maps_url": "https://www.google.com/maps/search/?api=1&query=Manjuyod+Sandbar"},
+    {"id": "budbud-kabog", "province": "negros-oriental", "name": "Budbud Kabog of Tanjay", "cat": "food", "barangay": "Tanjay City", "desc": "Sticky millet rice cake wrapped in banana leaves, a Tanjay specialty. Best with hot chocolate.", "points": 5, "lat": 9.515, "lng": 123.158, "maps_url": "https://www.google.com/maps/search/?api=1&query=budbud+kabog+Tanjay+City"},
+    {"id": "buglasan", "province": "negros-oriental", "name": "Buglasan Festival", "cat": "festival", "barangay": "Dumaguete City", "desc": "Negros Oriental's festival of festivals every October, with every town's dancers on one stage.", "points": 25, "lat": 9.307, "lng": 123.305, "maps_url": "https://www.google.com/maps/search/?api=1&query=Buglasan+Festival+Dumaguete"},
+    {"id": "cambugahay-falls", "province": "siquijor", "name": "Cambugahay Falls", "cat": "nature", "barangay": "Lazi", "desc": "Turquoise tiered falls with rope swings into the pools.", "points": 15, "lat": 9.139, "lng": 123.626, "maps_url": "https://www.google.com/maps/search/?api=1&query=Cambugahay+Falls+Siquijor"},
+    {"id": "lazi-church", "province": "siquijor", "name": "Lazi Church and Convent", "cat": "landmark", "barangay": "Lazi", "desc": "Coral-stone church with one of the largest old convents in Asia.", "points": 15, "lat": 9.129, "lng": 123.636, "maps_url": "https://www.google.com/maps/search/?api=1&query=Lazi+Church+Siquijor"},
+    {"id": "salagdoong-beach", "province": "siquijor", "name": "Salagdoong Beach", "cat": "stay", "barangay": "Maria", "desc": "White-sand beach with cliff-jumping platforms.", "points": 15, "lat": 9.204, "lng": 123.67, "maps_url": "https://www.google.com/maps/search/?api=1&query=Salagdoong+Beach+Siquijor"},
+    {"id": "century-old-balete", "province": "siquijor", "name": "Century-Old Balete Tree", "cat": "nature", "barangay": "Lena, San Juan", "desc": "Giant balete tree with a fish-spa spring at its roots.", "points": 10, "lat": 9.164, "lng": 123.522, "maps_url": "https://www.google.com/maps/search/?api=1&query=Century+Old+Balete+Tree+Siquijor"},
+    {"id": "healing-festival", "province": "siquijor", "name": "Healing Festival", "cat": "festival", "barangay": "San Antonio", "desc": "Holy Week gathering of Siquijor's folk healers and their herbal oils.", "points": 25, "lat": 9.17, "lng": 123.58, "maps_url": "https://www.google.com/maps/search/?api=1&query=Siquijor+Healing+Festival+San+Antonio"},
+    {"id": "mt-kanlaon", "province": "negros-oriental", "name": "Mt. Kanlaon", "cat": "nature", "barangay": "Canlaon City", "desc": "Negros' highest peak and an active volcano. Enjoy the view from Canlaon City; climbing is closed during volcanic activity, so check PHIVOLCS advisories first.", "points": 10, "lat": 10.412, "lng": 123.132, "maps_url": "https://www.google.com/maps/search/?api=1&query=Canlaon+City+Negros+Oriental"}
   ];
 
   var CATS = {
@@ -53,6 +89,14 @@
     stay: { label: 'Islands & stays', icon: 'island', color: '#0096C7' }
   };
 
+  // Provinces: the tourist picks one on the home page; its places and shops show first,
+  // and every other province stays listed below it (never hidden).
+  var PROVINCES = [ { "id": "aklan", "name": "Aklan", "sub": "Boracay · Kalibo", "color": "#0096C7", "icon": "island" }, { "id": "antique", "name": "Antique", "sub": "San Jose · Tibiao · Culasi", "color": "#00A651", "icon": "palm" }, { "id": "capiz", "name": "Capiz", "sub": "Roxas City · Panay", "color": "#7B2CBF", "icon": "food" }, { "id": "guimaras", "name": "Guimaras", "sub": "Jordan · Nueva Valencia", "color": "#E09A00", "icon": "heart" }, { "id": "iloilo", "name": "Iloilo", "sub": "Iloilo City · Miagao · Gigantes", "color": "#FF6B00", "icon": "church" }, { "id": "negros-occidental", "name": "Negros Occidental", "sub": "Bacolod · Silay · Talisay", "color": "#ED0460", "icon": "festival" }, { "id":  "negros-oriental", "name":  "Negros Oriental", "sub":  "Dumaguete · Apo Island · Manjuyod", "color":  "#0057D9", "icon":  "globe" }, { "id":  "siquijor", "name":  "Siquijor", "sub":  "Lazi · San Juan · Maria", "color":  "#5B2A86", "icon":  "sparkle" } ];
+  var DEFAULT_PROVINCE = 'iloilo';
+  function provinceOf(x) { var id = String((x && x.province) || DEFAULT_PROVINCE).toLowerCase().trim(); return PROVINCES.some(function (p) { return p.id === id; }) ? id : DEFAULT_PROVINCE; }
+  function provinceInfo(id) { return PROVINCES.filter(function (p) { return p.id === id; })[0] || null; }
+  function provinceName(id) { var p = provinceInfo(id); return p ? p.name : 'Western Visayas'; }
+
   var SUGGESTIONS = {
     landmark: ['Elegant Filipiniana gown', 'Barong Tagalog formal', 'Modest church Sunday best outfit'],
     heritage: ['1920s Calle Real vintage outfit', 'Barong Tagalog', 'Filipiniana dress'],
@@ -60,25 +104,28 @@
     food: ['Fun chef outfit holding Batchoy bowl', 'Ilonggo food trip apron outfit'],
     nature: ['Elegant summer dress sunset outfit', 'Tasteful beach resort outfit'],
     stay: ['Elegant two-piece bikini resort outfit', 'Tasteful swimsuit with beach cover-up', 'Island hopping rash guard outfit', 'Summer beach dress'],
-    _default: ['SMILE Iloilo tourist t-shirt', 'Filipiniana outfit']
+    _default: ['SMILE Western Visayas tourist t-shirt', 'Filipiniana outfit']
   };
 
   var RANKS = [['E', 0], ['D', 3], ['C', 6], ['B', 10], ['A', 15], ['S', 20], ['SS', 30], ['SSS', 45]];
 
   // Poster hotspots, in % of the poster image (1024 × 1536).
   var HOTSPOTS = [
-    { id: 'dinagyang', label: 'Dinagyang', icon: 'festival', x: 22, y: 9 },
-    { id: 'iloilo-capitol', label: 'Capitol', icon: 'heritage', x: 74, y: 16 },
-    { id: 'miagao-church', label: 'Miag-ao Church', icon: 'church', x: 15, y: 50 },
-    { id: 'jaro-cathedral', label: 'Jaro Cathedral', icon: 'church', x: 86, y: 54 },
-    { id: 'esplanade', label: 'Esplanade', icon: 'palm', x: 66, y: 67 },
-    { id: 'lapaz-batchoy', label: 'Batchoy', icon: 'food', x: 14, y: 78 },
-    { id: 'pancit-molo', label: 'Pancit Molo', icon: 'food', x: 36, y: 83 },
-    { id: 'chicken-inasal', label: 'Chicken Inasal', icon: 'food', x: 66, y: 81 },
-    { id: 'seafoods', label: 'Seafoods', icon: 'food', x: 88, y: 84 }
+    { id: 'dinagyang', label: 'Dinagyang', icon: 'festival', x: 22, y: 13 },
+    { id: 'iloilo-capitol', label: 'Iloilo Capitol', icon: 'heritage', x: 78, y: 18 },
+    { id: 'miagao-church', label: 'Miag-ao Church', icon: 'church', x: 12, y: 41 },
+    { id: 'gigantes', label: 'Carles Islands', icon: 'island', x: 84, y: 38 },
+    { id: 'mt-kanlaon', label: 'Mt. Kanlaon', icon: 'palm', x: 88, y: 51 },
+    { id: 'jaro-cathedral', label: 'Jaro Cathedral', icon: 'church', x: 13, y: 58 },
+    { id: 'balay-negrense', label: 'Silay Heritage', icon: 'heritage', x: 45, y: 59 },
+    { id: 'masskara', label: 'MassKara', icon: 'festival', x: 72, y: 61 },
+    { id: 'lapaz-batchoy', label: 'Batchoy', icon: 'food', x: 12, y: 75 },
+    { id: 'bacolod-inasal', label: 'Chicken Inasal', icon: 'food', x: 37, y: 75 },
+    { id: 'roxas-seafood', label: 'Seafoods', icon: 'food', x: 62, y: 75 },
+    { id: 'pancit-molo', label: 'Pancit Molo', icon: 'food', x: 87, y: 75 }
   ];
 
-  var ROTATING = ['landmarks.', 'festivals.', 'churches.', 'food trips.', 'islands.', 'heritage streets.'];
+  var ROTATING = ['landmarks.', 'beaches.', 'festivals.', 'food trips.', 'islands.', 'heritage streets.'];
 
   var State = {
     places: FALLBACK.slice(),
@@ -86,8 +133,20 @@
     demo: !Api.isConfigured(),
     visionStatus: 'skipped',
     stampsBought: false,
-    lastCheckin: null
+    lastCheckin: null,
+    province: ''
   };
+
+  /** The province the tourist picked ('' until they pick one). Remembered on this device. */
+  function currentProvince() {
+    if (!State.province) { var saved = storageGet('smile.province'); State.province = provinceInfo(saved) ? saved : ''; }
+    return State.province;
+  }
+  function setProvince(id) {
+    if (!provinceInfo(id)) return;
+    State.province = id;
+    storageSet('smile.province', id);
+  }
 
   var renderToken = 0;
 
@@ -226,6 +285,14 @@
       storageSet('smile_challenges', JSON.stringify(list));
     },
     hasAccepted: function (id) { return Passport.challenges().some(function (x) { return x && x.id === id; }); },
+    /** Places this explorer has checked in at (their stamp album), kept on this device. */
+    stamps: function () { var l = readJson('smile_stamps', []); return Array.isArray(l) ? l.filter(function (x) { return x && x.id; }) : []; },
+    hasStamp: function (id) { return Passport.stamps().some(function (x) { return x.id === id; }); },
+    addStamp: function (id) {
+      var list = Passport.stamps();
+      if (!list.some(function (x) { return x.id === id; })) list.push({ id: id, at: new Date().toISOString() });
+      storageSet('smile_stamps', JSON.stringify(list));
+    },
     paint: function () {
       var pts = Passport.points();
       var r = $('#pill-rank'), p = $('#pill-pts');
@@ -415,10 +482,21 @@
   function findPlace(id) { return State.places.filter(function (p) { return p.id === id; })[0] || FALLBACK.filter(function (p) { return p.id === id; })[0] || null; }
   function catOf(p) { return CATS[p && p.cat] || { label: 'Place', icon: 'pin', color: '#0057D9' }; }
 
+  /**
+   * An older backend (before v10) sends no "province" field and only Iloilo places. Until the new
+   * Code.gs is deployed, add the built-in places/shops of the other provinces so no province is empty.
+   */
+  function withBuiltIns(list, builtIns, key) {
+    if (list.some(function (x) { return x.province; })) return list;
+    var have = {};
+    list.forEach(function (x) { have[x[key]] = true; });
+    return list.concat(builtIns.filter(function (x) { return !have[x[key]]; }));
+  }
+
   function loadPlaces() {
     if (State.placesLoaded || State.demo) return Promise.resolve(State.places);
     return Api.places().then(function (r) {
-      if (r && Array.isArray(r.places) && r.places.length) State.places = r.places.filter(function (p) { return p && p.id && p.name; });
+      if (r && Array.isArray(r.places) && r.places.length) State.places = withBuiltIns(r.places.filter(function (p) { return p && p.id && p.name; }), FALLBACK, 'id');
       State.placesLoaded = true;
       return State.places;
     }, function () { return State.places; });
@@ -484,12 +562,13 @@
         el('div', null, [
           el('h3', { class: 'place-card__name', text: p.name }),
           el('p', { class: 'place-card__meta' }, [
-            el('span', { text: p.barangay || 'Iloilo' }),
+            el('span', { text: (p.barangay ? p.barangay + ', ' : '') + provinceName(provinceOf(p)) }),
             el('span', { class: 'dot', 'aria-hidden': 'true', text: '•' }),
             el('span', { class: 'pts', text: '+' + (p.points || 0) + ' pts' })
           ])
         ]),
-        Passport.hasAccepted(p.id) ? el('span', { class: 'badge', text: 'Accepted' }) : null
+        Passport.hasStamp(p.id) ? el('span', { class: 'badge badge--stamp' }, [icon('stamp'), 'Stamped'])
+          : Passport.hasAccepted(p.id) ? el('span', { class: 'badge', text: 'Accepted' }) : null
       ]),
       p.desc ? el('p', { class: 'place-card__desc', text: p.desc }) : null,
       placeActions(p, opts)
@@ -506,12 +585,106 @@
       body: [
         el('p', { class: 'place-sheet__meta' }, [
           el('span', { class: 'chip', style: '--c:' + c.color }, [icon(c.icon), c.label]),
-          el('span', { class: 'chip chip--plain', text: (p.barangay || 'Iloilo') + ' • +' + (p.points || 0) + ' pts' })
+          el('span', { class: 'chip chip--plain', text: (p.barangay ? p.barangay + ', ' : '') + provinceName(provinceOf(p)) + ' • +' + (p.points || 0) + ' pts' })
         ]),
         p.desc ? el('p', { text: p.desc }) : null,
         placeActions(p, { onChange: function () { Modal.close(); } })
       ]
     });
+  }
+
+  /**
+   * Province picker. Big cards on the home page; a compact chip row on Explore and Shop.
+   * onPick(id) runs after the choice is saved on this device.
+   */
+  function provincePicker(onPick, compact) {
+    var sel = currentProvince();
+    var counts = {};
+    State.places.forEach(function (p) { var k = provinceOf(p); counts[k] = (counts[k] || 0) + 1; });
+    var wrap = el('div', { class: compact ? 'prov-chips' : 'prov-grid', role: 'group', 'aria-label': 'Choose a province' });
+    PROVINCES.forEach(function (pv, i) {
+      var b = el('button', {
+        type: 'button', class: compact ? 'prov-chip' : 'prov-card reveal', 'aria-pressed': String(sel === pv.id),
+        style: '--c:' + pv.color + (compact ? '' : ';--d:' + (i * 60) + 'ms'),
+        onclick: function () {
+          setProvince(pv.id);
+          wrap.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', 'false'); });
+          b.setAttribute('aria-pressed', 'true');
+          if (typeof onPick === 'function') onPick(pv.id);
+        }
+      }, compact ? [icon(pv.icon), pv.name] : [
+        el('span', { class: 'prov-card__icon' }, icon(pv.icon)),
+        el('span', { class: 'prov-card__name', text: pv.name }),
+        el('span', { class: 'prov-card__sub', text: pv.sub }),
+        el('span', { class: 'prov-card__count', text: (counts[pv.id] || 0) + ' places to explore' })
+      ]);
+      wrap.appendChild(b);
+    });
+    return wrap;
+  }
+
+  /** Stamp album: one page per province, one stamp per place. Collected stamps light up. */
+  function stampAlbum() {
+    var got = {};
+    Passport.stamps().forEach(function (x) { got[x.id] = true; });
+    var have = State.places.filter(function (p) { return got[p.id]; }).length;
+    var sel = currentProvince();
+    var order = PROVINCES.slice().sort(function (a, b) { return (b.id === sel) - (a.id === sel); });
+    return el('section', { class: 'card album reveal', 'aria-labelledby': 'album-h' }, [
+      el('div', { class: 'album__head' }, [
+        el('h2', { id: 'album-h', class: 'section__title' }, [icon('stamp'), ' My stamp album']),
+        el('p', { class: 'album__total', text: have + ' of ' + State.places.length + ' stamps' })
+      ]),
+      el('p', { class: 'muted small', text: have ? 'Keep exploring! Every check-in lights up a stamp.' : 'Your album is empty. Check in at any place with your SMILE postcard to collect your first stamp.' }),
+      el('div', { class: 'album__pages' }, order.map(function (pv) {
+        var ps = State.places.filter(function (p) { return provinceOf(p) === pv.id; });
+        var n = ps.filter(function (p) { return got[p.id]; }).length;
+        var pct = ps.length ? Math.round(n / ps.length * 100) : 0;
+        return el('div', { class: 'album-page', style: '--c:' + pv.color }, [
+          el('div', { class: 'album-page__head' }, [
+            el('b', null, [icon(pv.icon), ' ' + pv.name]),
+            el('span', { text: n === ps.length && n ? 'Conquered!' : n + '/' + ps.length })
+          ]),
+          el('div', { class: 'album-page__bar', role: 'progressbar', 'aria-label': pv.name + ' stamps', 'aria-valuemin': '0', 'aria-valuemax': String(ps.length), 'aria-valuenow': String(n) }, el('span', { style: 'width:' + pct + '%' })),
+          el('div', { class: 'album-page__stamps' }, ps.map(function (p) {
+            var c = catOf(p);
+            return el('button', { type: 'button', class: 'album-stamp' + (got[p.id] ? ' is-got' : ''), style: '--s:' + c.color, title: p.name,
+              'aria-label': p.name + (got[p.id] ? ': collected' : ': not collected yet'), onclick: function () { openPlace(p.id); } }, icon(c.icon));
+          }))
+        ]);
+      }))
+    ]);
+  }
+
+  /** "You have 2 of 5 stamps in Aklan" bar for a province. */
+  function provinceProgress(pv) {
+    var ps = State.places.filter(function (p) { return provinceOf(p) === pv.id; });
+    var n = ps.filter(function (p) { return Passport.hasStamp(p.id); }).length;
+    return el('div', { class: 'prov-progress' }, [
+      el('p', { class: 'small', text: n ? 'You have ' + n + ' of ' + ps.length + ' stamps in ' + pv.name + '. ' + (n === ps.length ? 'Province conquered!' : 'Keep going!') : 'Collect all ' + ps.length + ' stamps in ' + pv.name + ' to conquer the province.' }),
+      el('div', { class: 'album-page__bar' }, el('span', { style: 'width:' + (ps.length ? Math.round(n / ps.length * 100) : 0) + '%' }))
+    ]);
+  }
+
+  function isFeatured(s) { var f = s && s.featured; return f === true || /^(true|yes|y|1|featured)$/i.test(String(f || '').trim()); }
+  /** Featured merchants (paid SMILE subscription) are listed first; the rest keep their order. */
+  function sortShops(list) {
+    return list.map(function (s, i) { return { s: s, i: i }; })
+      .sort(function (a, b) { return (isFeatured(b.s) - isFeatured(a.s)) || (a.i - b.i); })
+      .map(function (x) { return x.s; });
+  }
+
+  /** Splits a list into [items in the chosen province, items elsewhere grouped by province]. */
+  function splitByProvince(list, sel) {
+    var here = [], others = {};
+    list.forEach(function (x) {
+      var k = provinceOf(x);
+      if (sel && k === sel) here.push(x);
+      else (others[k] = others[k] || []).push(x);
+    });
+    var groups = PROVINCES.filter(function (p) { return others[p.id] && others[p.id].length; })
+      .map(function (p) { return { province: p, items: others[p.id] }; });
+    return { here: here, others: groups };
   }
 
   // ---------------------------------------------------------------------------
@@ -567,7 +740,7 @@
         Install.deferred = null;
         storageSet(Install.SEEN_KEY, 'installed');
         Install.hide();
-        toast('SMILE Iloilo was added to your device.');
+        toast('SMILE was added to your device.');
       });
       Install.registerWorker();
       var link = $('#install-link');
@@ -582,9 +755,9 @@
       try { window.navigator.serviceWorker.register('sw.js').catch(function () { /* offline support is optional */ }); } catch (e) { /* ignore */ }
     },
     show: function (manual) {
-      if (Install.isStandalone()) { if (manual) toast('SMILE Iloilo is already installed on this device.'); return; }
+      if (Install.isStandalone()) { if (manual) toast('SMILE is already installed on this device.'); return; }
       if (!Install.node) {
-        Install.node = el('section', { class: 'install-banner', role: 'region', 'aria-label': 'Install SMILE Iloilo', tabindex: '-1' });
+        Install.node = el('section', { class: 'install-banner', role: 'region', 'aria-label': 'Install SMILE', tabindex: '-1' });
         document.body.appendChild(Install.node);
       }
       Install.paint();
@@ -610,7 +783,7 @@
       appendChildren(n, [
         el('img', { class: 'install-banner__icon', src: 'assets/icon-192.png', alt: '', width: 56, height: 56 }),
         el('div', { class: 'install-banner__body' }, [
-          el('p', { class: 'install-banner__title', text: 'Install the SMILE Iloilo app' }),
+          el('p', { class: 'install-banner__title', text: 'Install the SMILE app' }),
           steps
         ]),
         el('div', { class: 'install-banner__actions' }, [
@@ -682,7 +855,7 @@
       el('ol', { class: 'rank-ladder', 'aria-label': 'Ranks' }, RANKS.map(function (r) {
         return el('li', { class: r[0] === rank ? 'is-current' : (pts >= r[1] ? 'is-done' : null) }, [el('b', { text: r[0] }), el('span', { text: String(r[1]) })]);
       })),
-      el('p', { class: 'muted small', text: nx ? nx.need + ' more point' + (nx.need === 1 ? '' : 's') + ' to rank ' + nx.rank + '.' : 'You reached SSS. Maayo gid! Iloilo is proud of you.' }),
+      el('p', { class: 'muted small', text: nx ? nx.need + ' more point' + (nx.need === 1 ? '' : 's') + ' to rank ' + nx.rank + '.' : 'You reached SSS. Maayo gid! Western Visayas is proud of you.' }),
       big ? null : el('div', { class: 'passport__actions' }, [
         Passport.name() ? null : button('Set my name', 'user', { small: true, variant: 'light', onclick: function () { ensureName(function () { route(); }); } }),
         button('Leaderboard', 'trophy', { small: true, variant: 'light', href: '#/ranks' })
@@ -736,7 +909,7 @@
             el('div', { class: 'poster-frame' }, [
               el('picture', null, [
                 el('source', { srcset: POSTER_SRC, type: 'image/webp' }),
-                el('img', { class: 'poster-frame__img', src: 'assets/poster.jpg', alt: 'SMILE Iloilo poster: Dinagyang Festival, Iloilo Provincial Capitol, Miag-ao Church, Jaro Cathedral, Iloilo Esplanade, Batchoy, Pancit Molo, Chicken Inasal and seafood.', width: 1024, height: 1536 })
+                el('img', { class: 'poster-frame__img', src: 'assets/poster.jpg', alt: 'SMILE poster, See More of Islands’ Landmarks and Events, Western Visayas and Negros Island Region: Dinagyang Festival, Iloilo Provincial Capitol, Miag-ao Church, Carles Islands, Mt. Kanlaon, Jaro Cathedral, Silay heritage houses, MassKara Festival, Batchoy, Chicken Inasal, Capiz seafood and Pancit Molo.', width: 1024, height: 1536 })
               ]),
               el('span', { class: 'poster-frame__shine', 'aria-hidden': 'true' }),
               hotspots
@@ -746,43 +919,52 @@
           el('div', { class: 'hero__copy' }, [
             el('img', { class: 'hero__logo anim-rise', src: LOGO_SRC, alt: '', width: 512, height: 512 }),
             el('h1', { id: 'hero-h', class: 'hero__title anim-rise', style: '--d:120ms' }, [
-              el('span', { class: 'sr-only', text: 'SMILE Iloilo: See More of Iloilo’s Landmarks and Events.' }),
-              el('span', { 'aria-hidden': 'true' }, ['See more of Iloilo’s ', el('br'), rotator, el('span', { class: 'caret' })])
+              el('span', { class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events.' }),
+              el('span', { 'aria-hidden': 'true' }, ['See more of the Islands’ ', el('br'), rotator, el('span', { class: 'caret' })])
             ]),
-            el('p', { class: 'hero__lead anim-rise', style: '--d:220ms', text: 'Ask Isidro, accept a challenge, scan your postcard, collect stamps and rank up from E to SSS. Then mail your postcard to another place in the Philippines.' }),
+            el('p', { class: 'hero__lead anim-rise', style: '--d:220ms', text: 'Boracay, Iloilo, Guimaras, Bacolod, Dumaguete, Siquijor and more. Pick a province, ask Isidro, accept a challenge, scan your postcard, collect stamps and rank up from E to SSS.' }),
             el('div', { class: 'hero__cta anim-rise', style: '--d:320ms' }, [
-              button('Ask Isidro', 'compass', { href: '#/isidro', variant: 'glow' }),
-              button('Explore', 'map', { href: '#/explore', variant: 'yellow' }),
+              button('Pick your province', 'pin', { variant: 'glow', onclick: function () { var t = $('#home-provinces'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }),
+              button('Ask Isidro', 'compass', { href: '#/isidro', variant: 'yellow' }),
               button('Check-In', 'postcard', { href: '#/checkin', variant: 'green' })
             ])
           ])
         ]),
-        el('a', { class: 'scroll-down', href: '#/', 'aria-label': 'Scroll to your passport', onclick: function (e) { e.preventDefault(); var t = $('#home-passport'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }, icon('chevronDown'))
+        el('a', { class: 'scroll-down', href: '#/', 'aria-label': 'Scroll to the provinces', onclick: function (e) { e.preventDefault(); var t = $('#home-provinces'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }, icon('chevronDown'))
       ]),
 
-      el('div', { class: 'section', id: 'home-passport' }, passportCard(false)),
+      el('section', { class: 'section', id: 'home-provinces', 'aria-labelledby': 'prov-h' }, [
+        el('h2', { id: 'prov-h', class: 'section__title reveal', text: 'Where are you exploring?' }),
+        el('p', { class: 'muted reveal', text: 'Pick a province to see its landmarks, festivals, food trips and shops. You can switch any time.' }),
+        provincePicker(function () { location.hash = '#/explore'; })
+      ]),
+
+      el('div', { class: 'section stack-lg', id: 'home-passport' }, [passportCard(false), stampAlbum()]),
 
       el('section', { class: 'section', 'aria-labelledby': 'what-h' }, [
         el('h2', { id: 'what-h', class: 'section__title reveal', text: 'Everything you can do with SMILE' }),
         el('ul', { class: 'feature-grid' }, [
-          feature('guide', '#FF6B00', 'Ask Isidro', 'Your Ilonggo AI guide plans your day in Hiligaynon, English or Tagalog.', '#/isidro', 0),
+          feature('guide', '#FF6B00', 'Ask Isidro', 'Your AI guide plans your day in any province, in Hiligaynon, English or Tagalog.', '#/isidro', 0),
           feature('trophy', '#ED0460', 'Accept challenges', 'Pick a landmark, festival or food stop, and get directions in Google Maps.', '#/explore', 1),
           feature('qr', '#00A651', 'One-use QR check-in', 'Scan your SMILE postcard at the place to collect a stamp and points.', '#/checkin', 2),
           feature('camera', '#7B2CBF', 'AI Photobooth', 'Turn a selfie into a "CONQUERED" postcard, with your outfit or an AI one.', '#/explore', 3),
-          feature('mailbox', '#0057D9', 'Mail across PH', 'Add 2 stamps and drop your postcard. It travels to another destination.', '#/postcards', 4),
+          feature('mailbox', '#0057D9', 'Mail across PH', 'Paste a PhilPost stamp and mail it. It travels to a surprise destination.', '#/postcards', 4),
           feature('star', '#FDB603', 'Rank E to SSS', 'Every stamp counts. Climb the leaderboard with fellow explorers.', '#/ranks', 5),
           feature('shop', '#02A04F', 'Pasalubong & souvenirs', 'Biscocho, butterscotch, shirts and crafts from local stores and nano entrepreneurs.', '#/shop', 6)
         ])
       ]),
 
       el('section', { class: 'section section--tint', 'aria-labelledby': 'how-h' }, [
-        el('h2', { id: 'how-h', class: 'section__title reveal', text: 'How it works' }),
+        el('p', { class: 'eyebrow reveal', text: 'The post office is back, and it is an adventure' }),
+        el('h2', { id: 'how-h', class: 'section__title reveal', text: 'Your postal adventure' }),
+        el('p', { class: 'muted reveal', text: 'Every postcard is a quest. Every mailbox is a finish line.' }),
         el('ol', { class: 'how-steps' }, [
-          ['compass', 'Ask Isidro', 'Tell him your time and what you love.'],
-          ['trophy', 'Accept a challenge', 'Follow the directions to the place.'],
-          ['qr', 'Scan and check in', 'Use your postcard code and a proof photo.'],
-          ['stamp', 'Mail the postcard', 'Paste 2 stamps and send it on its journey.'],
-          ['star', 'Rank up', 'From E all the way to SSS.']
+          ['postcard', 'Grab your postcard', 'Get an official SMILE postcard from a partner shop. It is your game piece.'],
+          ['trophy', 'Take the challenge', 'Pick a landmark, festival or food stop and follow the map.'],
+          ['qr', 'Scan and collect', 'Scan your postcard at the place to earn its stamp and points.'],
+          ['mailbox', 'Stamp it and mail it', 'Paste a PhilPost stamp and drop it in the mailbox: quest complete!'],
+          ['heart', 'Pass it on', 'It lands somewhere new in the Philippines, where someone adopts it and plays.'],
+          ['star', 'Rank up', 'Fill your stamp album and climb from E to SSS.']
         ].map(function (s, i) {
           return el('li', { class: 'how-step reveal', style: '--d:' + (i * 100) + 'ms' }, [
             el('span', { class: 'how-step__num', text: String(i + 1) }),
@@ -814,22 +996,95 @@
   // Explore: search, category filter, place cards, my challenges
   // ---------------------------------------------------------------------------
 
+  var EXPLORE_GROUPS = [
+    { key: 'landmarks', title: 'Landmarks & heritage', icon: 'church', cats: ['landmark', 'heritage'] },
+    { key: 'events', title: 'Festivals & events', icon: 'festival', cats: ['festival'] },
+    { key: 'food', title: 'Food trips', icon: 'food', cats: ['food'] },
+    { key: 'nature', title: 'Beaches, islands & nature', icon: 'palm', cats: ['nature', 'stay'] }
+  ];
+
   function renderExplore(token, query) {
+    if (query.province && provinceInfo(query.province)) setProvince(query.province);
     var filter = { cat: query.cat || 'all', q: '' };
-    var grid = el('div', { class: 'grid' });
+    var body = el('div', { class: 'stack-lg' });
     var mine = el('div', { class: 'grid' });
     var count = el('p', { class: 'muted small', role: 'status' });
+    var head = el('div');
+
+    var matches = function (p) {
+      var q = filter.q.toLowerCase();
+      return (filter.cat === 'all' || p.cat === filter.cat) &&
+        (!q || (p.name + ' ' + (p.barangay || '') + ' ' + (p.desc || '') + ' ' + provinceName(provinceOf(p))).toLowerCase().indexOf(q) !== -1);
+    };
+    var shopMatches = function (s) {
+      var q = filter.q.toLowerCase();
+      if (filter.cat !== 'all' && filter.cat !== 'food') return false;
+      var hay = (s.name + ' ' + (s.barangay || '') + ' ' + (s.desc || '') + ' ' + (s.items || []).map(function (x) { return x.name; }).join(' ')).toLowerCase();
+      return !q || hay.indexOf(q) !== -1;
+    };
+    var gridOf = function (items, start) {
+      return el('div', { class: 'grid' }, items.map(function (p, i) { return placeCard(p, start + i, { onChange: paint }); }));
+    };
+    var shopsBlock = function (shops, provName) {
+      return el('div', { class: 'explore-group' }, [
+        el('h3', { class: 'explore-group__title' }, [icon('shop'), ' Shops & pasalubong']),
+        shops.length ? el('div', { class: 'grid' }, shops.map(shopCard))
+          : el('p', { class: 'empty empty--sm' }, ['No shops in ' + provName + ' yet. ', el('a', { href: '#/shop', text: 'Sell on SMILE' }), '.'])
+      ]);
+    };
 
     var paint = function () {
-      var q = filter.q.toLowerCase();
-      var list = State.places.filter(function (p) {
-        return (filter.cat === 'all' || p.cat === filter.cat) &&
-          (!q || (p.name + ' ' + (p.barangay || '') + ' ' + (p.desc || '')).toLowerCase().indexOf(q) !== -1);
-      });
-      grid.textContent = '';
-      appendChildren(grid, list.length ? list.map(function (p, i) { return placeCard(p, i, { onChange: paint }); })
-        : el('p', { class: 'empty', text: 'No places match. Try another word or category.' }));
-      count.textContent = list.length + ' place' + (list.length === 1 ? '' : 's');
+      var sel = currentProvince();
+      var pv = provinceInfo(sel);
+      var places = State.places.filter(matches);
+      var shops = (State.shops || []).filter(shopMatches);
+      var sp = splitByProvince(places, sel);
+      var ss = splitByProvince(shops, sel);
+      head.textContent = '';
+      appendChildren(head, pageHead(pv ? pv.icon : 'map', pv ? pv.color : '#0057D9', pv ? 'Discover ' + pv.name : 'Discover Western Visayas',
+        pv ? pv.sub + '. Accept a challenge, get directions, then check in to collect your stamp.' : 'Pick a province above to see its places first. Everything else stays listed below.'));
+      body.textContent = '';
+      var n = 0;
+      if (pv) {
+        var sec = el('section', { class: 'prov-section', 'aria-labelledby': 'here-h', style: '--c:' + pv.color }, [
+          el('h2', { id: 'here-h', class: 'section__title' }, [icon(pv.icon), ' In ' + pv.name]),
+          provinceProgress(pv)
+        ]);
+        if (filter.cat === 'all') {
+          EXPLORE_GROUPS.forEach(function (g) {
+            var items = sp.here.filter(function (p) { return g.cats.indexOf(p.cat) !== -1; });
+            if (!items.length) return;
+            sec.appendChild(el('div', { class: 'explore-group' }, [el('h3', { class: 'explore-group__title' }, [icon(g.icon), ' ' + g.title]), gridOf(items, n)]));
+            n += items.length;
+          });
+        } else if (sp.here.length) { sec.appendChild(gridOf(sp.here, 0)); n += sp.here.length; }
+        if (!sp.here.length) sec.appendChild(el('p', { class: 'empty', text: 'No places in ' + pv.name + ' match. Try another word or category.' }));
+        if (filter.cat === 'all' || filter.cat === 'food') sec.appendChild(shopsBlock(ss.here, pv.name));
+        body.appendChild(sec);
+      }
+      if (sp.others.length || ss.others.length) {
+        var other = el('section', { class: 'prov-section prov-section--others', 'aria-labelledby': 'else-h' }, [
+          el('h2', { id: 'else-h', class: 'section__title' }, [icon('map'), pv ? ' Elsewhere in Western Visayas' : ' All provinces']),
+          pv ? el('p', { class: 'muted small', text: 'Planning a side trip? Every province\'s places and shops stay here for you.' }) : null
+        ]);
+        PROVINCES.forEach(function (prov) {
+          if (prov.id === sel) return;
+          var ps = (sp.others.filter(function (g) { return g.province.id === prov.id; })[0] || { items: [] }).items;
+          var sh = (ss.others.filter(function (g) { return g.province.id === prov.id; })[0] || { items: [] }).items;
+          if (!ps.length && !sh.length) return;
+          other.appendChild(el('div', { class: 'explore-group', style: '--c:' + prov.color }, [
+            el('div', { class: 'explore-group__bar' }, [
+              el('h3', { class: 'explore-group__title' }, [icon(prov.icon), ' ' + prov.name]),
+              button('Make this my province', 'pin', { small: true, variant: 'light', onclick: function () { setProvince(prov.id); paint(); window.scrollTo(0, 0); } })
+            ]),
+            ps.length ? gridOf(ps, n) : null,
+            sh.length ? el('div', { class: 'grid' }, sh.map(shopCard)) : null
+          ]));
+          n += ps.length;
+        });
+        body.appendChild(other);
+      }
+      count.textContent = places.length + ' place' + (places.length === 1 ? '' : 's') + ' across ' + PROVINCES.length + ' provinces';
       var ch = Passport.challenges().map(function (c) { return findPlace(c.id) || c; });
       mine.textContent = '';
       appendChildren(mine, ch.length ? ch.map(function (p, i) { return placeCard(p, i, { onChange: paint }); })
@@ -850,18 +1105,19 @@
         }, [icon(pair[1].icon), pair[1].label]);
       }));
 
-    var search = el('input', { type: 'search', id: 'place-search', placeholder: 'Search churches, batchoy, beaches…', autocomplete: 'off' });
+    var search = el('input', { type: 'search', id: 'place-search', placeholder: 'Search beaches, churches, inasal, piaya…', autocomplete: 'off' });
     search.addEventListener('input', function () { filter.q = search.value.trim(); paint(); });
 
     setView([
       el('section', { class: 'section' }, [
-        pageHead('map', '#0057D9', 'Discover Iloilo', 'Accept a challenge, get directions, then check in at the place to collect your stamp.'),
+        head,
+        provincePicker(function () { paint(); }, true),
         el('div', { class: 'toolbar' }, [
           el('label', { class: 'searchbox' }, [icon('search'), el('span', { class: 'sr-only', text: 'Search places' }), search]),
           chips
         ]),
         count,
-        grid
+        body
       ]),
       el('section', { class: 'section', 'aria-labelledby': 'mine-h' }, [
         el('h2', { id: 'mine-h', class: 'section__title' }, [icon('trophy'), ' My Challenges']),
@@ -870,7 +1126,7 @@
     ]);
     paint();
     focusHeading();
-    loadPlaces().then(function () { if (token === renderToken) paint(); });
+    Promise.all([loadPlaces(), loadShops()]).then(function () { if (token === renderToken) paint(); });
   }
 
   // ---------------------------------------------------------------------------
@@ -884,6 +1140,9 @@
     lang.value = storageGet('smile.lang') || 'hil';
     lang.addEventListener('change', function () { storageSet('smile.lang', lang.value); });
     var q = el('textarea', { id: 'isidro-q', rows: '3', maxlength: '500', placeholder: 'I have 4 hours and love food. Where should I go?' });
+    var prov = el('select', { id: 'isidro-province' }, [el('option', { value: '', text: 'Anywhere in Western Visayas' })].concat(PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); })));
+    prov.value = currentProvince();
+    prov.addEventListener('change', function () { if (prov.value) setProvince(prov.value); });
     var out = outputBox();
     var recs = el('div', { class: 'grid' });
     var ask = button('Ask Isidro', 'compass', { type: 'submit', block: true, variant: 'glow' });
@@ -901,28 +1160,31 @@
       setBusy(ask, true, 'Isidro is planning…');
       out.loading('Isidro is planning your trip…');
       recs.textContent = '';
-      Api.recommend(question, lang.value).then(function (r) {
+      Api.recommend(question, lang.value, prov.value).then(function (r) {
         if (token !== renderToken) return;
         out.show((r.reply || 'Here are my picks for you.') + (r.demo ? '\n\n(Isidro is in demo mode: the AI key is not set on the server yet.)' : ''), r.demo ? 'warn' : null);
         showRecs(Array.isArray(r.places) ? r.places : []);
       }, function (err) {
         if (token !== renderToken) return;
         // Demo fallback (same as before): a sample answer with the first four places.
+        var pool = State.places.filter(function (p) { return !prov.value || provinceOf(p) === prov.value; });
+        var picks = pool.slice(0, 4);
         out.show((State.demo ? 'Demo answer: ' : friendlyError(err) + '\n\nMeanwhile, here is a classic route: ') +
-          'Molo Church in the morning, La Paz Batchoy for lunch, then the Esplanade at sunset. #SMILEIloilo', State.demo ? null : 'warn');
-        showRecs(State.places.slice(0, 4));
+          picks.map(function (p) { return p.name; }).join(', then ') + '. #SMILEPH', State.demo ? null : 'warn');
+        showRecs(picks);
       }).then(function () { setBusy(ask, false); });
     };
 
-    var prompts = ['I have 4 hours and love food', 'Heritage walk in the city', 'Beach weekend with friends', 'When is Dinagyang and what should I wear?'];
+    var prompts = ['I have 4 hours and love food', 'Heritage walk in the city', 'Beach weekend in Boracay', 'Mango trip to Guimaras', 'When is MassKara and what should I wear?'];
 
     setView(el('section', { class: 'section section--narrow' }, [
       el('div', { class: 'isidro-hero' }, [
         el('div', { class: 'isidro-avatar' }, icon('guide')),
-        el('h1', { class: 'page-head__title', text: 'Isidro, your Ilonggo AI guide' }),
-        el('p', { class: 'muted', text: 'Maayong adlaw! Tell me how much time you have and what you love. I will plan your SMILE route.' })
+        el('h1', { class: 'page-head__title', text: 'Isidro, your Western Visayas AI guide' }),
+        el('p', { class: 'muted', text: 'Maayong adlaw! Tell me where you are, how much time you have and what you love. I will plan your SMILE route.' })
       ]),
       el('form', { class: 'card stack', onsubmit: submit }, [
+        formField('isidro-province', 'Province', prov),
         formField('isidro-lang', 'Language', lang),
         formField('isidro-q', 'Your question', q),
         el('div', { class: 'chips chips--wrap', 'aria-label': 'Ideas' }, prompts.map(function (p) {
@@ -996,6 +1258,7 @@
         if (r.total !== undefined) Passport.setPoints(r.total);
         var pts = r.stamp && r.stamp.points !== undefined ? r.stamp.points : (findPlace(select.value) || {}).points || 0;
         State.lastCheckin = { placeId: select.value, postcard: code.value.trim() };
+        Passport.addStamp(select.value);
         result.show('Completed! +' + pts + ' pts\nTotal: ' + (r.total !== undefined ? r.total : Passport.points()) + '   Rank: ' + (r.rank || rankOf(Passport.points())), 'ok');
         toast('Stamp collected! Now mail your postcard.');
         mailCard.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
@@ -1030,13 +1293,13 @@
   function mailSection(getInfo) {
     var out = outputBox();
     var mailBtn = button('Drop in Mailbox', 'send', { variant: 'blue', disabled: !State.stampsBought });
-    var buyBtn = button(State.stampsBought ? '2 stamps pasted' : 'Buy 2 Stamps · ₱30', 'stamp', { variant: 'yellow', disabled: State.stampsBought });
+    var buyBtn = button(State.stampsBought ? 'Stamp pasted' : 'Buy ₱20 Stamp', 'stamp', { variant: 'yellow', disabled: State.stampsBought });
     buyBtn.addEventListener('click', function () {
       State.stampsBought = true;
       mailBtn.disabled = false;
       buyBtn.disabled = true;
-      buyBtn.querySelector('.btn__text').textContent = '2 stamps pasted';
-      toast('2 PhilPost stamps pasted!');
+      buyBtn.querySelector('.btn__text').textContent = 'Stamp pasted';
+      toast('PhilPost stamp pasted! Your postcard is ready for its journey.');
     });
     mailBtn.addEventListener('click', function () {
       var info = getInfo();
@@ -1051,9 +1314,10 @@
     return el('section', { class: 'section section--narrow', id: 'mail' }, [
       el('div', { class: 'card mail-card reveal' }, [
         el('h2', { class: 'section__title' }, [icon('mailbox'), ' Mail your postcard']),
-        el('p', { text: 'After check-in, buy 2 PhilPost stamps and drop your postcard in the mailbox. It is sent to a random destination in the Philippines!' }),
-        el('div', { class: 'stamps', 'aria-hidden': 'true' }, [el('span', { class: 'stamp stamp--a' }, icon('stamp')), el('span', { class: 'stamp stamp--b' }, icon('stamp'))]),
+        el('p', { text: 'The mailbox is your finish line! Paste a ₱20 PhilPost stamp and drop your postcard in any PhilPost mailbox or post office. SMILE sends it to a surprise destination in the Philippines, where someone adopts it and starts their own adventure.' }),
+        el('div', { class: 'stamps', 'aria-hidden': 'true' }, [el('span', { class: 'stamp stamp--a' }, icon('stamp'))]),
         el('div', { class: 'btn-row' }, [buyBtn, mailBtn]),
+        button('Find a post office near me', 'map', { variant: 'light', small: true, href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('PhilPost post office'), target: '_blank' }),
         out
       ])
     ]);
@@ -1173,22 +1437,25 @@
   };
 
   var SHOPS_FALLBACK = [
-    { shop_id: 'biscocho-haus', name: 'Original Biscocho Haus', type: 'pasalubong', barangay: 'Lopez Jaena St, Jaro',
+    { province: 'iloilo', shop_id: 'biscocho-haus', name: 'Original Biscocho Haus', type: 'pasalubong', barangay: 'Lopez Jaena St, Jaro',
       desc: 'Iloilo’s classic pasalubong bakery, famous for biscocho and butterscotch.', contact: '',
       maps_url: 'https://www.google.com/maps/search/?api=1&query=Original+Biscocho+Haus+Jaro+Iloilo+City',
       items: [
         { item_id: 'bh-biscocho', name: 'Biscocho', price: '', desc: 'Twice-baked bread toasted with butter and sugar. The Iloilo classic.' },
         { item_id: 'bh-butterscotch', name: 'Butterscotch', price: '', desc: 'Chewy, buttery bars: the original flavor, plus versions with dried fruits.' },
         { item_id: 'bh-barquillos', name: 'Barquillos', price: '', desc: 'Crisp rolled wafers, an Ilonggo favorite.' }
-      ] }
+      ] },
+    {"shop_id": "bongbongs-piaya", "province": "negros-occidental", "name": "Bongbong's Piaya & Barquillos", "type": "pasalubong", "barangay": "Bacolod City", "desc": "Bacolod's pasalubong favorite for piaya, barquillos and other Negrense treats.", "contact": "", "items": [{"item_id": "bb-piaya", "name": "Piaya", "price": "", "desc": "Flat, flaky bread filled with muscovado sugar. Also in ube and other flavors."}, {"item_id": "bb-barquillos", "name": "Barquillos", "price": "", "desc": "Crisp rolled wafers, a Negrense classic."}], "maps_url": "https://www.google.com/maps/search/?api=1&query=Bongbong%27s+Piaya+Bacolod"},
+    {"shop_id": "trappist-gift-shop", "province": "guimaras", "name": "Trappist Monastery Gift Shop", "type": "pasalubong", "barangay": "Jordan", "desc": "The monks' shop for Guimaras mango jams and preserves.", "contact": "", "items": [{"item_id": "tm-mango-jam", "name": "Mango jams and preserves", "price": "", "desc": "Made with Guimaras mangoes by the Trappist community."}], "maps_url": "https://www.google.com/maps/search/?api=1&query=Trappist+Monastery+Guimaras"},
+    {"shop_id": "sans-rival-dumaguete", "province": "negros-oriental", "name": "Sans Rival Cakes & Pastries", "type": "pasalubong", "barangay": "Dumaguete City", "desc": "Dumaguete's famous bakery for silvanas and sans rival, packed for travel.", "contact": "", "maps_url": "https://www.google.com/maps/search/?api=1&query=Sans+Rival+Cakes+and+Pastries+Dumaguete", "items": [{"item_id": "sr-silvanas", "name": "Silvanas", "price": "", "desc": "Frozen cashew-meringue wafers with buttercream, coated in cookie crumbs."}, {"item_id": "sr-sans-rival", "name": "Sans Rival", "price": "", "desc": "Layered cashew meringue and buttercream cake."}]}
   ];
-  State.shops = SHOPS_FALLBACK.slice();
+  State.shops = sortShops(SHOPS_FALLBACK.slice());
   State.shopsLoaded = false;
 
   function loadShops() {
     if (State.shopsLoaded || State.demo) return Promise.resolve(State.shops);
     return Api.shops().then(function (r) {
-      if (r && Array.isArray(r.shops) && r.shops.length) State.shops = r.shops.filter(function (s) { return s && s.name; });
+      if (r && Array.isArray(r.shops) && r.shops.length) State.shops = sortShops(withBuiltIns(r.shops.filter(function (s) { return s && s.name; }), SHOPS_FALLBACK, 'shop_id'));
       State.shopsLoaded = true;
       return State.shops;
     }, function () { return State.shops; });
@@ -1210,12 +1477,12 @@
   function shopCard(s, i) {
     var t = SHOP_TYPES[s.type] || SHOP_TYPES.other;
     var items = Array.isArray(s.items) ? s.items : [];
-    return el('article', { class: 'card shop-card reveal', style: '--d:' + Math.min(i, 10) * 60 + 'ms' }, [
+    return el('article', { class: 'card shop-card reveal' + (isFeatured(s) ? ' shop-card--featured' : ''), style: '--d:' + Math.min(i, 10) * 60 + 'ms' }, [
       el('div', { class: 'place-card__top' }, [
         el('span', { class: 'card-icon', style: 'background:' + t.color }, icon(t.icon)),
         el('div', null, [
           el('h3', { class: 'place-card__name', text: s.name }),
-          el('p', { class: 'place-card__meta' }, [el('span', { class: 'chip chip--sm', style: '--c:' + t.color, text: t.label }), s.barangay ? el('span', { text: s.barangay }) : null])
+          el('p', { class: 'place-card__meta' }, [isFeatured(s) ? el('span', { class: 'chip chip--sm chip--featured' }, [icon('star'), 'Featured']) : null, el('span', { class: 'chip chip--sm', style: '--c:' + t.color, text: t.label }), el('span', { text: (s.barangay ? s.barangay + ', ' : '') + provinceName(provinceOf(s)) })])
         ])
       ]),
       s.desc ? el('p', { class: 'place-card__desc', text: s.desc }) : null,
@@ -1226,10 +1493,10 @@
         ]);
       })) : null,
       el('div', { class: 'btn-row shop-card__actions' }, [
-        button('Directions', 'map', { variant: 'blue', small: true, href: s.maps_url || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' Iloilo')), target: '_blank' }),
+        button('Directions', 'map', { variant: 'blue', small: true, href: s.maps_url || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' ' + provinceName(provinceOf(s)))), target: '_blank' }),
         contactNode(s.contact),
         button('Share', 'share', { variant: 'light', small: true, onclick: function () {
-          var text = s.name + ' (' + t.label + ', Iloilo): ' + items.map(function (x) { return x.name; }).join(', ') + ' #SMILEIloilo';
+          var text = s.name + ' (' + t.label + ', ' + provinceName(provinceOf(s)) + '): ' + items.map(function (x) { return x.name; }).join(', ') + ' #SMILEPH';
           if (navigator.share) navigator.share({ title: s.name, text: text, url: location.origin + location.pathname + '#/shop' }).catch(function () { /* cancelled */ });
           else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast('Copied!'); });
         } })
@@ -1239,7 +1506,7 @@
 
   function renderShop(token, query) {
     var filter = { type: query.type || 'all', q: '' };
-    var grid = el('div', { class: 'grid' });
+    var grid = el('div', { class: 'stack-lg' });
     var count = el('p', { class: 'muted small', role: 'status' });
     var paint = function () {
       var q = filter.q.toLowerCase();
@@ -1247,9 +1514,27 @@
         var hay = (s.name + ' ' + (s.barangay || '') + ' ' + (s.desc || '') + ' ' + (s.items || []).map(function (x) { return x.name + ' ' + (x.desc || ''); }).join(' ')).toLowerCase();
         return (filter.type === 'all' || s.type === filter.type) && (!q || hay.indexOf(q) !== -1);
       });
+      var sel = currentProvince(), pv = provinceInfo(sel), sp = splitByProvince(list, sel);
       grid.textContent = '';
-      appendChildren(grid, list.length ? list.map(shopCard) : el('p', { class: 'empty', text: 'No shops match yet. Be the first to sell here!' }));
-      count.textContent = list.length + ' shop' + (list.length === 1 ? '' : 's');
+      if (pv) {
+        appendChildren(grid, el('section', { class: 'prov-section', style: '--c:' + pv.color }, [
+          el('h2', { class: 'section__title' }, [icon(pv.icon), ' In ' + pv.name]),
+          sp.here.length ? el('div', { class: 'grid' }, sp.here.map(shopCard))
+            : el('p', { class: 'empty' }, ['No shops in ' + pv.name + ' yet. ', el('a', { href: '#sell', text: 'Be the first to sell here' }), '!'])
+        ]));
+      }
+      if (sp.others.length) {
+        appendChildren(grid, el('section', { class: 'prov-section prov-section--others' }, [
+          el('h2', { class: 'section__title' }, [icon('map'), pv ? ' Elsewhere in Western Visayas' : ' All provinces'])
+        ].concat(sp.others.map(function (g) {
+          return el('div', { class: 'explore-group', style: '--c:' + g.province.color }, [
+            el('h3', { class: 'explore-group__title' }, [icon(g.province.icon), ' ' + g.province.name]),
+            el('div', { class: 'grid' }, g.items.map(shopCard))
+          ]);
+        }))));
+      }
+      if (!list.length) appendChildren(grid, el('p', { class: 'empty', text: 'No shops match yet. Be the first to sell here!' }));
+      count.textContent = list.length + ' shop' + (list.length === 1 ? '' : 's') + ' across Western Visayas';
       Motion.reveal(view());
     };
     var chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Shop type' },
@@ -1266,7 +1551,8 @@
 
     setView([
       el('section', { class: 'section' }, [
-        pageHead('shop', '#FF6A03', 'Pasalubong & Souvenirs', 'Take home a taste of Iloilo. Buy from pasalubong stores and local nano entrepreneurs.'),
+        pageHead('shop', '#FF6A03', 'Pasalubong & Souvenirs', 'Take home a taste of the islands. Buy from pasalubong stores and nano entrepreneurs in every province.'),
+        provincePicker(function () { paint(); }, true),
         el('div', { class: 'toolbar' }, [el('label', { class: 'searchbox' }, [icon('search'), el('span', { class: 'sr-only', text: 'Search shops' }), search]), chips]),
         count,
         grid
@@ -1282,6 +1568,8 @@
   function sellForm(token) {
     var name = el('input', { id: 'sell-name', type: 'text', maxlength: '80', placeholder: 'e.g. Lola’s Piaya House' });
     var type = el('select', { id: 'sell-type' }, Object.keys(SHOP_TYPES).map(function (k) { return el('option', { value: k, text: SHOP_TYPES[k].label }); }));
+    var prov = el('select', { id: 'sell-province' }, PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); }));
+    prov.value = currentProvince() || DEFAULT_PROVINCE;
     var area = el('input', { id: 'sell-area', type: 'text', maxlength: '80', placeholder: 'Barangay / street, e.g. Molo Plaza' });
     var desc = el('textarea', { id: 'sell-desc', rows: '2', maxlength: '400', placeholder: 'What makes your shop special?' });
     var contact = el('input', { id: 'sell-contact', type: 'text', maxlength: '120', placeholder: 'Facebook page link, mobile number or email' });
@@ -1320,16 +1608,17 @@
       if (!items.length) { toast('Add at least one product.'); return; }
       setBusy(submit, true, 'Sending…');
       out.loading('Sending your shop…');
-      Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim() }, items).then(function (r) {
+      Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, province: prov.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim() }, items).then(function (r) {
         out.show(r.message || 'Salamat! Your shop was sent for review.', 'ok');
         form.reset(); itemsBox.textContent = ''; rows = []; addItem();
       }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(submit, false); });
     } }, [
       el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#02A04F' }, icon('shop')), 'Sell on SMILE']),
-      el('p', { class: 'muted', text: 'For nano entrepreneurs and pasalubong stores in Iloilo. Free to join. The SMILE team checks each shop before it appears here.' }),
+      el('p', { class: 'muted', text: 'For nano entrepreneurs and pasalubong stores in every province of Western Visayas and the Negros Island Region. Free to join. The SMILE team checks each shop before it appears here.' }),
       formField('sell-name', 'Shop name', name),
       formField('sell-type', 'What do you sell?', type),
-      formField('sell-area', 'Where are you?', area),
+      formField('sell-province', 'Province', prov),
+      formField('sell-area', 'Town, barangay or street', area),
       formField('sell-desc', 'About your shop', desc),
       formField('sell-contact', 'Contact for buyers', contact, 'Shown publicly so tourists can order or visit.'),
       el('h3', { class: 'sell-items__title', text: 'Products' }),
@@ -1401,6 +1690,7 @@
     setView(el('section', { class: 'section section--narrow' }, [
       pageHead('trophy', '#FDB603', 'Ranks and Leaderboard', '3 pts = D • 6 = C • 10 = B • 15 = A • 20 = S • 30 = SS • 45 = SSS'),
       passportCard(true),
+      stampAlbum(),
       el('div', { class: 'row-between' }, [el('h2', { class: 'section__title', text: 'Top explorers' }), refresh]),
       list
     ]));
@@ -1793,7 +2083,7 @@
       name: 'photobooth',
       wide: true,
       body: el('div', { class: 'stack' }, [
-        el('p', { class: 'pb-place' }, [icon('pin', 'icon--inline'), place.name + ' • ' + (place.barangay || 'Iloilo')]),
+        el('p', { class: 'pb-place' }, [icon('pin', 'icon--inline'), place.name + ' • ' + (place.barangay ? place.barangay + ', ' : '') + provinceName(provinceOf(place))]),
         el('div', { class: 'field' }, [el('span', { class: 'field__label', text: '1. Your selfie' }), file]),
         preview,
         el('fieldset', { class: 'stack' }, [el('legend', { class: 'field__label', text: '2. Outfit' }),
@@ -1828,9 +2118,9 @@
       }
       var f = '"Baloo 2", "Nunito", system-ui, sans-serif';
       x.fillStyle = '#FDB603'; x.font = '800 84px ' + f; x.fillText('SMILE ILOILO', 44, H - 220);
-      x.fillStyle = '#fff'; x.font = '800 54px ' + f; x.fillText(String(place.name || 'Iloilo').toUpperCase().slice(0, 28), 44, H - 150);
-      x.font = '600 36px "Nunito", system-ui, sans-serif'; x.fillText((place.barangay || 'Iloilo') + ', Iloilo, Philippines', 44, H - 95);
-      x.font = '700 28px "Nunito", system-ui, sans-serif'; x.fillText(new Date().toLocaleDateString('en-PH') + ' • #SMILEIloilo', 44, H - 46);
+      x.fillStyle = '#fff'; x.font = '800 54px ' + f; x.fillText(String(place.name || 'Western Visayas').toUpperCase().slice(0, 28), 44, H - 150);
+      x.font = '600 36px "Nunito", system-ui, sans-serif'; x.fillText(((place.barangay ? place.barangay + ', ' : '') + provinceName(provinceOf(place)) + ', Philippines').slice(0, 48), 44, H - 95);
+      x.font = '700 28px "Nunito", system-ui, sans-serif'; x.fillText(new Date().toLocaleDateString('en-PH') + ' • #SMILEPH', 44, H - 46);
       x.save(); x.translate(W - 240, 230); x.rotate(-0.22);
       x.strokeStyle = '#ED0460'; x.lineWidth = 10; x.strokeRect(-190, -70, 380, 140);
       x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(-190, -70, 380, 140);
@@ -1855,7 +2145,7 @@
         if (!b) return savePostcard(canvas, place);
         var f = new File([b], 'SMILE-' + place.id + '.png', { type: 'image/png' });
         if (navigator.canShare && navigator.canShare({ files: [f] })) {
-          navigator.share({ files: [f], text: 'I conquered ' + place.name + '! #SMILEIloilo' }).catch(function () { /* cancelled */ });
+          navigator.share({ files: [f], text: 'I conquered ' + place.name + '! #SMILEPH' }).catch(function () { /* cancelled */ });
         } else savePostcard(canvas, place);
       }, 'image/png');
     } catch (e) { savePostcard(canvas, place); }
@@ -1925,7 +2215,7 @@
 
   function init() {
     var d = $('#dateline');
-    if (d) d.textContent = 'Iloilo, Philippines · ' + manilaDate();
+    if (d) d.textContent = 'Western Visayas, Philippines · ' + manilaDate();
     if (State.demo) $('#demo-strip').hidden = false;
     decorateStaticIcons();
     Passport.paint();

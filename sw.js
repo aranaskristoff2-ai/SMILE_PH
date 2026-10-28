@@ -1,11 +1,11 @@
 /*
- * SMILE Iloilo service worker.
+ * SMILE service worker.
  * Purpose: make the site installable and let the app shell (HTML, CSS, JS, logo, poster) open quickly
  * and offline. It NEVER touches POST requests or anything on another origin (Apps Script, Google Fonts,
  * Google Maps, AI services): those always go straight to the network.
  * Bump VERSION whenever you upload changed frontend files, so installed copies pick up the new files.
  */
-var VERSION = 'smile-shell-v9.5.0';
+var VERSION = 'smile-shell-v10.3.2';
 var SHELL = [
   './',
   './index.html',

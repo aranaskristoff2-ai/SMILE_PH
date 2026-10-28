@@ -1,12 +1,12 @@
 /*
- * SMILE Iloilo: the single frontend API client (window.SmileApi).
+ * SMILE: the single frontend API client (window.SmileApi).
  *
  * Every call the frontend makes to the Apps Script backend goes through this file.
  *
  *  SmileApi method                         action=            Returns (fields of the JSON reply)
  *  ──────────────────────────────────────  ─────────────────  ─────────────────────────────────────
  *  places()                                places             { places: [...] }
- *  recommend(q, lang)                      recommend          { reply, places: [...] }
+ *  recommend(q, lang, province)            recommend          { reply, places: [...] }
  *  acceptChallenge(user, placeId)          accept_challenge   { ... }
  *  vision(placeId, image)                  vision             { result }
  *  checkin({user, placeId, postcard, vs})  checkin            { stamp: {points}, total, rank }
@@ -113,7 +113,7 @@
     },
 
     places: function () { return post('places', {}, TIMEOUTS.read); },
-    recommend: function (q, lang) { return post('recommend', { q: q, lang: lang }, TIMEOUTS.ai); },
+    recommend: function (q, lang, province) { return post('recommend', { q: q, lang: lang, province: province || '' }, TIMEOUTS.ai); },
     acceptChallenge: function (user, placeId) { return post('accept_challenge', { user: user, place_id: placeId }, TIMEOUTS.write); },
     vision: function (placeId, image) { return post('vision', { place_id: placeId, image: image }, TIMEOUTS.ai); },
     checkin: function (o) {

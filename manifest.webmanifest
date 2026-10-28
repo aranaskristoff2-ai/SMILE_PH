@@ -1,7 +1,7 @@
 {
-  "name": "SMILE Iloilo: See More of Iloilo's Landmarks and Events",
+  "name": "SMILE: See More of Islands' Landmarks and Events",
   "short_name": "SMILE",
-  "description": "Gamified Iloilo tourism. Ask Isidro, accept challenges, collect stamps, rank E to SSS.",
+  "description": "Gamified Western Visayas tourism: Boracay, Iloilo, Guimaras, Bacolod, Dumaguete, Siquijor and more. Ask Isidro, accept challenges, collect stamps, rank E to SSS.",
   "id": "./",
   "start_url": "./#/",
   "scope": "./",

@@ -205,10 +205,13 @@ fieldset { border: 0; padding: 0; margin: 0; }
 .poster-frame__shine { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .28) 48%, transparent 62%); transform: translateX(-130%); animation: shine 6s infinite; pointer-events: none; }
 .hero__hint { font-size: 13px; font-weight: 800; opacity: .9; margin: 0; }
 .hotspot {
-  position: absolute; z-index: 2; width: 42px; height: 42px; margin: -21px 0 0 -21px; border-radius: 50%; border: 3px solid #fff; cursor: pointer;
-  background: rgba(0, 87, 217, .55); color: #fff; display: grid; place-items: center; padding: 0; animation: hotspotPulse 2.2s infinite; animation-delay: var(--d, 0s);
+  position: absolute; z-index: 2; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .9); cursor: pointer;
+  background: rgba(255, 255, 255, .18); color: #fff; display: grid; place-items: center; padding: 0; box-shadow: 0 0 0 1px rgba(0, 0, 0, .25);
+  animation: hotspotPulse 2.2s infinite; animation-delay: var(--d, 0s);
 }
-.hotspot .icon { width: 20px; height: 20px; animation: float 2.5s ease-in-out infinite; }
+/* Small dot on the photo, but a finger-sized (40 px) invisible tap area around it. */
+.hotspot::after { content: ''; position: absolute; inset: -12px; border-radius: 50%; }
+.hotspot .icon { display: none; }
 .hotspot__label { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translate(-50%, 4px); background: var(--blue-2); color: #fff; font-size: 11px; font-weight: 900; padding: 4px 9px; border-radius: 999px; white-space: nowrap; opacity: 0; transition: .2s; pointer-events: none; }
 .hotspot:hover .hotspot__label, .hotspot:focus-visible .hotspot__label { opacity: 1; transform: translate(-50%, 0); }
 .hero__copy { text-align: center; }
@@ -375,7 +378,7 @@ fieldset { border: 0; padding: 0; margin: 0; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes shine { 0%, 55% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
 @keyframes posterZoom { from { transform: scale(1); } to { transform: scale(1.06); } }
-@keyframes hotspotPulse { 0% { box-shadow: 0 0 0 0 rgba(253, 182, 3, .8); } 70% { box-shadow: 0 0 0 16px rgba(253, 182, 3, 0); } 100% { box-shadow: 0 0 0 0 rgba(253, 182, 3, 0); } }
+@keyframes hotspotPulse { 0% { box-shadow: 0 0 0 0 rgba(253, 182, 3, .8); } 70% { box-shadow: 0 0 0 9px rgba(253, 182, 3, 0); } 100% { box-shadow: 0 0 0 0 rgba(253, 182, 3, 0); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
@@ -480,3 +483,60 @@ body.has-cam { overflow: hidden; }
 .sell-item legend { padding: 0 6px; }
 .sell-item__grid { display: grid; grid-template-columns: 1fr 120px; gap: 8px; }
 .sell-items__title { font-size: 18px; margin: 6px 0 0; }
+
+/* ---------- v10: province picker and province sections ---------- */
+.stack-lg { display: grid; gap: 28px; }
+.prov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 14px; }
+.prov-card { --c: var(--blue); position: relative; display: grid; gap: 4px; justify-items: start; text-align: left; padding: 16px; border-radius: var(--radius); border: 2px solid transparent; background: var(--paper); box-shadow: var(--shadow); color: var(--ink); cursor: pointer; font: inherit; transition: transform .15s, box-shadow .15s, border-color .15s; overflow: hidden; }
+.prov-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--c); }
+.prov-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.prov-card:focus-visible { outline: 3px solid var(--c); outline-offset: 2px; }
+.prov-card[aria-pressed="true"] { border-color: var(--c); background: color-mix(in srgb, var(--c) 9%, #fff); }
+.prov-card__icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 14px; background: var(--c); color: #fff; margin: 4px 0 6px; }
+.prov-card__icon .icon { width: 24px; height: 24px; }
+.prov-card__name { font-family: var(--display); font-size: 20px; font-weight: 800; line-height: 1.1; }
+.prov-card__sub { font-size: 13px; color: var(--muted); font-weight: 700; }
+.prov-card__count { font-size: 12px; font-weight: 800; color: var(--c); margin-top: 4px; }
+.prov-chips { display: flex; gap: 8px; overflow-x: auto; padding: 6px 2px 10px; margin: 6px 0 4px; scrollbar-width: none; }
+.prov-chips::-webkit-scrollbar { display: none; }
+.prov-chip { --c: var(--ink); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; background: #fff; border: 2px solid var(--c); color: var(--ink); padding: 8px 14px; border-radius: 999px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.prov-chip .icon { width: 18px; height: 18px; color: var(--c); }
+.prov-chip[aria-pressed="true"] { background: var(--c); color: #fff; }
+.prov-chip[aria-pressed="true"] .icon { color: #fff; }
+.prov-section { --c: var(--blue); display: grid; gap: 18px; }
+.prov-section > .section__title .icon { color: var(--c); }
+.prov-section--others { padding-top: 20px; border-top: 2px dashed var(--line); }
+.explore-group { --c: var(--ink); display: grid; gap: 12px; }
+.explore-group__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.explore-group__title { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 6px; }
+.explore-group__title .icon { color: var(--c); width: 20px; height: 20px; }
+.empty--sm { padding: 12px; font-size: 14px; }
+@media (max-width: 420px) { .prov-grid { grid-template-columns: 1fr 1fr; } .prov-card { padding: 12px; } .prov-card__name { font-size: 17px; } }
+
+/* ---------- v10.2: stamp album, province progress, featured shops ---------- */
+.album { display: grid; gap: 12px; }
+.album__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; }
+.album__head .section__title { margin: 0; }
+.album__total { margin: 0; font-family: var(--display); font-weight: 800; font-size: 18px; color: var(--pink); }
+.album__pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.album-page { --c: var(--blue); border: 2px solid color-mix(in srgb, var(--c) 30%, var(--line)); border-radius: 16px; padding: 12px; background: color-mix(in srgb, var(--c) 5%, #fff); display: grid; gap: 8px; }
+.album-page__head { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 14px; }
+.album-page__head b { display: inline-flex; align-items: center; gap: 4px; }
+.album-page__head .icon { width: 16px; height: 16px; color: var(--c); }
+.album-page__head span { font-weight: 900; color: var(--c); font-size: 13px; }
+.album-page__bar { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--c, var(--blue)) 15%, #fff); overflow: hidden; }
+.album-page__bar span { display: block; height: 100%; min-width: 0; background: var(--c, var(--blue)); border-radius: inherit; transition: width .6s ease; }
+.album-page__stamps { display: flex; flex-wrap: wrap; gap: 6px; }
+.album-stamp { --s: var(--muted); width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; border: 2px dashed #CBC5B8; background: #fff; color: #C9C3B6; cursor: pointer; padding: 0; transition: transform .15s; }
+.album-stamp .icon { width: 20px; height: 20px; }
+.album-stamp:hover { transform: rotate(-6deg) scale(1.08); }
+.album-stamp.is-got { border: 2px solid var(--s); background: var(--s); color: #fff; box-shadow: 0 3px 0 color-mix(in srgb, var(--s) 60%, #000); transform: rotate(-4deg); }
+.album-stamp:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.prov-progress { --c: inherit; display: grid; gap: 6px; max-width: 520px; }
+.prov-progress p { margin: 0; color: var(--muted); font-weight: 700; }
+.badge--stamp { display: inline-flex; align-items: center; gap: 4px; background: #FFE9F1; color: var(--pink); }
+.badge--stamp .icon { width: 13px; height: 13px; }
+.chip--featured { --c: var(--yellow); background: var(--yellow); color: #2a1f00; gap: 3px; }
+.chip--featured .icon { width: 12px; height: 12px; }
+.shop-card--featured { box-shadow: 0 0 0 3px var(--yellow), var(--shadow); }
+.mail-card .btn--small { justify-self: center; margin-top: 4px; }
