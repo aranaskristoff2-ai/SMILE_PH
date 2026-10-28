@@ -35,7 +35,7 @@
     read: 30000,       // places, leaderboard, track
     ai: 60000,         // Isidro, captions, merchant, insights, vision
     write: 45000,      // check-in, mail, adopt, accept
-    photobooth: 120000 // moderation + image editing can take a while
+    photobooth: 180000 // Muse moderation + Muse Image edit (+ Gemini backup) can take a while
   };
 
   var FRIENDLY = {

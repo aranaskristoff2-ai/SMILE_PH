@@ -5,7 +5,7 @@
  * Google Maps, AI services): those always go straight to the network.
  * Bump VERSION whenever you upload changed frontend files, so installed copies pick up the new files.
  */
-var VERSION = 'smile-shell-v9.2.0';
+var VERSION = 'smile-shell-v9.4.0';
 var SHELL = [
   './',
   './index.html',
@@ -25,7 +25,8 @@ var SHELL = [
   './assets/icon-512.png',
   './assets/poster.webp',
   './assets/poster.jpg',
-  './assets/poster-blur.jpg'
+  './assets/poster-blur.jpg',
+  './assets/vendor/jsQR.min.js'
 ];
 
 self.addEventListener('install', function (event) {

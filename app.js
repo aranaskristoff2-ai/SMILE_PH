@@ -901,7 +901,7 @@
       recs.textContent = '';
       Api.recommend(question, lang.value).then(function (r) {
         if (token !== renderToken) return;
-        out.show(r.reply || 'Here are my picks for you.');
+        out.show((r.reply || 'Here are my picks for you.') + (r.demo ? '\n\n(Isidro is in demo mode: the AI key is not set on the server yet.)' : ''), r.demo ? 'warn' : null);
         showRecs(Array.isArray(r.places) ? r.places : []);
       }, function (err) {
         if (token !== renderToken) return;
@@ -952,22 +952,19 @@
     fillSelect();
     var code = el('input', { id: 'ci-code', type: 'text', autocapitalize: 'characters', spellcheck: 'false', placeholder: 'SMILE-1234-ABCD', value: (query.code || '').toUpperCase() });
     code.addEventListener('input', function () { var s = code.selectionStart; code.value = code.value.toUpperCase(); try { code.setSelectionRange(s, s); } catch (e) { /* ignore */ } });
-    var proof = el('input', { id: 'ci-proof', type: 'file', accept: 'image/*', capture: 'environment' });
     var preview = el('img', { class: 'proof-preview', alt: 'Your proof photo', hidden: true });
     var proofData = null;
-    proof.addEventListener('change', function () {
-      var f = proof.files && proof.files[0];
-      proofData = null; State.visionStatus = 'skipped';
-      if (!f) { preview.hidden = true; return; }
-      shrinkImage(f).then(function (r) { if (!r) return; proofData = r.dataUrl; preview.src = r.dataUrl; preview.hidden = false; });
-    });
+    var proof = photoPicker({ id: 'ci-proof', facing: 'environment', variant: 'orange', cameraLabel: 'Take photo', max: 1280,
+      title: 'Proof photo', hint: 'Show the place (and you, if you like) in the photo.',
+      onPhoto: function (r) { proofData = r.dataUrl; State.visionStatus = 'skipped'; visionOut.hidden = true; preview.src = r.dataUrl; preview.hidden = false; } });
+    var scanBtn = scanButton(code, function (pid) { if (findPlace(pid)) select.value = pid; });
     var visionOut = outputBox();
     var result = outputBox();
     var verifyBtn = button('Verify Photo', 'camera', { variant: 'blue' });
     var collectBtn = button('Collect Stamp', 'stamp', { variant: 'green', type: 'submit' });
 
     verifyBtn.addEventListener('click', function () {
-      if (!proofData) { toast('Take or choose a proof photo first.'); proof.focus(); return; }
+      if (!proofData) { toast('Take or choose a proof photo first.'); proof.querySelector('button').focus(); return; }
       setBusy(verifyBtn, true, 'Checking…');
       visionOut.loading('Checking your photo…');
       Api.vision(select.value, proofData).then(function (r) {
@@ -1012,8 +1009,8 @@
         el('form', { class: 'card stack', onsubmit: submit }, [
           formField('ci-user', 'Your name', user),
           formField('ci-place', 'Place', select),
-          formField('ci-code', 'Postcard code', code, 'Printed on the back of your SMILE postcard, under the QR code.'),
-          formField('ci-proof', 'Proof photo (optional, checked by AI and staff)', proof),
+          formField('ci-code', 'Postcard code', el('div', { class: 'input-with-btn' }, [code, scanBtn]), 'Scan the QR on the back of your SMILE postcard, or type the code under it.'),
+          el('div', { class: 'field' }, [el('span', { class: 'field__label', text: 'Proof photo (optional, checked by AI and staff)' }), proof]),
           preview,
           visionOut,
           el('div', { class: 'btn-row' }, [verifyBtn, collectBtn]),
@@ -1024,6 +1021,8 @@
     ]);
     focusHeading();
     loadPlaces().then(function () { if (token === renderToken) fillSelect(); });
+    // From the "Scan postcard" app shortcut: open the scanner straight away.
+    if (query.scan === '1' && !query.code && Camera.supported()) scanBtn.click();
   }
 
   function mailSection(getInfo) {
@@ -1109,12 +1108,12 @@
       el('form', { class: 'card stack', onsubmit: adopt }, [
         el('h2', { class: 'card__title', text: 'Adopt a postcard' }),
         formField('ad-user', 'Your name', aUser),
-        formField('ad-code', 'Postcard code', aCode),
+        formField('ad-code', 'Postcard code', el('div', { class: 'input-with-btn' }, [aCode, scanButton(aCode)])),
         aBtn, aOut
       ]),
       el('form', { class: 'card stack', onsubmit: track }, [
         el('h2', { class: 'card__title', text: 'Track a journey' }),
-        formField('tr-code', 'Postcard code', tCode),
+        formField('tr-code', 'Postcard code', el('div', { class: 'input-with-btn' }, [tCode, scanButton(tCode)])),
         tBtn, tOut, timeline
       ])
     ]));
@@ -1226,6 +1225,320 @@
   // AI Photobooth: selfie → (actual or AI outfit) → "CONQUERED" postcard canvas
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // Camera: QR scanner (postcard codes) + photo camera (selfies, proof photos)
+  //  - Uses the phone camera through getUserMedia (needs https: GitHub Pages is fine).
+  //  - QR: the browser's own BarcodeDetector when it has one (Android Chrome), otherwise
+  //    jsQR (assets/vendor/jsQR.min.js, loaded only when needed; iPhone Safari uses this).
+  //  - Always offers a fallback: type the code, scan a QR from a saved photo, or pick a photo.
+  // ---------------------------------------------------------------------------
+
+  var JSQR_SRC = 'assets/vendor/jsQR.min.js';
+  var jsqrLoading = null;
+  function loadJsQR() {
+    if (window.jsQR) return Promise.resolve(window.jsQR);
+    if (jsqrLoading) return jsqrLoading;
+    jsqrLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = JSQR_SRC; s.async = true;
+      s.onload = function () { window.jsQR ? resolve(window.jsQR) : reject(new Error('jsQR')); };
+      s.onerror = function () { jsqrLoading = null; reject(new Error('jsQR')); };
+      document.head.appendChild(s);
+    });
+    return jsqrLoading;
+  }
+
+  /** Returns a promise of decode(source) → Promise<string|null>. source: video, image or canvas. */
+  var qrDecoder = null;
+  function getQrDecoder() {
+    if (qrDecoder) return Promise.resolve(qrDecoder);
+    var useJsQR = function () {
+      return loadJsQR().then(function (jsQR) {
+        var c = document.createElement('canvas'), x = c.getContext('2d', { willReadFrequently: true });
+        qrDecoder = function (src) {
+          var w = src.videoWidth || src.naturalWidth || src.width, h = src.videoHeight || src.naturalHeight || src.height;
+          if (!w || !h) return Promise.resolve(null);
+          var s = Math.min(1, 800 / Math.max(w, h));
+          c.width = Math.round(w * s); c.height = Math.round(h * s);
+          x.drawImage(src, 0, 0, c.width, c.height);
+          var d = x.getImageData(0, 0, c.width, c.height);
+          var r = jsQR(d.data, c.width, c.height, { inversionAttempts: 'attemptBoth' });
+          return Promise.resolve(r && r.data ? r.data : null);
+        };
+        return qrDecoder;
+      });
+    };
+    if ('BarcodeDetector' in window && window.BarcodeDetector.getSupportedFormats) {
+      return window.BarcodeDetector.getSupportedFormats().then(function (f) {
+        if (f.indexOf('qr_code') === -1) return useJsQR();
+        var det = new window.BarcodeDetector({ formats: ['qr_code'] });
+        qrDecoder = function (src) { return det.detect(src).then(function (r) { return r && r[0] ? r[0].rawValue : null; }); };
+        return qrDecoder;
+      }, useJsQR);
+    }
+    return useJsQR();
+  }
+
+  /** Reads a SMILE postcard QR: a link (…?place=…&code=…) or the code itself. */
+  function parsePostcardQR(text) {
+    text = String(text || '').trim();
+    var out = { code: '', place: '', raw: text };
+    try {
+      var u = new URL(text);
+      var q = new URLSearchParams(u.search);
+      var hq = u.hash.indexOf('?') > -1 ? new URLSearchParams(u.hash.slice(u.hash.indexOf('?') + 1)) : null;
+      out.code = q.get('code') || (hq && hq.get('code')) || '';
+      out.place = q.get('place') || (hq && hq.get('place')) || '';
+    } catch (e) { /* not a link */ }
+    if (!out.code) { var m = text.match(/SMILE-[A-Z0-9]{3,8}-[A-Z0-9]{3,8}/i); if (m) out.code = m[0]; }
+    if (!out.code && /^[A-Z0-9-]{6,40}$/i.test(text)) out.code = text;
+    out.code = out.code.toUpperCase();
+    return out;
+  }
+
+  var Camera = {
+    node: null, stream: null, facing: 'environment', opts: null, timer: null, busy: false, prev: null, onKey: null, lastMsg: 0,
+    supported: function () { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false; },
+
+    /**
+     * opts: { mode: 'qr' | 'photo', facing: 'user' | 'environment', title, hint, onResult(data), onType() }
+     * qr → onResult({code, place, raw});  photo → onResult({dataUrl, mime})
+     */
+    open: function (opts) {
+      Camera.close(true);
+      Camera.opts = opts;
+      Camera.facing = opts.facing || (opts.mode === 'qr' ? 'environment' : 'user');
+      Camera.prev = document.activeElement;
+      var o = opts, isQR = o.mode === 'qr';
+
+      var video = el('video', { class: 'cam__video', playsinline: true, autoplay: true, muted: true, 'aria-hidden': 'true' });
+      video.muted = true;
+      var msg = el('p', { class: 'cam__msg', role: 'status', 'aria-live': 'polite', text: o.hint || '' });
+      var count = el('div', { class: 'cam__count', 'aria-live': 'assertive' });
+      var flash = el('div', { class: 'cam__flash' });
+      var still = el('img', { class: 'cam__still', alt: 'Your photo', hidden: true });
+
+      var galleryInput = el('input', { type: 'file', accept: 'image/*', hidden: true });
+      galleryInput.addEventListener('change', function () {
+        var f = galleryInput.files && galleryInput.files[0];
+        if (!f) return;
+        if (isQR) Camera.decodeFile(f);
+        else shrinkImage(f, 1600, 0.9).then(function (r) { if (r) Camera.finish(r); });
+      });
+
+      var closeBtn = el('button', { type: 'button', class: 'cam__icon-btn', 'aria-label': 'Close camera', onclick: function () { Camera.close(); } }, icon('close'));
+      var switchBtn = el('button', { type: 'button', class: 'cam__icon-btn', 'aria-label': 'Switch camera', onclick: function () { Camera.facing = Camera.facing === 'user' ? 'environment' : 'user'; Camera.start(); } }, icon('refresh'));
+      var torchBtn = el('button', { type: 'button', class: 'cam__icon-btn', 'aria-label': 'Flashlight', 'aria-pressed': 'false', hidden: true, onclick: function () { Camera.toggleTorch(torchBtn); } }, icon('sparkle'));
+      var timerOn = false;
+      var timerBtn = el('button', { type: 'button', class: 'cam__chip', 'aria-pressed': 'false', onclick: function () { timerOn = !timerOn; timerBtn.setAttribute('aria-pressed', String(timerOn)); timerBtn.textContent = timerOn ? '3s timer: on' : '3s timer: off'; } }, '3s timer: off');
+      var shutter = el('button', { type: 'button', class: 'cam__shutter', 'aria-label': 'Take photo', onclick: function () {
+        if (timerOn) Camera.countdown(3, count, function () { Camera.snap(video, still, flash); });
+        else Camera.snap(video, still, flash);
+      } });
+
+      var review = el('div', { class: 'cam__review', hidden: true }, [
+        button('Retake', 'refresh', { variant: 'light', onclick: function () { still.hidden = true; review.hidden = true; controls.hidden = false; Camera.shot = null; } }),
+        button('Use photo', 'check', { variant: 'green', onclick: function () { if (Camera.shot) Camera.finish(Camera.shot); } })
+      ]);
+
+      var controls = isQR
+        ? el('div', { class: 'cam__bar' }, [
+            el('button', { type: 'button', class: 'cam__chip', onclick: function () { galleryInput.click(); } }, [icon('postcard'), 'Scan from photo']),
+            o.onType ? el('button', { type: 'button', class: 'cam__chip', onclick: function () { Camera.close(); o.onType(); } }, [icon('caption'), 'Type code']) : null,
+            switchBtn, torchBtn
+          ])
+        : el('div', { class: 'cam__bar cam__bar--photo' }, [
+            el('button', { type: 'button', class: 'cam__icon-btn', 'aria-label': 'Choose from gallery', onclick: function () { galleryInput.click(); } }, icon('save')),
+            shutter,
+            switchBtn
+          ]);
+
+      Camera.node = el('div', { class: 'cam' + (isQR ? ' cam--qr' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': o.title || 'Camera', tabindex: '-1' }, [
+        video,
+        isQR ? el('div', { class: 'cam__frame', 'aria-hidden': 'true' }, [el('span', { class: 'cam__laser' })]) : null,
+        still, flash, count,
+        el('div', { class: 'cam__top' }, [el('h2', { class: 'cam__title', text: o.title || 'Camera' }), closeBtn]),
+        el('div', { class: 'cam__bottom' }, [msg, isQR ? null : timerBtn, controls, review, galleryInput])
+      ]);
+      Camera.refs = { video: video, msg: msg, still: still, review: review, controls: controls, torch: torchBtn, switchBtn: switchBtn, shutter: shutter };
+      document.body.appendChild(Camera.node);
+      document.body.classList.add('has-cam');
+
+      Camera.onKey = function (e) {
+        if (!Camera.node) return;
+        if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); Camera.close(); return; }
+        if (e.key === 'Tab') {
+          e.stopImmediatePropagation();
+          var f = Array.prototype.slice.call(Camera.node.querySelectorAll('button:not([disabled]):not([hidden])')).filter(function (n) { return n.offsetParent !== null; });
+          if (!f.length) return;
+          if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+          else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+        }
+      };
+      document.addEventListener('keydown', Camera.onKey, true);
+      Camera.node.focus({ preventScroll: true });
+      Camera.start();
+    },
+
+    start: function () {
+      var r = Camera.refs, o = Camera.opts;
+      Camera.stopStream();
+      Camera.node.classList.toggle('cam--mirror', Camera.facing === 'user');
+      if (!Camera.supported()) { Camera.fail('This browser cannot open the camera here.'); return; }
+      Camera.say(o.mode === 'qr' ? 'Starting camera…' : 'Starting camera…');
+      navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: Camera.facing }, width: { ideal: 1920 }, height: { ideal: 1080 } } }).then(function (stream) {
+        if (!Camera.node || Camera.opts !== o) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+        Camera.stream = stream;
+        r.video.srcObject = stream;
+        var p = r.video.play(); if (p && p.catch) p.catch(function () { /* autoplay blocked: user can tap */ });
+        var track = stream.getVideoTracks()[0];
+        var caps = track && track.getCapabilities ? track.getCapabilities() : {};
+        r.torch.hidden = !caps.torch;
+        Camera.say(o.hint || '');
+        if (o.mode === 'qr') Camera.scanLoop(o);
+      }, function (err) {
+        var n = err && err.name;
+        Camera.fail(n === 'NotAllowedError' || n === 'SecurityError' ? 'Camera permission is blocked. Allow the camera for this site in your browser settings, then try again.'
+          : n === 'NotFoundError' || n === 'OverconstrainedError' ? 'No camera was found on this device.'
+          : n === 'NotReadableError' ? 'The camera is being used by another app. Close it and try again.'
+          : 'The camera could not start.');
+      });
+    },
+
+    fail: function (text) {
+      var r = Camera.refs;
+      Camera.node.classList.add('cam--error');
+      Camera.say(text + (Camera.opts.mode === 'qr' ? ' You can scan from a photo or type the code instead.' : ' You can choose a photo from your gallery instead.'));
+      if (r.shutter) r.shutter.disabled = true;
+      r.switchBtn.hidden = true;
+    },
+
+    say: function (text) { if (Camera.refs) Camera.refs.msg.textContent = text; },
+
+    scanLoop: function (o) {
+      getQrDecoder().then(function (decode) {
+        var video = Camera.refs.video;
+        var tick = function () {
+          if (!Camera.node || Camera.opts !== o) return;
+          if (!Camera.busy && video.readyState >= 2) {
+            Camera.busy = true;
+            decode(video).then(function (val) { Camera.busy = false; if (val) Camera.gotQR(val); }, function () { Camera.busy = false; });
+          }
+          Camera.timer = setTimeout(tick, 180);
+        };
+        tick();
+      }, function () { Camera.say('The QR reader could not load. Check your internet once, or type the code instead.'); });
+    },
+
+    gotQR: function (val) {
+      var parsed = parsePostcardQR(val);
+      if (!parsed.code) {
+        if (Date.now() - Camera.lastMsg > 2500) { Camera.lastMsg = Date.now(); Camera.say('That QR is not a SMILE postcard. Try the QR on the back of your postcard.'); }
+        return;
+      }
+      try { if (navigator.vibrate) navigator.vibrate(80); } catch (e) { /* ignore */ }
+      Camera.finish(parsed);
+    },
+
+    decodeFile: function (file) {
+      Camera.say('Reading the QR in your photo…');
+      var img = new Image(), url = URL.createObjectURL(file);
+      img.onload = function () {
+        getQrDecoder().then(function (decode) { return decode(img); }).then(function (val) {
+          URL.revokeObjectURL(url);
+          if (val && parsePostcardQR(val).code) Camera.gotQR(val);
+          else Camera.say('No SMILE QR found in that photo. Try a sharper, closer photo.');
+        }, function () { URL.revokeObjectURL(url); Camera.say('Could not read that photo.'); });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); Camera.say('Could not open that photo.'); };
+      img.src = url;
+    },
+
+    countdown: function (n, node, done) {
+      if (n <= 0) { node.textContent = ''; done(); return; }
+      node.textContent = String(n);
+      node.classList.remove('is-tick'); void node.offsetWidth; node.classList.add('is-tick');
+      setTimeout(function () { if (Camera.node) Camera.countdown(n - 1, node, done); }, 1000);
+    },
+
+    snap: function (video, still, flash) {
+      if (!video.videoWidth) { toast('The camera is still starting. Try again.'); return; }
+      var w = video.videoWidth, h = video.videoHeight, s = Math.min(1, 1600 / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * s); c.height = Math.round(h * s);
+      c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);   // saved the right way round, so signs stay readable
+      Camera.shot = { dataUrl: c.toDataURL('image/jpeg', 0.9), mime: 'image/jpeg' };
+      flash.classList.remove('is-on'); void flash.offsetWidth; flash.classList.add('is-on');
+      still.src = Camera.shot.dataUrl; still.hidden = false;
+      Camera.refs.controls.hidden = true; Camera.refs.review.hidden = false;
+    },
+
+    toggleTorch: function (btn) {
+      var t = Camera.stream && Camera.stream.getVideoTracks()[0];
+      if (!t) return;
+      var on = btn.getAttribute('aria-pressed') !== 'true';
+      t.applyConstraints({ advanced: [{ torch: on }] }).then(function () { btn.setAttribute('aria-pressed', String(on)); }, function () { btn.hidden = true; });
+    },
+
+    finish: function (data) {
+      var cb = Camera.opts && Camera.opts.onResult;
+      Camera.close();
+      if (cb) cb(data);
+    },
+
+    stopStream: function () {
+      clearTimeout(Camera.timer); Camera.busy = false;
+      if (Camera.stream) { Camera.stream.getTracks().forEach(function (t) { t.stop(); }); Camera.stream = null; }
+    },
+
+    close: function (silent) {
+      Camera.stopStream();
+      if (Camera.onKey) document.removeEventListener('keydown', Camera.onKey, true);
+      Camera.onKey = null;
+      if (Camera.node && Camera.node.parentNode) Camera.node.parentNode.removeChild(Camera.node);
+      Camera.node = null; Camera.refs = null; Camera.shot = null;
+      document.body.classList.remove('has-cam');
+      if (!silent && Camera.prev && typeof Camera.prev.focus === 'function') Camera.prev.focus({ preventScroll: true });
+      Camera.opts = null;
+    }
+  };
+
+  // Release the camera when the app goes to the background.
+  document.addEventListener('visibilitychange', function () { if (document.hidden && Camera.node) Camera.close(true); });
+
+  /** A "Scan QR" button that fills a code input (and optionally the place). */
+  function scanButton(codeInput, onPlace) {
+    return button('Scan QR', 'qr', { variant: 'blue', label: 'Scan the QR code on your postcard', onclick: function () {
+      Camera.open({
+        mode: 'qr', title: 'Scan your SMILE postcard', hint: 'Point the camera at the QR code on the back of your postcard.',
+        onType: function () { codeInput.focus(); },
+        onResult: function (r) {
+          codeInput.value = r.code;
+          codeInput.dispatchEvent(new Event('input'));
+          if (r.place && onPlace) onPlace(r.place);
+          toast('Postcard scanned: ' + r.code);
+        }
+      });
+    } });
+  }
+
+  /** "Open camera" + "Choose photo" buttons for a photo, with a hidden file input. */
+  function photoPicker(o) {
+    var file = el('input', { id: o.id, type: 'file', accept: 'image/*', hidden: true });
+    file.addEventListener('change', function () {
+      var f = file.files && file.files[0];
+      if (f) shrinkImage(f, o.max || 1600, 0.9).then(function (r) { if (r) o.onPhoto(r); });
+      file.value = '';
+    });
+    var cam = button(o.cameraLabel || 'Open camera', 'camera', { variant: o.variant || 'glow', onclick: function () {
+      if (!Camera.supported()) { file.click(); return; }
+      Camera.open({ mode: 'photo', facing: o.facing, title: o.title, hint: o.hint, onResult: o.onPhoto });
+    } });
+    var pick = button('Choose photo', 'save', { variant: 'light', onclick: function () { file.click(); } });
+    return el('div', { class: 'btn-row photo-picker' }, [cam, pick, file]);
+  }
+
+
   var logoImg = null;
   function getLogo() {
     if (logoImg) return Promise.resolve(logoImg);
@@ -1241,13 +1554,10 @@
     var place = findPlace(id);
     if (!place) return;
     var mode = 'actual', photo = null;
-    var file = el('input', { id: 'pb-file', type: 'file', accept: 'image/*', capture: 'user' });
-    var preview = el('img', { class: 'proof-preview', alt: 'Your selfie', hidden: true });
-    file.addEventListener('change', function () {
-      var f = file.files && file.files[0];
-      if (!f) return;
-      shrinkImage(f, 1600, 0.9).then(function (r) { if (!r) return; photo = r; preview.src = r.dataUrl; preview.hidden = false; });
-    });
+    var preview = el('img', { class: 'proof-preview proof-preview--selfie', alt: 'Your selfie', hidden: true });
+    var file = photoPicker({ id: 'pb-file', facing: 'user', cameraLabel: 'Open selfie camera', title: 'Selfie at ' + place.name,
+      hint: 'Smile! Tap the round button, or turn on the 3-second timer.',
+      onPhoto: function (r) { photo = r; preview.src = r.dataUrl; preview.hidden = false; resultBox.hidden = true; } });
     var outfit = el('textarea', { id: 'pb-outfit', rows: '2', maxlength: '200', placeholder: 'e.g. Dinagyang warrior, Filipiniana, elegant beach outfit…' });
     var outfitBox = el('div', { class: 'stack', hidden: true }, [
       formField('pb-outfit', 'Describe the outfit', outfit, 'Isidro moderates: beach = swimwear OK, church = modest only.'),
@@ -1279,12 +1589,12 @@
     ]);
     var ok = button('OK, create postcard', 'sparkle', { block: true, variant: 'glow' });
     ok.addEventListener('click', function () {
-      if (!photo) { toast('Take or choose a selfie first.'); file.focus(); return; }
+      if (!photo) { toast('Take or choose a selfie first.'); file.querySelector('button').focus(); return; }
       if (mode === 'actual') { drawPostcard(canvas, photo.dataUrl, place).then(function () { resultBox.hidden = false; resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }); return; }
       var o = outfit.value.trim();
       if (!o) { toast('Choose or type an outfit.'); outfit.focus(); return; }
       setBusy(ok, true, 'Creating…');
-      status.textContent = 'Isidro is checking the outfit, then the AI is editing your photo. This takes 15 to 25 seconds…';
+      status.textContent = 'Isidro is checking the outfit, then Meta AI is editing your photo. This can take up to a minute…';
       Api.photobooth({ user: Passport.name() || 'Guest', placeId: place.id, outfit: o, image: photo.dataUrl, mime: photo.mime }).then(function (r) {
         status.textContent = '';
         return drawPostcard(canvas, r.image, r.place || place).then(function () { resultBox.hidden = false; resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
@@ -1297,7 +1607,7 @@
       wide: true,
       body: el('div', { class: 'stack' }, [
         el('p', { class: 'pb-place' }, [icon('pin', 'icon--inline'), place.name + ' • ' + (place.barangay || 'Iloilo')]),
-        formField('pb-file', '1. Your selfie', file),
+        el('div', { class: 'field' }, [el('span', { class: 'field__label', text: '1. Your selfie' }), file]),
         preview,
         el('fieldset', { class: 'stack' }, [el('legend', { class: 'field__label', text: '2. Outfit' }),
           radio('actual', 'Actual outfit', 'Use my photo as it is'),
@@ -1400,6 +1710,7 @@
     var r = parseHash();
     var section = r.parts[0] || '';
     var token = ++renderToken;
+    if (Camera.node) Camera.close(true);
     if (Modal.current) Modal.close(true);
     window.scrollTo(0, 0);
     renderNav();
@@ -1451,5 +1762,5 @@
   else init();
 
   // Exposed for automated tests only (no secrets here).
-  window.SmileApp = { State: State, Passport: Passport, Install: Install, Modal: Modal, route: route, rankOf: rankOf };
+  window.SmileApp = { Camera: Camera, parsePostcardQR: parsePostcardQR, State: State, Passport: Passport, Install: Install, Modal: Modal, route: route, rankOf: rankOf };
 })();

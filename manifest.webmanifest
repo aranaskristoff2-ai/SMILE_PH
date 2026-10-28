@@ -10,15 +10,71 @@
   "background_color": "#FFF8EC",
   "theme_color": "#0057D9",
   "lang": "en-PH",
-  "categories": ["travel", "lifestyle", "entertainment"],
+  "categories": [
+    "travel",
+    "lifestyle",
+    "entertainment"
+  ],
   "icons": [
-    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Ask Isidro", "url": "./#/isidro", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Check-In", "url": "./#/checkin", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Explore", "url": "./#/explore", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Scan postcard QR",
+      "url": "./#/checkin?scan=1",
+      "icons": [
+        {
+          "src": "assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Ask Isidro",
+      "url": "./#/isidro",
+      "icons": [
+        {
+          "src": "assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Check-In",
+      "url": "./#/checkin",
+      "icons": [
+        {
+          "src": "assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Explore",
+      "url": "./#/explore",
+      "icons": [
+        {
+          "src": "assets/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
