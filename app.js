@@ -1,0 +1,1455 @@
+/*
+ * SMILE Iloilo: frontend application (vanilla JS, GitHub Pages).
+ *
+ * Files: config.js (API URL) → api.js (window.SmileApi, the only backend client) → app.js (this file).
+ *
+ * Built on the same structure as Journalism Writer:
+ *  - Safe DOM construction only. Server and AI text (Isidro replies, captions, place names) is always
+ *    inserted with textContent / createTextNode, never innerHTML.
+ *  - A small hash router (#/, #/explore, #/isidro, #/checkin, #/postcards, #/tools, #/ranks) with a
+ *    render token so a slow reply never paints over a newer page.
+ *  - Install banner on first opening with steps for Android, iPhone and desktop.
+ *  - Accessible modals (focus kept inside, Esc closes, focus returns), toasts in an aria-live region,
+ *    scroll-reveal motion that switches off for "reduce motion".
+ *  - localStorage keeps only small things: display name, points, accepted challenges, install choice.
+ *    Every read and write is wrapped, so private windows still work.
+ *  - Old links keep working: #isidro, #checkin and ?place=…&code=… (postcard QR codes).
+ */
+(function () {
+  'use strict';
+
+  var Api = window.SmileApi;
+  var TZ = 'Asia/Manila';
+  var LOGO_SRC = 'assets/logo-512.webp';
+  var POSTER_SRC = 'assets/poster.webp';
+
+  // ---------------------------------------------------------------------------
+  // Data: fallback places (demo mode / offline), categories, outfit suggestions, ranks
+  // ---------------------------------------------------------------------------
+
+  var FALLBACK = [
+    { id: 'molo-church', name: 'Molo Church', cat: 'landmark', barangay: 'Molo', desc: 'Gothic church, all-female saints.', points: 10, lat: 10.6974, lng: 122.5441 },
+    { id: 'jaro-cathedral', name: 'Jaro Cathedral', cat: 'landmark', barangay: 'Jaro', desc: 'Our Lady of Candles shrine.', points: 10, lat: 10.724, lng: 122.5563 },
+    { id: 'miagao-church', name: 'Miagao Church UNESCO', cat: 'landmark', barangay: 'Miagao', desc: 'World Heritage fortress church.', points: 20, lat: 10.642, lng: 122.2358 },
+    { id: 'calle-real', name: 'Calle Real', cat: 'heritage', barangay: 'City Proper', desc: 'Heritage walk + coffee.', points: 10, lat: 10.6938, lng: 122.5742 },
+    { id: 'esplanade', name: 'Iloilo Esplanade', cat: 'nature', barangay: 'Mandurriao', desc: 'Sunset riverside.', points: 5, lat: 10.7085, lng: 122.5488 },
+    { id: 'lapaz-batchoy', name: "Netong's Batchoy", cat: 'food', barangay: 'La Paz', desc: 'Original La Paz Batchoy.', points: 5, lat: 10.7118, lng: 122.569 },
+    { id: 'pancit-molo', name: "Pancit Molo at Kap Esing's", cat: 'food', barangay: 'Iloilo Central Market', desc: "Kap Esing's classic Ilonggo pancit molo: pork dumplings in garlicky chicken broth.", points: 5, lat: 10.6965, lng: 122.5684, maps_url: 'https://www.google.com/maps/search/?api=1&query=Kap+Esing%27s+Pancit+Molo+Iloilo+Central+Market' },
+    { id: 'dinagyang', name: 'Dinagyang Festival', cat: 'festival', barangay: 'City Proper', desc: 'Ati warriors, Jan.', points: 25, lat: 10.693, lng: 122.572 },
+    { id: 'iloilo-capitol', name: 'Iloilo Provincial Capitol', cat: 'heritage', barangay: 'City Proper', desc: 'Iconic capitol.', points: 10, lat: 10.702, lng: 122.5685 },
+    { id: 'gigantes', name: 'Islas de Gigantes', cat: 'stay', barangay: 'Carles', desc: 'Island hopping & scallops.', points: 20, lat: 11.5867, lng: 123.1767 },
+    { id: 'garin-farm', name: 'Garin Farm', cat: 'nature', barangay: 'San Joaquin', desc: 'White cross pilgrimage.', points: 15, lat: 10.5978, lng: 122.0983 },
+    { id: 'chicken-inasal', name: 'Chicken Inasal at Fort in the City', cat: 'food', barangay: 'Iloilo Central Market', desc: 'Charcoal-grilled Ilonggo inasal with garlic rice and chicken oil at Fort in the City.', points: 5, lat: 10.6965, lng: 122.5684, maps_url: 'https://www.google.com/maps/search/?api=1&query=Fort+in+the+City+Iloilo+Central+Market' },
+    { id: 'seafoods', name: 'Seafood Feast in Arevalo', cat: 'food', barangay: 'Villa Arevalo', desc: 'Fresh crabs, prawns, scallops and mussels by the sea.', points: 5, lat: 10.6877, lng: 122.5135, maps_url: 'https://www.google.com/maps/search/?api=1&query=Seafood+restaurant+Villa+Arevalo+Iloilo' }
+  ];
+
+  var CATS = {
+    landmark: { label: 'Landmarks', icon: 'church', color: '#0057D9' },
+    heritage: { label: 'Heritage', icon: 'heritage', color: '#7B2CBF' },
+    nature: { label: 'Nature', icon: 'palm', color: '#00A651' },
+    food: { label: 'Food', icon: 'food', color: '#FF6B00' },
+    festival: { label: 'Festivals', icon: 'festival', color: '#ED0460' },
+    stay: { label: 'Islands & stays', icon: 'island', color: '#0096C7' }
+  };
+
+  var SUGGESTIONS = {
+    landmark: ['Elegant Filipiniana gown', 'Barong Tagalog formal', 'Modest church Sunday best outfit'],
+    heritage: ['1920s Calle Real vintage outfit', 'Barong Tagalog', 'Filipiniana dress'],
+    festival: ['Dinagyang Ati warrior costume with tall feather headdress', 'Colorful Dinagyang dancer outfit'],
+    food: ['Fun chef outfit holding Batchoy bowl', 'Ilonggo food trip apron outfit'],
+    nature: ['Elegant summer dress sunset outfit', 'Tasteful beach resort outfit'],
+    stay: ['Elegant two-piece bikini resort outfit', 'Tasteful swimsuit with beach cover-up', 'Island hopping rash guard outfit', 'Summer beach dress'],
+    _default: ['SMILE Iloilo tourist t-shirt', 'Filipiniana outfit']
+  };
+
+  var RANKS = [['E', 0], ['D', 3], ['C', 6], ['B', 10], ['A', 15], ['S', 20], ['SS', 30], ['SSS', 45]];
+
+  // Poster hotspots, in % of the poster image (1024 × 1536).
+  var HOTSPOTS = [
+    { id: 'dinagyang', label: 'Dinagyang', icon: 'festival', x: 22, y: 9 },
+    { id: 'iloilo-capitol', label: 'Capitol', icon: 'heritage', x: 74, y: 16 },
+    { id: 'miagao-church', label: 'Miag-ao Church', icon: 'church', x: 15, y: 50 },
+    { id: 'jaro-cathedral', label: 'Jaro Cathedral', icon: 'church', x: 86, y: 54 },
+    { id: 'esplanade', label: 'Esplanade', icon: 'palm', x: 66, y: 67 },
+    { id: 'lapaz-batchoy', label: 'Batchoy', icon: 'food', x: 14, y: 78 },
+    { id: 'pancit-molo', label: 'Pancit Molo', icon: 'food', x: 36, y: 83 },
+    { id: 'chicken-inasal', label: 'Chicken Inasal', icon: 'food', x: 66, y: 81 },
+    { id: 'seafoods', label: 'Seafoods', icon: 'food', x: 88, y: 84 }
+  ];
+
+  var ROTATING = ['landmarks.', 'festivals.', 'churches.', 'food trips.', 'islands.', 'heritage streets.'];
+
+  var State = {
+    places: FALLBACK.slice(),
+    placesLoaded: false,
+    demo: !Api.isConfigured(),
+    visionStatus: 'skipped',
+    stampsBought: false,
+    lastCheckin: null
+  };
+
+  var renderToken = 0;
+
+  // ---------------------------------------------------------------------------
+  // DOM helpers (safe construction only)
+  // ---------------------------------------------------------------------------
+
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (v === null || v === undefined || v === false) return;
+        if (k === 'class') node.className = v;
+        else if (k === 'text') node.textContent = v;
+        else if (k === 'value') node.value = v;
+        else if (k.slice(0, 2) === 'on' && typeof v === 'function') node.addEventListener(k.slice(2), v);
+        else if (v === true) node.setAttribute(k, '');
+        else node.setAttribute(k, String(v));
+      });
+    }
+    appendChildren(node, children);
+    return node;
+  }
+
+  function appendChildren(node, children) {
+    if (children === null || children === undefined) return;
+    if (!Array.isArray(children)) children = [children];
+    children.forEach(function (c) {
+      if (c === null || c === undefined || c === false) return;
+      if (Array.isArray(c)) appendChildren(node, c);
+      else node.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c);
+    });
+  }
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function storageGet(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
+  function storageSet(key, value) { try { window.localStorage.setItem(key, value); } catch (e) { /* optional */ } }
+  function readJson(key, fallback) { try { var v = JSON.parse(storageGet(key) || 'null'); return v === null ? fallback : v; } catch (e) { return fallback; } }
+  function prefersReducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+
+  function manilaDate() {
+    try { return new Intl.DateTimeFormat('en-PH', { timeZone: TZ, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).format(new Date()); }
+    catch (e) { return new Date().toDateString(); }
+  }
+
+  var toastTimer = null;
+  function toast(message) {
+    var t = $('#toast');
+    t.textContent = message;
+    t.classList.add('is-on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('is-on'); }, 3400);
+  }
+
+  function friendlyError(err) { return Api.friendly(err); }
+
+  // ---------------------------------------------------------------------------
+  // Icons (static SVG paths, built with createElementNS)
+  // ---------------------------------------------------------------------------
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var ICONS = {
+    pin: 'M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z',
+    church: 'M11 2h2v3h3v2h-3v2h-2V7H8V5h3V2ZM12 10l7 5v7h-5v-5h-4v5H5v-7l7-5Z',
+    heritage: 'M12 2 2 7v2h20V7L12 2ZM4 10v7H2v3h20v-3h-2v-7h-3v7h-3v-7h-4v7H7v-7H4Z',
+    palm: 'M13 22h-2c0-5 1-9 3-12-3 0-6-1-8-3 3-1 6 0 8 1C13 5 14 3 16 1c1 2 1 5 0 7 2-1 4-1 6 0-2 2-5 3-7 3-1 3-2 7-2 11Z',
+    food: 'M3 13h18a9 9 0 0 1-18 0ZM4 20h16v2H4v-2ZM7 4h2v6H7V4Zm4-2h2v8h-2V2Zm4 2h2v6h-2V4Z',
+    festival: 'M12 2l2 4 4-2-1 4 4 1-3 3 3 3-4 1 1 4-4-2-2 4-2-4-4 2 1-4-4-1 3-3-3-3 4-1-1-4 4 2 2-4Z',
+    island: 'M11 20c0-4 1-7 3-9-2 0-4-1-5-2 2-1 4 0 5 1 0-2 1-3 2-4 1 1 1 3 0 5 1-1 3-1 4 0-1 1-3 2-4 2-1 2-2 4-2 7h-3ZM2 21c2-1 4-1 6 0 2-1 4-1 6 0 2-1 4-1 6 0v2c-2-1-4-1-6 0-2-1-4-1-6 0-2-1-4-1-6 0v-2Z',
+    map: 'M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2Zm0 2.2 6 2v11.6l-6-2V5.2Z',
+    postcard: 'M3 5h18v14H3V5Zm9 1H4v12h8V6Zm2 2h6v2h-6V8Zm0 4h6v1h-6v-1Z',
+    compass: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm4 4-2.5 6.5L7 15l2.5-6.5L16 6Z',
+    trophy: 'M5 3h14v2h3v4a5 5 0 0 1-5 5h-.4A6 6 0 0 1 13 17.9V20h4v2H7v-2h4V18A6 6 0 0 1 7.4 14H7a5 5 0 0 1-5-5V5h3V3Zm0 4H4v2a3 3 0 0 0 1.2 2.4L5 7Zm14 0v4.4A3 3 0 0 0 20 9V7h-1Z',
+    check: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-1 15 7-7-1.4-1.4L11 14.2l-2.6-2.6L7 13l4 4Z',
+    install: 'M11 3h2v9.2l3.6-3.6L18 10l-6 6-6-6 1.4-1.4 3.6 3.6V3ZM5 19h14v2H5v-2Z',
+    camera: 'M9 3h6l1 2h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l1-2Zm3 15a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z',
+    shop: 'M4 4h16l1 5a3 3 0 0 1-5 2 3 3 0 0 1-4 0 3 3 0 0 1-4 0 3 3 0 0 1-5-2l1-5Zm0 9h2v5h12v-5h2v7H4v-7Z',
+    chart: 'M4 20V10h3v10H4Zm6.5 0V4h3v16h-3ZM17 20v-7h3v7h-3Z',
+    guide: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4 0-8 2-8 5v3h16v-3c0-3-4-5-8-5Z',
+    star: 'm12 2 3 6.6 7 .8-5.2 4.8 1.4 7L12 17.7 5.8 21.2l1.4-7L2 9.4l7-.8L12 2Z',
+    mailbox: 'M4 11V8a8 8 0 0 1 16 0v3H4Zm-2 2h20v7H2v-7ZM19 4h3v5h-3V4Z',
+    stamp: 'M4 2h16v20H4V2Zm2 2v16h12V4H6Zm6 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8Z',
+    heart: 'M12 21S2.5 16.4 2.5 9.6A5.4 5.4 0 0 1 12 6a5.4 5.4 0 0 1 9.5 3.6C21.5 16.4 12 21 12 21Z',
+    route: 'M6 3a3 3 0 0 1 3 3c0 2.4-3 6-3 6S3 8.4 3 6a3 3 0 0 1 3-3Zm12 9a3 3 0 0 1 3 3c0 2.4-3 6-3 6s-3-3.6-3-6a3 3 0 0 1 3-3ZM6 14h2v2a2 2 0 0 0 2 2h3v2h-3a4 4 0 0 1-4-4v-2Z',
+    save: 'M5 3h12l4 4v14H5V3Zm2 2v14h12V8.5L16.5 5H15v4H8V5H7Z',
+    caption: 'M4 3h16v13H9l-5 4V3Zm3 4v2h10V7H7Zm0 4v2h7v-2H7Z',
+    close: 'M6.4 5 12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6 10.6 12 5 6.4 6.4 5Z',
+    search: 'M10 3a7 7 0 0 1 5.6 11.2l5.1 5.1-1.4 1.4-5.1-5.1A7 7 0 1 1 10 3Zm0 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z',
+    share: 'M12 2 7 7l1.4 1.4L11 5.8V15h2V5.8l2.6 2.6L17 7l-5-5ZM5 11h3v2H7v7h10v-7h-1v-2h3v11H5V11Z',
+    plusSquare: 'M4 4h16v16H4V4Zm2 2v12h12V6H6Zm5 2h2v3h3v2h-3v3h-2v-3H8v-2h3V8Z',
+    sparkle: 'M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2L12 2Z',
+    send: 'M2 21 23 12 2 3v7l15 2-15 2v7Z',
+    home: 'M12 3 2 11h3v10h5v-6h4v6h5V11h3L12 3Z',
+    globe: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-1.6 2.2A8 8 0 0 0 4.1 11H8c.1-2.6.9-5 2.4-6.8ZM12 4.3C10.9 5.8 10.1 8.2 10 11h4c-.1-2.8-.9-5.2-2-6.7Zm1.6-.1C15.1 6 15.9 8.4 16 11h3.9a8 8 0 0 0-6.3-6.8ZM4.1 13a8 8 0 0 0 6.3 6.8C8.9 18 8.1 15.6 8 13H4.1Zm5.9 0c.1 2.8.9 5.2 2 6.7 1.1-1.5 1.9-3.9 2-6.7h-4Zm6 0c-.1 2.6-.9 5-2.4 6.8a8 8 0 0 0 6.3-6.8H16Z',
+    alert: 'M12 2 1 21h22L12 2Zm-1 7h2v6h-2V9Zm0 8h2v2h-2v-2Z',
+    user: 'M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z',
+    refresh: 'M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 1 0 22 13h-2a8 8 0 1 1-8-9Z',
+    chevronDown: 'M12 16.5 3.5 8 5 6.5l7 7 7-7L20.5 8 12 16.5Z',
+    qr: 'M3 3h8v8H3V3Zm2 2v4h4V5H5Zm8-2h8v8h-8V3Zm2 2v4h4V5h-4ZM3 13h8v8H3v-8Zm2 2v4h4v-4H5Zm8-2h2v2h-2v-2Zm2 2h2v2h-2v-2Zm2-2h4v2h-2v2h-2v-4Zm-4 4h2v4h-2v-4Zm4 2h4v2h-4v-2Zm2-2h2v2h-2v-2Z'
+  };
+
+  function icon(name, cls) {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.setAttribute('class', 'icon' + (cls ? ' ' + cls : ''));
+    var path = document.createElementNS(SVG_NS, 'path');
+    path.setAttribute('d', ICONS[name] || ICONS.pin);
+    path.setAttribute('fill-rule', 'evenodd');
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function decorateStaticIcons() {
+    document.querySelectorAll('[data-icon]').forEach(function (n) {
+      if (n.querySelector('svg')) return;
+      n.insertBefore(icon(n.getAttribute('data-icon')), n.firstChild);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Passport: name, points, rank, accepted challenges (device only)
+  // ---------------------------------------------------------------------------
+
+  var Passport = {
+    name: function () { return storageGet('smile_user') || ''; },
+    setName: function (n) { storageSet('smile_user', String(n || '').trim().slice(0, 40)); Passport.paint(); },
+    points: function () { var n = parseInt(storageGet('smile_pts') || '0', 10); return isNaN(n) ? 0 : n; },
+    setPoints: function (n) { n = parseInt(n, 10); if (!isNaN(n)) { storageSet('smile_pts', String(n)); Passport.paint(); } },
+    challenges: function () { var l = readJson('smile_challenges', []); return Array.isArray(l) ? l : []; },
+    accept: function (place) {
+      var list = Passport.challenges();
+      if (!list.some(function (x) { return x && x.id === place.id; })) list.push({ id: place.id, name: place.name, lat: place.lat, lng: place.lng, cat: place.cat, barangay: place.barangay, points: place.points });
+      storageSet('smile_challenges', JSON.stringify(list));
+    },
+    hasAccepted: function (id) { return Passport.challenges().some(function (x) { return x && x.id === id; }); },
+    paint: function () {
+      var pts = Passport.points();
+      var r = $('#pill-rank'), p = $('#pill-pts');
+      if (r) r.textContent = rankOf(pts);
+      if (p) p.textContent = String(pts);
+    }
+  };
+
+  function rankOf(n) {
+    var out = 'E';
+    RANKS.forEach(function (r) { if (n >= r[1]) out = r[0]; });
+    return out;
+  }
+  function nextRank(n) {
+    for (var i = 0; i < RANKS.length; i++) if (n < RANKS[i][1]) return { rank: RANKS[i][0], need: RANKS[i][1] - n };
+    return null;
+  }
+
+  /** Ask for a display name once (modal), then continue. */
+  function ensureName(then) {
+    var current = Passport.name();
+    if (current) { then(current); return; }
+    var input = el('input', { id: 'name-input', type: 'text', maxlength: '40', autocomplete: 'nickname', placeholder: 'e.g. Juan from Jaro', required: true });
+    var form = el('form', { class: 'stack', onsubmit: function (e) {
+      e.preventDefault();
+      var v = input.value.trim();
+      if (!v) { input.focus(); return; }
+      Passport.setName(v);
+      Modal.close();
+      then(v);
+    } }, [
+      el('p', { class: 'muted', text: 'This name shows on your stamps, postcards and the leaderboard.' }),
+      formField('name-input', 'Your display name', input),
+      el('button', { type: 'submit', class: 'btn btn--block' }, [icon('check'), 'Save and continue'])
+    ]);
+    Modal.open({ title: 'What should we call you, explorer?', body: form, name: 'name', initialFocus: input });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Motion: page-enter animation and scroll reveal (both switched off for "reduce motion")
+  // ---------------------------------------------------------------------------
+
+  var Motion = {
+    observer: null,
+    enter: function (node) {
+      if (!node || prefersReducedMotion()) return;
+      node.classList.remove('view--enter');
+      void node.offsetWidth;
+      node.classList.add('view--enter');
+    },
+    reveal: function (root) {
+      var items = Array.prototype.slice.call((root || document).querySelectorAll('.reveal:not(.is-visible)'));
+      if (prefersReducedMotion() || typeof window.IntersectionObserver !== 'function') {
+        items.forEach(function (n) { n.classList.add('is-visible'); });
+        return;
+      }
+      if (!Motion.observer) Motion.observer = new window.IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) { en.target.classList.add('is-visible'); Motion.observer.unobserve(en.target); }
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+      items.forEach(function (n) { Motion.observer.observe(n); });
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Modal dialogs (focus kept inside, Esc closes, focus returns to the opener)
+  // ---------------------------------------------------------------------------
+
+  var Modal = {
+    current: null,
+    seq: 0,
+    open: function (opts) {
+      Modal.close(true);
+      var prev = document.activeElement;
+      var titleId = 'modal-title-' + (++Modal.seq);
+      var closeBtn = el('button', { type: 'button', class: 'modal__close', 'aria-label': 'Close', onclick: function () { Modal.close(); } }, icon('close'));
+      var dialog = el('div', { class: 'modal__dialog' + (opts.wide ? ' modal__dialog--wide' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId, tabindex: '-1' }, [
+        el('div', { class: 'modal__head' }, [el('h2', { id: titleId, class: 'modal__title', text: opts.title }), closeBtn]),
+        el('div', { class: 'modal__body' }, opts.body)
+      ]);
+      var root = el('div', { class: 'modal' }, [
+        el('div', { class: 'modal__backdrop', onclick: function () { Modal.close(); } }),
+        dialog
+      ]);
+      var onKey = function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); Modal.close(); return; }
+        if (e.key !== 'Tab') return;
+        var f = Modal.focusables(dialog);
+        if (!f.length) return;
+        if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+        else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+      };
+      document.addEventListener('keydown', onKey);
+      document.body.appendChild(root);
+      document.body.classList.add('has-modal');
+      Modal.current = { root: root, dialog: dialog, prev: prev, onKey: onKey, onClose: opts.onClose, name: opts.name || '' };
+      if (prefersReducedMotion()) root.classList.add('is-open');
+      else window.requestAnimationFrame(function () { root.classList.add('is-open'); });
+      (opts.initialFocus || dialog).focus({ preventScroll: true });
+      return dialog;
+    },
+    focusables: function (root) {
+      return Array.prototype.slice.call(root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea,[tabindex]:not([tabindex="-1"])'))
+        .filter(function (n) { return n.offsetParent !== null || n === document.activeElement; });
+    },
+    close: function (silent) {
+      var m = Modal.current;
+      if (!m) return;
+      Modal.current = null;
+      document.removeEventListener('keydown', m.onKey);
+      document.body.classList.remove('has-modal');
+      m.root.classList.remove('is-open');
+      setTimeout(function () { if (m.root.parentNode) m.root.parentNode.removeChild(m.root); }, silent || prefersReducedMotion() ? 0 : 260);
+      if (typeof m.onClose === 'function') m.onClose();
+      if (!silent && m.prev && typeof m.prev.focus === 'function') m.prev.focus({ preventScroll: true });
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Form helpers
+  // ---------------------------------------------------------------------------
+
+  function formField(id, label, input, hint) {
+    return el('div', { class: 'field' }, [
+      el('label', { for: id, class: 'field__label', text: label }),
+      input,
+      hint ? el('p', { class: 'field__hint', text: hint }) : null
+    ]);
+  }
+
+  function setBusy(btn, busy, text) {
+    if (!btn) return;
+    if (busy) {
+      btn.dataset.label = btn.dataset.label || btn.textContent;
+      btn.disabled = true;
+      btn.classList.add('is-busy');
+      btn.setAttribute('aria-busy', 'true');
+      if (text) { var s = btn.querySelector('.btn__text'); if (s) s.textContent = text; }
+    } else {
+      btn.disabled = false;
+      btn.classList.remove('is-busy');
+      btn.removeAttribute('aria-busy');
+      var t = btn.querySelector('.btn__text');
+      if (t && btn.dataset.orig) t.textContent = btn.dataset.orig;
+    }
+  }
+
+  function button(text, ic, opts) {
+    opts = opts || {};
+    var b = el(opts.href ? 'a' : 'button', {
+      type: opts.href ? null : (opts.type || 'button'),
+      href: opts.href || null,
+      target: opts.target || null,
+      rel: opts.target ? 'noopener' : null,
+      class: 'btn' + (opts.variant ? ' btn--' + opts.variant : '') + (opts.block ? ' btn--block' : '') + (opts.small ? ' btn--small' : ''),
+      onclick: opts.onclick || null,
+      disabled: opts.disabled || null,
+      'aria-label': opts.label || null
+    }, [ic ? icon(ic) : null, el('span', { class: 'btn__text', text: text })]);
+    b.dataset.orig = text;
+    return b;
+  }
+
+  /** A box that shows status / AI text safely (textContent only). */
+  function outputBox() {
+    var box = el('div', { class: 'output', role: 'status', 'aria-live': 'polite', hidden: true });
+    box.show = function (text, kind) {
+      box.hidden = false;
+      box.className = 'output' + (kind ? ' output--' + kind : '');
+      box.textContent = text;
+    };
+    box.loading = function (text) {
+      box.hidden = false;
+      box.className = 'output output--loading';
+      box.textContent = '';
+      appendChildren(box, [el('span', { class: 'spinner spinner--small', 'aria-hidden': 'true' }), el('span', { text: text })]);
+    };
+    return box;
+  }
+
+  function mapsUrl(p) {
+    if (p.maps_url && /^https:\/\//.test(p.maps_url)) return p.maps_url;
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(p.lat + ',' + p.lng);
+  }
+
+  function findPlace(id) { return State.places.filter(function (p) { return p.id === id; })[0] || FALLBACK.filter(function (p) { return p.id === id; })[0] || null; }
+  function catOf(p) { return CATS[p && p.cat] || { label: 'Place', icon: 'pin', color: '#0057D9' }; }
+
+  function loadPlaces() {
+    if (State.placesLoaded || State.demo) return Promise.resolve(State.places);
+    return Api.places().then(function (r) {
+      if (r && Array.isArray(r.places) && r.places.length) State.places = r.places.filter(function (p) { return p && p.id && p.name; });
+      State.placesLoaded = true;
+      return State.places;
+    }, function () { return State.places; });
+  }
+
+  /** Shrink a photo before upload (phones make 4000 px photos; Apps Script prefers small payloads). */
+  function shrinkImage(file, maxSide, quality) {
+    maxSide = maxSide || 1280; quality = quality || 0.85;
+    return new Promise(function (resolve) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var raw = reader.result;
+        var img = new Image();
+        img.onload = function () {
+          var s = Math.min(1, maxSide / Math.max(img.width, img.height));
+          var c = document.createElement('canvas');
+          c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          try { resolve({ dataUrl: c.toDataURL('image/jpeg', quality), mime: 'image/jpeg' }); }
+          catch (e) { resolve({ dataUrl: raw, mime: file.type || 'image/jpeg' }); }
+        };
+        img.onerror = function () { resolve({ dataUrl: raw, mime: file.type || 'image/jpeg' }); };
+        img.src = raw;
+      };
+      reader.onerror = function () { resolve(null); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared actions: accept challenge, place sheet
+  // ---------------------------------------------------------------------------
+
+  function acceptChallenge(id, after) {
+    var p = findPlace(id);
+    if (!p) return;
+    ensureName(function (user) {
+      // Open directions straight away (inside the tap, so pop-up blockers allow it).
+      window.open(mapsUrl(p), '_blank', 'noopener');
+      Passport.accept(p);
+      toast('Challenge accepted: ' + p.name);
+      Api.acceptChallenge(user, p.id).catch(function () { /* saved on this device; the server copy is optional */ });
+      if (typeof after === 'function') after();
+    });
+  }
+
+  function placeActions(p, opts) {
+    opts = opts || {};
+    var accepted = Passport.hasAccepted(p.id);
+    return el('div', { class: 'card__actions' }, [
+      button(accepted ? 'Go now' : 'Accept Challenge', accepted ? 'route' : 'trophy', { block: true, onclick: function () { acceptChallenge(p.id, opts.onChange); } }),
+      button('Directions', 'map', { variant: 'blue', href: mapsUrl(p), target: '_blank' }),
+      button('Check-In', 'qr', { variant: 'green', href: '#/checkin?place=' + encodeURIComponent(p.id) }),
+      button('Photobooth', 'camera', { variant: 'orange', onclick: function () { openPhotobooth(p.id); } })
+    ]);
+  }
+
+  function placeCard(p, i, opts) {
+    var c = catOf(p);
+    return el('article', { class: 'card place-card reveal', style: '--d:' + Math.min(i, 10) * 60 + 'ms' }, [
+      el('div', { class: 'place-card__top' }, [
+        el('span', { class: 'card-icon', style: 'background:' + c.color }, icon(c.icon)),
+        el('div', null, [
+          el('h3', { class: 'place-card__name', text: p.name }),
+          el('p', { class: 'place-card__meta' }, [
+            el('span', { text: p.barangay || 'Iloilo' }),
+            el('span', { class: 'dot', 'aria-hidden': 'true', text: '•' }),
+            el('span', { class: 'pts', text: '+' + (p.points || 0) + ' pts' })
+          ])
+        ]),
+        Passport.hasAccepted(p.id) ? el('span', { class: 'badge', text: 'Accepted' }) : null
+      ]),
+      p.desc ? el('p', { class: 'place-card__desc', text: p.desc }) : null,
+      placeActions(p, opts)
+    ]);
+  }
+
+  function openPlace(id) {
+    var p = findPlace(id);
+    if (!p) return;
+    var c = catOf(p);
+    Modal.open({
+      title: p.name,
+      name: 'place',
+      body: [
+        el('p', { class: 'place-sheet__meta' }, [
+          el('span', { class: 'chip', style: '--c:' + c.color }, [icon(c.icon), c.label]),
+          el('span', { class: 'chip chip--plain', text: (p.barangay || 'Iloilo') + ' • +' + (p.points || 0) + ' pts' })
+        ]),
+        p.desc ? el('p', { text: p.desc }) : null,
+        placeActions(p, { onChange: function () { Modal.close(); } })
+      ]
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Navigation (top on wide screens, tab bar on phones)
+  // ---------------------------------------------------------------------------
+
+  var NAV = [
+    { key: 'explore', href: '#/explore', text: 'Explore', icon: 'map' },
+    { key: 'checkin', href: '#/checkin', text: 'Check-In', icon: 'postcard' },
+    { key: 'isidro', href: '#/isidro', text: 'Isidro', icon: 'compass', main: true },
+    { key: 'tools', href: '#/tools', text: 'Sell', icon: 'shop' },
+    { key: 'ranks', href: '#/ranks', text: 'Ranks', icon: 'trophy' }
+  ];
+
+  function renderNav() {
+    var section = parseHash().parts[0] || '';
+    ['#mainnav', '#tabbar'].forEach(function (sel) {
+      var nav = $(sel);
+      if (!nav) return;
+      nav.textContent = '';
+      NAV.forEach(function (n) {
+        nav.appendChild(el('a', { href: n.href, class: n.main ? 'is-main' : null, 'aria-current': section === n.key ? 'page' : null }, [
+          el('span', { class: 'nav-icon' }, icon(n.icon)), el('span', { class: 'nav-text', text: n.text })
+        ]));
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // "Install the app" banner (first opening) + service worker
+  // ---------------------------------------------------------------------------
+
+  var Install = {
+    deferred: null,
+    node: null,
+    SEEN_KEY: 'smile.installSeen',
+    isStandalone: function () {
+      return !!((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true);
+    },
+    platform: function () {
+      var ua = String(window.navigator.userAgent || '');
+      if (/iphone|ipad|ipod/i.test(ua) || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)) return 'ios';
+      if (/android/i.test(ua)) return 'android';
+      return 'desktop';
+    },
+    init: function () {
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        Install.deferred = e;
+        if (Install.node) Install.paint();
+      });
+      window.addEventListener('appinstalled', function () {
+        Install.deferred = null;
+        storageSet(Install.SEEN_KEY, 'installed');
+        Install.hide();
+        toast('SMILE Iloilo was added to your device.');
+      });
+      Install.registerWorker();
+      var link = $('#install-link');
+      if (link) link.addEventListener('click', function (e) { e.preventDefault(); Install.show(true); });
+      if (!Install.isStandalone() && !storageGet(Install.SEEN_KEY)) {
+        setTimeout(function () { if (!Install.isStandalone()) Install.show(false); }, prefersReducedMotion() ? 600 : 2600);
+      }
+    },
+    registerWorker: function () {
+      if (!('serviceWorker' in window.navigator) || !$('link[rel="manifest"]')) return;
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return;
+      try { window.navigator.serviceWorker.register('sw.js').catch(function () { /* offline support is optional */ }); } catch (e) { /* ignore */ }
+    },
+    show: function (manual) {
+      if (Install.isStandalone()) { if (manual) toast('SMILE Iloilo is already installed on this device.'); return; }
+      if (!Install.node) {
+        Install.node = el('section', { class: 'install-banner', role: 'region', 'aria-label': 'Install SMILE Iloilo', tabindex: '-1' });
+        document.body.appendChild(Install.node);
+      }
+      Install.paint();
+      if (prefersReducedMotion()) Install.node.classList.add('is-open');
+      else window.requestAnimationFrame(function () { if (Install.node) Install.node.classList.add('is-open'); });
+      if (manual) Install.node.focus();
+    },
+    paint: function () {
+      var n = Install.node;
+      if (!n) return;
+      n.textContent = '';
+      var p = Install.platform();
+      var steps;
+      if (Install.deferred) steps = el('p', { class: 'install-banner__text', text: 'Open SMILE from your home screen like an app. It opens fast and works offline for places you have already seen.' });
+      else if (p === 'ios') steps = el('ol', { class: 'install-banner__steps' }, [
+        el('li', null, ['Tap the Share button ', icon('share', 'icon--inline'), ' in Safari.']),
+        el('li', null, ['Choose ', el('strong', { text: 'Add to Home Screen' }), ' ', icon('plusSquare', 'icon--inline'), '.'])
+      ]);
+      else steps = el('ol', { class: 'install-banner__steps' }, [
+        el('li', null, ['Open your browser menu (', el('strong', { text: '⋮' }), ' or ', el('strong', { text: '☰' }), ').']),
+        el('li', null, ['Choose ', el('strong', { text: p === 'android' ? 'Add to Home screen' : 'Install SMILE' }), ' (or "Install app").'])
+      ]);
+      appendChildren(n, [
+        el('img', { class: 'install-banner__icon', src: 'assets/icon-192.png', alt: '', width: 56, height: 56 }),
+        el('div', { class: 'install-banner__body' }, [
+          el('p', { class: 'install-banner__title', text: 'Install the SMILE Iloilo app' }),
+          steps
+        ]),
+        el('div', { class: 'install-banner__actions' }, [
+          Install.deferred ? button('Install', 'install', { small: true, onclick: Install.prompt }) : null,
+          button('Later', null, { small: true, variant: 'light', onclick: function () { storageSet(Install.SEEN_KEY, 'dismissed'); Install.hide(); } })
+        ])
+      ]);
+    },
+    prompt: function () {
+      var e = Install.deferred;
+      if (!e) return;
+      Install.deferred = null;
+      try {
+        e.prompt();
+        Promise.resolve(e.userChoice).then(function (choice) {
+          storageSet(Install.SEEN_KEY, choice && choice.outcome === 'accepted' ? 'installed' : 'dismissed');
+          Install.hide();
+        });
+      } catch (err) { Install.paint(); }
+    },
+    hide: function () {
+      var n = Install.node;
+      if (!n) return;
+      Install.node = null;
+      n.classList.remove('is-open');
+      setTimeout(function () { if (n.parentNode) n.parentNode.removeChild(n); }, prefersReducedMotion() ? 0 : 320);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // View helpers
+  // ---------------------------------------------------------------------------
+
+  function view() { return $('#view'); }
+  function setView(nodes) { var v = view(); v.textContent = ''; appendChildren(v, nodes); Motion.enter(v); Motion.reveal(v); }
+
+  function pageHead(ic, color, title, lead) {
+    return el('header', { class: 'page-head' }, [
+      el('span', { class: 'page-head__icon', style: 'background:' + color }, icon(ic)),
+      el('div', null, [
+        el('h1', { class: 'page-head__title', text: title }),
+        lead ? el('p', { class: 'page-head__lead', text: lead }) : null
+      ])
+    ]);
+  }
+
+  function focusHeading() {
+    var h = view().querySelector('h1');
+    if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+  }
+
+  function passportCard(big) {
+    var pts = Passport.points();
+    var rank = rankOf(pts);
+    var nx = nextRank(pts);
+    var pct = Math.min(100, Math.max(4, pts / 45 * 100));
+    return el('section', { class: 'card passport' + (big ? ' passport--big' : '') + ' reveal', 'aria-labelledby': 'passport-h' }, [
+      el('div', { class: 'passport__head' }, [
+        el('div', { class: 'passport__rank', 'aria-label': 'Rank ' + rank }, [el('span', { text: rank })]),
+        el('div', null, [
+          el('p', { class: 'eyebrow', text: 'Your Tourism Passport' }),
+          el('h2', { id: 'passport-h', class: 'passport__name', text: Passport.name() || 'Guest Explorer' }),
+          el('p', { class: 'passport__pts' }, [el('b', { text: String(pts) }), ' points • ', String(Passport.challenges().length), ' challenges accepted'])
+        ])
+      ]),
+      el('div', { class: 'rank-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '45', 'aria-valuenow': String(Math.min(pts, 45)), 'aria-label': 'Progress to SSS' }, [
+        el('div', { class: 'rank-fill', style: 'width:' + pct + '%' })
+      ]),
+      el('ol', { class: 'rank-ladder', 'aria-label': 'Ranks' }, RANKS.map(function (r) {
+        return el('li', { class: r[0] === rank ? 'is-current' : (pts >= r[1] ? 'is-done' : null) }, [el('b', { text: r[0] }), el('span', { text: String(r[1]) })]);
+      })),
+      el('p', { class: 'muted small', text: nx ? nx.need + ' more point' + (nx.need === 1 ? '' : 's') + ' to rank ' + nx.rank + '.' : 'You reached SSS. Maayo gid! Iloilo is proud of you.' }),
+      big ? null : el('div', { class: 'passport__actions' }, [
+        Passport.name() ? null : button('Set my name', 'user', { small: true, variant: 'light', onclick: function () { ensureName(function () { route(); }); } }),
+        button('Leaderboard', 'trophy', { small: true, variant: 'light', href: '#/ranks' })
+      ])
+    ]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Home: poster hero with hotspots, passport, features, how it works
+  // ---------------------------------------------------------------------------
+
+  function startTypewriter(node, token) {
+    if (prefersReducedMotion()) { node.textContent = 'landmarks and events.'; return; }
+    var w = 0, i = 0, deleting = false;
+    var tick = function () {
+      if (token !== renderToken || !node.isConnected) return;
+      var word = ROTATING[w];
+      i += deleting ? -1 : 1;
+      node.textContent = word.slice(0, i);
+      var wait = deleting ? 45 : 85;
+      if (!deleting && i === word.length) { deleting = true; wait = 1600; }
+      else if (deleting && i === 0) { deleting = false; w = (w + 1) % ROTATING.length; wait = 350; }
+      setTimeout(tick, wait);
+    };
+    setTimeout(tick, 900);
+  }
+
+  function renderHome(token) {
+    var rotator = el('span', { class: 'rotator', 'aria-hidden': 'true' });
+    var feature = function (ic, color, title, text, href, i) {
+      return el('li', { class: 'feature reveal', style: '--d:' + (i * 80) + 'ms' }, [
+        el('a', { href: href, class: 'feature__link' }, [
+          el('span', { class: 'feature__icon', style: 'background:' + color }, icon(ic)),
+          el('h3', { text: title }),
+          el('p', { text: text })
+        ])
+      ]);
+    };
+    var hotspots = HOTSPOTS.map(function (h, i) {
+      return el('button', {
+        type: 'button', class: 'hotspot', style: 'left:' + h.x + '%;top:' + h.y + '%;--d:' + (i * 0.25) + 's',
+        'aria-label': h.label + ': open place', onclick: function () { openPlace(h.id); }
+      }, [icon(h.icon), el('span', { class: 'hotspot__label', text: h.label })]);
+    });
+
+    setView([
+      el('section', { class: 'hero', 'aria-labelledby': 'hero-h' }, [
+        el('div', { class: 'hero__bg', 'aria-hidden': 'true' }),
+        el('div', { class: 'hero__grid' }, [
+          el('div', { class: 'hero__art anim-pop', style: '--d:120ms' }, [
+            el('div', { class: 'poster-frame' }, [
+              el('picture', null, [
+                el('source', { srcset: POSTER_SRC, type: 'image/webp' }),
+                el('img', { class: 'poster-frame__img', src: 'assets/poster.jpg', alt: 'SMILE Iloilo poster: Dinagyang Festival, Iloilo Provincial Capitol, Miag-ao Church, Jaro Cathedral, Iloilo Esplanade, Batchoy, Pancit Molo, Chicken Inasal and seafood.', width: 1024, height: 1536 })
+              ]),
+              el('span', { class: 'poster-frame__shine', 'aria-hidden': 'true' }),
+              hotspots
+            ]),
+            el('p', { class: 'hero__hint' }, [icon('pin', 'icon--inline'), 'Tap the glowing pins to open a place'])
+          ]),
+          el('div', { class: 'hero__copy' }, [
+            el('img', { class: 'hero__logo anim-rise', src: LOGO_SRC, alt: '', width: 512, height: 512 }),
+            el('h1', { id: 'hero-h', class: 'hero__title anim-rise', style: '--d:120ms' }, [
+              el('span', { class: 'sr-only', text: 'SMILE Iloilo: See More of Iloilo’s Landmarks and Events.' }),
+              el('span', { 'aria-hidden': 'true' }, ['See more of Iloilo’s ', el('br'), rotator, el('span', { class: 'caret' })])
+            ]),
+            el('p', { class: 'hero__lead anim-rise', style: '--d:220ms', text: 'Ask Isidro, accept a challenge, scan your postcard, collect stamps and rank up from E to SSS. Then mail your postcard to another place in the Philippines.' }),
+            el('div', { class: 'hero__cta anim-rise', style: '--d:320ms' }, [
+              button('Ask Isidro', 'compass', { href: '#/isidro', variant: 'glow' }),
+              button('Explore', 'map', { href: '#/explore', variant: 'yellow' }),
+              button('Check-In', 'postcard', { href: '#/checkin', variant: 'green' })
+            ])
+          ])
+        ]),
+        el('a', { class: 'scroll-down', href: '#/', 'aria-label': 'Scroll to your passport', onclick: function (e) { e.preventDefault(); var t = $('#home-passport'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }, icon('chevronDown'))
+      ]),
+
+      el('div', { class: 'section', id: 'home-passport' }, passportCard(false)),
+
+      el('section', { class: 'section', 'aria-labelledby': 'what-h' }, [
+        el('h2', { id: 'what-h', class: 'section__title reveal', text: 'Everything you can do with SMILE' }),
+        el('ul', { class: 'feature-grid' }, [
+          feature('guide', '#FF6B00', 'Ask Isidro', 'Your Ilonggo AI guide plans your day in Hiligaynon, English or Tagalog.', '#/isidro', 0),
+          feature('trophy', '#ED0460', 'Accept challenges', 'Pick a landmark, festival or food stop, and get directions in Google Maps.', '#/explore', 1),
+          feature('qr', '#00A651', 'One-use QR check-in', 'Scan your SMILE postcard at the place to collect a stamp and points.', '#/checkin', 2),
+          feature('camera', '#7B2CBF', 'AI Photobooth', 'Turn a selfie into a "CONQUERED" postcard, with your outfit or an AI one.', '#/explore', 3),
+          feature('mailbox', '#0057D9', 'Mail across PH', 'Add 2 stamps and drop your postcard. It travels to another destination.', '#/postcards', 4),
+          feature('star', '#FDB603', 'Rank E to SSS', 'Every stamp counts. Climb the leaderboard with fellow explorers.', '#/ranks', 5)
+        ])
+      ]),
+
+      el('section', { class: 'section section--tint', 'aria-labelledby': 'how-h' }, [
+        el('h2', { id: 'how-h', class: 'section__title reveal', text: 'How it works' }),
+        el('ol', { class: 'how-steps' }, [
+          ['compass', 'Ask Isidro', 'Tell him your time and what you love.'],
+          ['trophy', 'Accept a challenge', 'Follow the directions to the place.'],
+          ['qr', 'Scan and check in', 'Use your postcard code and a proof photo.'],
+          ['stamp', 'Mail the postcard', 'Paste 2 stamps and send it on its journey.'],
+          ['star', 'Rank up', 'From E all the way to SSS.']
+        ].map(function (s, i) {
+          return el('li', { class: 'how-step reveal', style: '--d:' + (i * 100) + 'ms' }, [
+            el('span', { class: 'how-step__num', text: String(i + 1) }),
+            el('span', { class: 'how-step__icon' }, icon(s[0])),
+            el('h3', { text: s[1] }),
+            el('p', { text: s[2] })
+          ]);
+        }))
+      ]),
+
+      el('section', { class: 'section split' }, [
+        el('a', { class: 'card promo promo--pink reveal', href: '#/postcards' }, [
+          el('span', { class: 'promo__icon' }, icon('heart')),
+          el('h3', { text: 'Found a SMILE postcard?' }),
+          el('p', { text: 'Adopt it, join SMILE and see where it has travelled.' })
+        ]),
+        el('a', { class: 'card promo promo--blue reveal', style: '--d:100ms', href: '#/tools' }, [
+          el('span', { class: 'promo__icon' }, icon('shop')),
+          el('h3', { text: 'For merchants and LGUs' }),
+          el('p', { text: 'Write product listings, captions and visitor insights.' })
+        ])
+      ])
+    ]);
+    startTypewriter(rotator, token);
+    focusHeading();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Explore: search, category filter, place cards, my challenges
+  // ---------------------------------------------------------------------------
+
+  function renderExplore(token, query) {
+    var filter = { cat: query.cat || 'all', q: '' };
+    var grid = el('div', { class: 'grid' });
+    var mine = el('div', { class: 'grid' });
+    var count = el('p', { class: 'muted small', role: 'status' });
+
+    var paint = function () {
+      var q = filter.q.toLowerCase();
+      var list = State.places.filter(function (p) {
+        return (filter.cat === 'all' || p.cat === filter.cat) &&
+          (!q || (p.name + ' ' + (p.barangay || '') + ' ' + (p.desc || '')).toLowerCase().indexOf(q) !== -1);
+      });
+      grid.textContent = '';
+      appendChildren(grid, list.length ? list.map(function (p, i) { return placeCard(p, i, { onChange: paint }); })
+        : el('p', { class: 'empty', text: 'No places match. Try another word or category.' }));
+      count.textContent = list.length + ' place' + (list.length === 1 ? '' : 's');
+      var ch = Passport.challenges().map(function (c) { return findPlace(c.id) || c; });
+      mine.textContent = '';
+      appendChildren(mine, ch.length ? ch.map(function (p, i) { return placeCard(p, i, { onChange: paint }); })
+        : el('p', { class: 'empty', text: 'No challenges yet. Ask Isidro, or accept one above!' }));
+      Motion.reveal(view());
+    };
+
+    var chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Category' },
+      [['all', { label: 'All', icon: 'pin', color: '#14213d' }]].concat(Object.keys(CATS).map(function (k) { return [k, CATS[k]]; })).map(function (pair) {
+        return el('button', {
+          type: 'button', class: 'chip-btn', 'aria-pressed': String(filter.cat === pair[0]), style: '--c:' + pair[1].color,
+          onclick: function (e) {
+            filter.cat = pair[0];
+            chips.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+            e.currentTarget.setAttribute('aria-pressed', 'true');
+            paint();
+          }
+        }, [icon(pair[1].icon), pair[1].label]);
+      }));
+
+    var search = el('input', { type: 'search', id: 'place-search', placeholder: 'Search churches, batchoy, beaches…', autocomplete: 'off' });
+    search.addEventListener('input', function () { filter.q = search.value.trim(); paint(); });
+
+    setView([
+      el('section', { class: 'section' }, [
+        pageHead('map', '#0057D9', 'Discover Iloilo', 'Accept a challenge, get directions, then check in at the place to collect your stamp.'),
+        el('div', { class: 'toolbar' }, [
+          el('label', { class: 'searchbox' }, [icon('search'), el('span', { class: 'sr-only', text: 'Search places' }), search]),
+          chips
+        ]),
+        count,
+        grid
+      ]),
+      el('section', { class: 'section', 'aria-labelledby': 'mine-h' }, [
+        el('h2', { id: 'mine-h', class: 'section__title' }, [icon('trophy'), ' My Challenges']),
+        mine
+      ])
+    ]);
+    paint();
+    focusHeading();
+    loadPlaces().then(function () { if (token === renderToken) paint(); });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Isidro: Ilonggo AI guide
+  // ---------------------------------------------------------------------------
+
+  function renderIsidro(token) {
+    var lang = el('select', { id: 'isidro-lang' }, [
+      el('option', { value: 'hil', text: 'Hiligaynon' }), el('option', { value: 'en', text: 'English' }), el('option', { value: 'tl', text: 'Tagalog' })
+    ]);
+    lang.value = storageGet('smile.lang') || 'hil';
+    lang.addEventListener('change', function () { storageSet('smile.lang', lang.value); });
+    var q = el('textarea', { id: 'isidro-q', rows: '3', maxlength: '500', placeholder: 'I have 4 hours and love food. Where should I go?' });
+    var out = outputBox();
+    var recs = el('div', { class: 'grid' });
+    var ask = button('Ask Isidro', 'compass', { type: 'submit', block: true, variant: 'glow' });
+
+    var showRecs = function (list) {
+      recs.textContent = '';
+      appendChildren(recs, (list || []).map(function (p, i) { return placeCard(p, i, { onChange: function () { showRecs(list); } }); }));
+      Motion.reveal(recs);
+    };
+
+    var submit = function (e) {
+      if (e) e.preventDefault();
+      var question = q.value.trim();
+      if (!question) { q.focus(); toast('Type a question for Isidro first.'); return; }
+      setBusy(ask, true, 'Isidro is planning…');
+      out.loading('Isidro is planning your trip…');
+      recs.textContent = '';
+      Api.recommend(question, lang.value).then(function (r) {
+        if (token !== renderToken) return;
+        out.show(r.reply || 'Here are my picks for you.');
+        showRecs(Array.isArray(r.places) ? r.places : []);
+      }, function (err) {
+        if (token !== renderToken) return;
+        // Demo fallback (same as before): a sample answer with the first four places.
+        out.show((State.demo ? 'Demo answer: ' : friendlyError(err) + '\n\nMeanwhile, here is a classic route: ') +
+          'Molo Church in the morning, La Paz Batchoy for lunch, then the Esplanade at sunset. #SMILEIloilo', State.demo ? null : 'warn');
+        showRecs(State.places.slice(0, 4));
+      }).then(function () { setBusy(ask, false); });
+    };
+
+    var prompts = ['I have 4 hours and love food', 'Heritage walk in the city', 'Beach weekend with friends', 'When is Dinagyang and what should I wear?'];
+
+    setView(el('section', { class: 'section section--narrow' }, [
+      el('div', { class: 'isidro-hero' }, [
+        el('div', { class: 'isidro-avatar' }, icon('guide')),
+        el('h1', { class: 'page-head__title', text: 'Isidro, your Ilonggo AI guide' }),
+        el('p', { class: 'muted', text: 'Maayong adlaw! Tell me how much time you have and what you love. I will plan your SMILE route.' })
+      ]),
+      el('form', { class: 'card stack', onsubmit: submit }, [
+        formField('isidro-lang', 'Language', lang),
+        formField('isidro-q', 'Your question', q),
+        el('div', { class: 'chips chips--wrap', 'aria-label': 'Ideas' }, prompts.map(function (p) {
+          return el('button', { type: 'button', class: 'chip-btn chip-btn--soft', onclick: function () { q.value = p; q.focus(); } }, p);
+        })),
+        ask,
+        out
+      ]),
+      recs
+    ]));
+    focusHeading();
+    loadPlaces();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Check-in (one-use QR postcard) + mail your postcard
+  // ---------------------------------------------------------------------------
+
+  function renderCheckin(token, query) {
+    State.visionStatus = 'skipped';
+    var user = el('input', { id: 'ci-user', type: 'text', maxlength: '40', autocomplete: 'nickname', placeholder: 'Your display name', value: Passport.name() });
+    var select = el('select', { id: 'ci-place' });
+    var fillSelect = function () {
+      var cur = select.value || query.place || '';
+      select.textContent = '';
+      State.places.forEach(function (p) { select.appendChild(el('option', { value: p.id, text: p.name + ' (+' + (p.points || 0) + ')' })); });
+      if (cur && findPlace(cur)) select.value = cur;
+    };
+    fillSelect();
+    var code = el('input', { id: 'ci-code', type: 'text', autocapitalize: 'characters', spellcheck: 'false', placeholder: 'SMILE-1234-ABCD', value: (query.code || '').toUpperCase() });
+    code.addEventListener('input', function () { var s = code.selectionStart; code.value = code.value.toUpperCase(); try { code.setSelectionRange(s, s); } catch (e) { /* ignore */ } });
+    var proof = el('input', { id: 'ci-proof', type: 'file', accept: 'image/*', capture: 'environment' });
+    var preview = el('img', { class: 'proof-preview', alt: 'Your proof photo', hidden: true });
+    var proofData = null;
+    proof.addEventListener('change', function () {
+      var f = proof.files && proof.files[0];
+      proofData = null; State.visionStatus = 'skipped';
+      if (!f) { preview.hidden = true; return; }
+      shrinkImage(f).then(function (r) { if (!r) return; proofData = r.dataUrl; preview.src = r.dataUrl; preview.hidden = false; });
+    });
+    var visionOut = outputBox();
+    var result = outputBox();
+    var verifyBtn = button('Verify Photo', 'camera', { variant: 'blue' });
+    var collectBtn = button('Collect Stamp', 'stamp', { variant: 'green', type: 'submit' });
+
+    verifyBtn.addEventListener('click', function () {
+      if (!proofData) { toast('Take or choose a proof photo first.'); proof.focus(); return; }
+      setBusy(verifyBtn, true, 'Checking…');
+      visionOut.loading('Checking your photo…');
+      Api.vision(select.value, proofData).then(function (r) {
+        State.visionStatus = r.result || 'review';
+        if (typeof r.match === 'boolean') {
+          visionOut.show((r.match ? 'Looks like ' + ((findPlace(select.value) || {}).name || 'the place') + '!' : 'We could not confirm the place from this photo. Staff will review it, and you can still collect your stamp.') +
+            (r.confidence ? '\nConfidence: ' + r.confidence + '%' : '') + (r.reason ? '\n' + r.reason : ''), r.match ? 'ok' : 'warn');
+        } else visionOut.show('Photo check (reviewed by staff too):\n' + (r.result || 'Sent for review.'));
+      }, function (err) {
+        State.visionStatus = 'review';
+        visionOut.show(friendlyError(err), 'warn');
+      }).then(function () { setBusy(verifyBtn, false); });
+    });
+
+    var mailCard = mailSection(function () { return { user: user.value.trim() || Passport.name() || 'Guest', postcard: code.value.trim(), placeId: select.value }; });
+
+    var submit = function (e) {
+      e.preventDefault();
+      var name = user.value.trim();
+      if (!name) { toast('Type your display name first.'); user.focus(); return; }
+      if (!code.value.trim()) { toast('Type the code printed on your SMILE postcard.'); code.focus(); return; }
+      Passport.setName(name);
+      setBusy(collectBtn, true, 'Saving…');
+      result.loading('Collecting your stamp…');
+      Api.checkin({ user: name, placeId: select.value, postcard: code.value.trim(), visionStatus: State.visionStatus }).then(function (r) {
+        if (token !== renderToken) return;
+        if (r.total !== undefined) Passport.setPoints(r.total);
+        var pts = r.stamp && r.stamp.points !== undefined ? r.stamp.points : (findPlace(select.value) || {}).points || 0;
+        State.lastCheckin = { placeId: select.value, postcard: code.value.trim() };
+        result.show('Completed! +' + pts + ' pts\nTotal: ' + (r.total !== undefined ? r.total : Passport.points()) + '   Rank: ' + (r.rank || rankOf(Passport.points())), 'ok');
+        toast('Stamp collected! Now mail your postcard.');
+        mailCard.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+      }, function (err) {
+        if (token !== renderToken) return;
+        result.show(friendlyError(err), 'error');
+      }).then(function () { setBusy(collectBtn, false); });
+    };
+
+    setView([
+      el('section', { class: 'section section--narrow' }, [
+        pageHead('postcard', '#ED0460', 'Check-In', 'Each SMILE postcard code works once. Scan it at the place, add a proof photo and collect your stamp.'),
+        el('form', { class: 'card stack', onsubmit: submit }, [
+          formField('ci-user', 'Your name', user),
+          formField('ci-place', 'Place', select),
+          formField('ci-code', 'Postcard code', code, 'Printed on the back of your SMILE postcard, under the QR code.'),
+          formField('ci-proof', 'Proof photo (optional, checked by AI and staff)', proof),
+          preview,
+          visionOut,
+          el('div', { class: 'btn-row' }, [verifyBtn, collectBtn]),
+          result
+        ])
+      ]),
+      mailCard
+    ]);
+    focusHeading();
+    loadPlaces().then(function () { if (token === renderToken) fillSelect(); });
+  }
+
+  function mailSection(getInfo) {
+    var out = outputBox();
+    var mailBtn = button('Drop in Mailbox', 'send', { variant: 'blue', disabled: !State.stampsBought });
+    var buyBtn = button(State.stampsBought ? '2 stamps pasted' : 'Buy 2 Stamps · ₱30', 'stamp', { variant: 'yellow', disabled: State.stampsBought });
+    buyBtn.addEventListener('click', function () {
+      State.stampsBought = true;
+      mailBtn.disabled = false;
+      buyBtn.disabled = true;
+      buyBtn.querySelector('.btn__text').textContent = '2 stamps pasted';
+      toast('2 PhilPost stamps pasted!');
+    });
+    mailBtn.addEventListener('click', function () {
+      var info = getInfo();
+      if (!info.postcard) { toast('Type your postcard code in the check-in form first.'); return; }
+      setBusy(mailBtn, true, 'Mailing…');
+      out.loading('Sending your postcard on its journey…');
+      Api.mailPostcard(info).then(function (r) {
+        var d = r.destination || {};
+        out.show('Mailed to ' + (d.place || 'a surprise destination') + (d.province ? ', ' + d.province : '') + '!' + (r.chain_no !== undefined ? '\nChain #' + r.chain_no : ''), 'ok');
+      }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(mailBtn, false); });
+    });
+    return el('section', { class: 'section section--narrow', id: 'mail' }, [
+      el('div', { class: 'card mail-card reveal' }, [
+        el('h2', { class: 'section__title' }, [icon('mailbox'), ' Mail your postcard']),
+        el('p', { text: 'After check-in, buy 2 PhilPost stamps and drop your postcard in the mailbox. It is sent to a random destination in the Philippines!' }),
+        el('div', { class: 'stamps', 'aria-hidden': 'true' }, [el('span', { class: 'stamp stamp--a' }, icon('stamp')), el('span', { class: 'stamp stamp--b' }, icon('stamp'))]),
+        el('div', { class: 'btn-row' }, [buyBtn, mailBtn]),
+        out
+      ])
+    ]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Postcards: adopt a found postcard, track a postcard's journey
+  // ---------------------------------------------------------------------------
+
+  function renderPostcards(token, query) {
+    var aUser = el('input', { id: 'ad-user', type: 'text', maxlength: '40', placeholder: 'Your name', value: Passport.name() });
+    var aCode = el('input', { id: 'ad-code', type: 'text', autocapitalize: 'characters', placeholder: 'SMILE-1234-ABCD', value: (query.code || '').toUpperCase() });
+    var aOut = outputBox();
+    var aBtn = button('Adopt and join SMILE', 'heart', { type: 'submit', block: true });
+    var tCode = el('input', { id: 'tr-code', type: 'text', autocapitalize: 'characters', placeholder: 'SMILE-1234-ABCD', value: (query.code || '').toUpperCase() });
+    var tBtn = button('Track Journey', 'route', { type: 'submit', block: true, variant: 'blue' });
+    var tOut = outputBox();
+    var timeline = el('ol', { class: 'timeline' });
+
+    var adopt = function (e) {
+      e.preventDefault();
+      if (!aUser.value.trim() || !aCode.value.trim()) { toast('Type your name and the postcard code.'); return; }
+      Passport.setName(aUser.value.trim());
+      setBusy(aBtn, true, 'Adopting…');
+      aOut.loading('Adopting your postcard…');
+      Api.adoptPostcard(aUser.value.trim(), aCode.value.trim().toUpperCase()).then(function (r) {
+        if (r.adopter_total !== undefined) Passport.setPoints(r.adopter_total);
+        aOut.show('Welcome to SMILE! You adopted a postcard from ' + (r.sender || 'a fellow explorer') + '.\nRank: ' + (r.rank || rankOf(Passport.points())), 'ok');
+      }, function (err) { aOut.show(friendlyError(err), 'error'); }).then(function () { setBusy(aBtn, false); });
+    };
+
+    var track = function (e) {
+      e.preventDefault();
+      if (!tCode.value.trim()) { toast('Type a postcard code.'); tCode.focus(); return; }
+      setBusy(tBtn, true, 'Tracking…');
+      tOut.loading('Finding the journey…');
+      timeline.textContent = '';
+      Api.trackPostcard(tCode.value.trim().toUpperCase()).then(function (r) {
+        var h = Array.isArray(r.history) ? r.history : [];
+        if (!h.length) { tOut.show('No journey yet for this postcard.'); return; }
+        tOut.hidden = true;
+        h.forEach(function (step, i) {
+          var lines = typeof step === 'object' && step
+            ? Object.keys(step).filter(function (k) { return step[k] !== '' && step[k] !== null && typeof step[k] !== 'object'; }).map(function (k) { return el('div', null, [el('b', { text: k.replace(/_/g, ' ') + ': ' }), String(step[k])]); })
+            : [el('div', { text: String(step) })];
+          timeline.appendChild(el('li', { class: 'timeline__item reveal', style: '--d:' + i * 80 + 'ms' }, [el('span', { class: 'timeline__dot', text: String(i + 1) }), el('div', { class: 'timeline__body' }, lines)]));
+        });
+        Motion.reveal(timeline);
+      }, function (err) { tOut.show(friendlyError(err), 'error'); }).then(function () { setBusy(tBtn, false); });
+    };
+
+    setView(el('section', { class: 'section section--narrow' }, [
+      pageHead('heart', '#ED0460', 'SMILE Postcards', 'Found a SMILE postcard in your mailbox? Adopt it to join, or track where a postcard has been.'),
+      el('form', { class: 'card stack', onsubmit: adopt }, [
+        el('h2', { class: 'card__title', text: 'Adopt a postcard' }),
+        formField('ad-user', 'Your name', aUser),
+        formField('ad-code', 'Postcard code', aCode),
+        aBtn, aOut
+      ]),
+      el('form', { class: 'card stack', onsubmit: track }, [
+        el('h2', { class: 'card__title', text: 'Track a journey' }),
+        formField('tr-code', 'Postcard code', tCode),
+        tBtn, tOut, timeline
+      ])
+    ]));
+    focusHeading();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tools: caption generator, merchant assistant, LGU insights
+  // ---------------------------------------------------------------------------
+
+  function copyable(box) {
+    var b = button('Copy', 'save', { small: true, variant: 'light' });
+    b.hidden = true;
+    b.addEventListener('click', function () {
+      var t = box.textContent;
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { toast('Copied!'); }, function () { toast('Select the text to copy it.'); });
+    });
+    return b;
+  }
+
+  function aiTool(o) {
+    var out = outputBox();
+    var copy = copyable(out);
+    var btn = button(o.button, o.icon, { type: 'submit', block: true, variant: o.variant });
+    var form = el('form', { class: 'card stack reveal', id: o.id, onsubmit: function (e) {
+      e.preventDefault();
+      var args = o.args();
+      if (!args) return;
+      setBusy(btn, true, 'Writing…');
+      out.loading(o.loading);
+      copy.hidden = true;
+      o.call.apply(null, args).then(function (r) { out.show(o.pick(r) || 'Done.'); copy.hidden = false; },
+        function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(btn, false); });
+    } }, [
+      el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:' + o.color }, icon(o.icon)), o.title]),
+      el('p', { class: 'muted', text: o.lead }),
+      o.fields, btn, out, copy
+    ]);
+    return form;
+  }
+
+  function renderTools() {
+    var capPlace = el('select', { id: 'cap-place' }, State.places.map(function (p) { return el('option', { text: p.name }); }));
+    var mood = el('select', { id: 'cap-mood' }, ['happy', 'proud Ilonggo', 'food trip', 'proud, conquered challenge'].map(function (m) { return el('option', { text: m }); }));
+    var mName = el('input', { id: 'm-name', type: 'text', placeholder: 'Shop name' });
+    var mRaw = el('input', { id: 'm-raw', type: 'text', placeholder: 'e.g. white shirt Dinagyang print 350' });
+    var lguQ = el('input', { id: 'lgu-q', type: 'text', placeholder: 'Which places got the most visitors?' });
+
+    setView(el('section', { class: 'section' }, [
+      pageHead('shop', '#00A651', 'SMILE Tools', 'AI helpers for travellers, local merchants and LGU tourism offices.'),
+      el('div', { class: 'tools-grid' }, [
+        aiTool({ id: 'tool-caption', title: 'Caption generator', icon: 'caption', color: '#FDB603', variant: 'yellow', button: 'Create caption', loading: 'Writing your caption…',
+          lead: 'A ready-to-post caption for your photo.',
+          fields: [formField('cap-place', 'Place', capPlace), formField('cap-mood', 'Mood', mood)],
+          args: function () { return [capPlace.value, mood.value]; }, call: Api.caption, pick: function (r) { return r.caption; } }),
+        aiTool({ id: 'tool-merchant', title: 'Merchant assistant', icon: 'shop', color: '#00A651', variant: 'green', button: 'Write my listing', loading: 'Writing your listing…',
+          lead: 'Type your product quickly; get a clean listing for your shop.',
+          fields: [formField('m-name', 'Shop name', mName), formField('m-raw', 'Product, notes and price', mRaw)],
+          args: function () { if (!mRaw.value.trim()) { toast('Describe your product first.'); mRaw.focus(); return null; } return [mName.value.trim(), mRaw.value.trim()]; },
+          call: Api.merchant, pick: function (r) { return r.listing; } }),
+        aiTool({ id: 'tool-lgu', title: 'LGU insights', icon: 'chart', color: '#0057D9', variant: 'blue', button: 'Analyze', loading: 'Analyzing check-ins…',
+          lead: 'Ask about visitor trends from SMILE check-ins.',
+          fields: [formField('lgu-q', 'Your question', lguQ)],
+          args: function () { if (!lguQ.value.trim()) { toast('Type a question first.'); lguQ.focus(); return null; } return [lguQ.value.trim()]; },
+          call: Api.insights, pick: function (r) { return r.insights; } })
+      ])
+    ]));
+    focusHeading();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ranks: passport + leaderboard
+  // ---------------------------------------------------------------------------
+
+  function renderRanks(token) {
+    var list = el('ol', { class: 'board', 'aria-live': 'polite' });
+    var refresh = button('Refresh', 'refresh', { small: true, variant: 'light' });
+    var load = function () {
+      list.textContent = '';
+      list.appendChild(el('li', { class: 'board__loading' }, [el('span', { class: 'spinner spinner--small', 'aria-hidden': 'true' }), 'Loading leaderboard…']));
+      Api.leaderboard().then(function (r) { return Array.isArray(r.board) ? r.board : []; }, function () { return []; }).then(function (b) {
+        if (token !== renderToken) return;
+        if (!b.length) b = [{ name: Passport.name() || 'You', stamps: Passport.points(), rank: rankOf(Passport.points()) }];
+        list.textContent = '';
+        var me = (Passport.name() || '').toLowerCase();
+        b.forEach(function (x, i) {
+          list.appendChild(el('li', { class: 'board__row reveal' + (i < 3 ? ' board__row--top' + (i + 1) : '') + (me && String(x.name).toLowerCase() === me ? ' is-me' : ''), style: '--d:' + Math.min(i, 12) * 50 + 'ms' }, [
+            el('span', { class: 'board__pos', text: '#' + (i + 1) }),
+            el('span', { class: 'board__name', text: String(x.name || 'Explorer') }),
+            el('span', { class: 'board__pts', text: String(x.stamps || 0) + ' pts' }),
+            el('span', { class: 'board__rank', text: String(x.rank || rankOf(+x.stamps || 0)) })
+          ]));
+        });
+        Motion.reveal(list);
+      });
+    };
+    refresh.addEventListener('click', load);
+    setView(el('section', { class: 'section section--narrow' }, [
+      pageHead('trophy', '#FDB603', 'Ranks and Leaderboard', '3 pts = D • 6 = C • 10 = B • 15 = A • 20 = S • 30 = SS • 45 = SSS'),
+      passportCard(true),
+      el('div', { class: 'row-between' }, [el('h2', { class: 'section__title', text: 'Top explorers' }), refresh]),
+      list
+    ]));
+    load();
+    focusHeading();
+  }
+
+  // ---------------------------------------------------------------------------
+  // AI Photobooth: selfie → (actual or AI outfit) → "CONQUERED" postcard canvas
+  // ---------------------------------------------------------------------------
+
+  var logoImg = null;
+  function getLogo() {
+    if (logoImg) return Promise.resolve(logoImg);
+    return new Promise(function (resolve) {
+      var i = new Image();
+      i.onload = function () { logoImg = i; resolve(i); };
+      i.onerror = function () { resolve(null); };
+      i.src = LOGO_SRC;
+    });
+  }
+
+  function openPhotobooth(id) {
+    var place = findPlace(id);
+    if (!place) return;
+    var mode = 'actual', photo = null;
+    var file = el('input', { id: 'pb-file', type: 'file', accept: 'image/*', capture: 'user' });
+    var preview = el('img', { class: 'proof-preview', alt: 'Your selfie', hidden: true });
+    file.addEventListener('change', function () {
+      var f = file.files && file.files[0];
+      if (!f) return;
+      shrinkImage(f, 1600, 0.9).then(function (r) { if (!r) return; photo = r; preview.src = r.dataUrl; preview.hidden = false; });
+    });
+    var outfit = el('textarea', { id: 'pb-outfit', rows: '2', maxlength: '200', placeholder: 'e.g. Dinagyang warrior, Filipiniana, elegant beach outfit…' });
+    var outfitBox = el('div', { class: 'stack', hidden: true }, [
+      formField('pb-outfit', 'Describe the outfit', outfit, 'Isidro moderates: beach = swimwear OK, church = modest only.'),
+      el('div', { class: 'chips chips--wrap' }, (SUGGESTIONS[place.cat] || SUGGESTIONS._default).map(function (s) {
+        return el('button', { type: 'button', class: 'chip-btn chip-btn--soft', onclick: function () { outfit.value = s; } }, s);
+      }))
+    ]);
+    var radio = function (value, label, sub) {
+      var input = el('input', { type: 'radio', name: 'pb-mode', value: value, checked: value === 'actual' });
+      input.addEventListener('change', function () { mode = value; outfitBox.hidden = value !== 'ai'; });
+      return el('label', { class: 'radio-card' }, [input, el('span', null, [el('b', { text: label }), el('small', { text: sub })])]);
+    };
+    var status = el('p', { class: 'muted small center', role: 'status' });
+    var canvas = el('canvas', { class: 'postcard-canvas', width: 1080, height: 1350, 'aria-label': 'Your SMILE postcard' });
+    var capOut = outputBox();
+    var resultBox = el('div', { class: 'stack', hidden: true }, [
+      canvas,
+      el('div', { class: 'btn-row' }, [
+        button('Save to Phone', 'save', { variant: 'green', onclick: function () { savePostcard(canvas, place); } }),
+        button('Share', 'share', { variant: 'yellow', onclick: function () { sharePostcard(canvas, place); } })
+      ]),
+      button('Generate Caption', 'caption', { block: true, variant: 'blue', onclick: function (e) {
+        var b = e.currentTarget;
+        setBusy(b, true, 'Writing…');
+        capOut.loading('Writing your caption…');
+        Api.caption(place.name, 'proud, conquered challenge').then(function (r) { capOut.show(r.caption || ''); }, function (err) { capOut.show(friendlyError(err), 'error'); }).then(function () { setBusy(b, false); });
+      } }),
+      capOut
+    ]);
+    var ok = button('OK, create postcard', 'sparkle', { block: true, variant: 'glow' });
+    ok.addEventListener('click', function () {
+      if (!photo) { toast('Take or choose a selfie first.'); file.focus(); return; }
+      if (mode === 'actual') { drawPostcard(canvas, photo.dataUrl, place).then(function () { resultBox.hidden = false; resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }); return; }
+      var o = outfit.value.trim();
+      if (!o) { toast('Choose or type an outfit.'); outfit.focus(); return; }
+      setBusy(ok, true, 'Creating…');
+      status.textContent = 'Isidro is checking the outfit, then the AI is editing your photo. This takes 15 to 25 seconds…';
+      Api.photobooth({ user: Passport.name() || 'Guest', placeId: place.id, outfit: o, image: photo.dataUrl, mime: photo.mime }).then(function (r) {
+        status.textContent = '';
+        return drawPostcard(canvas, r.image, r.place || place).then(function () { resultBox.hidden = false; resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
+      }, function (err) { status.textContent = friendlyError(err); }).then(function () { setBusy(ok, false); });
+    });
+
+    Modal.open({
+      title: 'AI Photobooth',
+      name: 'photobooth',
+      wide: true,
+      body: el('div', { class: 'stack' }, [
+        el('p', { class: 'pb-place' }, [icon('pin', 'icon--inline'), place.name + ' • ' + (place.barangay || 'Iloilo')]),
+        formField('pb-file', '1. Your selfie', file),
+        preview,
+        el('fieldset', { class: 'stack' }, [el('legend', { class: 'field__label', text: '2. Outfit' }),
+          radio('actual', 'Actual outfit', 'Use my photo as it is'),
+          radio('ai', 'AI-generated outfit', 'Dress me up for this place')]),
+        outfitBox,
+        ok, status, resultBox
+      ])
+    });
+  }
+
+  function drawPostcard(canvas, src, place) {
+    return Promise.all([getLogo(), new Promise(function (resolve, reject) {
+      var img = new Image();
+      if (/^https?:/.test(src)) img.crossOrigin = 'anonymous';
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { reject(new Error('image')); };
+      img.src = src;
+    })]).then(function (res) {
+      var logo = res[0], img = res[1];
+      var x = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+      var s = Math.max(W / img.width, H / img.height), w = img.width * s, h = img.height * s;
+      x.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+      var g = x.createLinearGradient(0, H - 420, 0, H);
+      g.addColorStop(0, 'rgba(0,40,120,0)'); g.addColorStop(1, 'rgba(0,40,120,.94)');
+      x.fillStyle = g; x.fillRect(0, H - 420, W, 420);
+      // rainbow ribbon, like the poster
+      ['#005BC1', '#FDB603', '#02A04F', '#FF6A03', '#ED0460'].forEach(function (c, i) { x.fillStyle = c; x.fillRect(i * W / 5, H - 14, W / 5, 14); });
+      if (logo) {
+        var lw = 230, lh = lw * logo.height / logo.width;
+        x.save(); x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 22; x.drawImage(logo, 36, 34, lw, lh); x.restore();
+      }
+      var f = '"Baloo 2", "Nunito", system-ui, sans-serif';
+      x.fillStyle = '#FDB603'; x.font = '800 84px ' + f; x.fillText('SMILE ILOILO', 44, H - 220);
+      x.fillStyle = '#fff'; x.font = '800 54px ' + f; x.fillText(String(place.name || 'Iloilo').toUpperCase().slice(0, 28), 44, H - 150);
+      x.font = '600 36px "Nunito", system-ui, sans-serif'; x.fillText((place.barangay || 'Iloilo') + ', Iloilo, Philippines', 44, H - 95);
+      x.font = '700 28px "Nunito", system-ui, sans-serif'; x.fillText(new Date().toLocaleDateString('en-PH') + ' • #SMILEIloilo', 44, H - 46);
+      x.save(); x.translate(W - 240, 230); x.rotate(-0.22);
+      x.strokeStyle = '#ED0460'; x.lineWidth = 10; x.strokeRect(-190, -70, 380, 140);
+      x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(-190, -70, 380, 140);
+      x.fillStyle = '#ED0460'; x.font = '800 60px ' + f; x.textAlign = 'center'; x.fillText('CONQUERED', 0, 22);
+      x.restore();
+    }, function () { toast('That photo could not be opened. Try another one.'); throw new Error('draw'); });
+  }
+
+  function savePostcard(canvas, place) {
+    try {
+      var a = document.createElement('a');
+      a.download = 'SMILE-' + place.id + '-CONQUERED.png';
+      a.href = canvas.toDataURL('image/png');
+      document.body.appendChild(a); a.click(); a.remove();
+      toast('Saved!');
+    } catch (e) { toast('Could not save this image. Long-press it to save instead.'); }
+  }
+
+  function sharePostcard(canvas, place) {
+    try {
+      canvas.toBlob(function (b) {
+        if (!b) return savePostcard(canvas, place);
+        var f = new File([b], 'SMILE-' + place.id + '.png', { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [f] })) {
+          navigator.share({ files: [f], text: 'I conquered ' + place.name + '! #SMILEIloilo' }).catch(function () { /* cancelled */ });
+        } else savePostcard(canvas, place);
+      }, 'image/png');
+    } catch (e) { savePostcard(canvas, place); }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Router
+  // ---------------------------------------------------------------------------
+
+  function parseHash() {
+    var raw = location.hash.replace(/^#\/?/, '');
+    var qi = raw.indexOf('?');
+    var path = qi >= 0 ? raw.slice(0, qi) : raw;
+    var query = {};
+    if (qi >= 0) new URLSearchParams(raw.slice(qi + 1)).forEach(function (v, k) { query[k] = v; });
+    var parts = path.split('/').filter(Boolean).map(function (p) { try { return decodeURIComponent(p); } catch (e) { return p; } });
+    return { parts: parts, query: query };
+  }
+
+  // Old one-page anchors (#isidro, #checkin, #board…) → new pages.
+  var LEGACY = { home: '', passport: 'ranks', isidro: 'isidro', places: 'explore', myChallenges: 'explore', checkin: 'checkin', mailSec: 'checkin', adoptSec: 'postcards', captionSec: 'tools', merchantSec: 'tools', lguSec: 'tools', board: 'ranks' };
+
+  var ROUTES = {
+    '': renderHome,
+    explore: renderExplore,
+    isidro: renderIsidro,
+    checkin: renderCheckin,
+    postcards: renderPostcards,
+    tools: renderTools,
+    ranks: renderRanks
+  };
+
+  function route() {
+    var legacy = location.hash.replace(/^#/, '');
+    if (legacy && legacy.charAt(0) !== '/' && Object.prototype.hasOwnProperty.call(LEGACY, legacy)) {
+      location.replace('#/' + LEGACY[legacy]);
+      return;
+    }
+    var r = parseHash();
+    var section = r.parts[0] || '';
+    var token = ++renderToken;
+    if (Modal.current) Modal.close(true);
+    window.scrollTo(0, 0);
+    renderNav();
+    document.body.setAttribute('data-page', section || 'home');
+    var fn = ROUTES[section];
+    if (!fn) {
+      setView(el('div', { class: 'state' }, [
+        el('div', { class: 'state__icon' }, icon('compass')),
+        el('h1', { class: 'state__title', text: 'Page not found' }),
+        el('p', { text: 'That page is not on our map.' }),
+        button('Go home', 'home', { href: '#/' })
+      ]));
+      return;
+    }
+    fn(token, r.query);
+  }
+
+  function hideSplash() {
+    var s = $('#splash');
+    if (!s) return;
+    s.classList.add('is-gone');
+    setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 500);
+  }
+
+  function init() {
+    var d = $('#dateline');
+    if (d) d.textContent = 'Iloilo, Philippines · ' + manilaDate();
+    if (State.demo) $('#demo-strip').hidden = false;
+    decorateStaticIcons();
+    Passport.paint();
+    Install.init();
+
+    // Postcard QR codes open ?place=…&code=… → send them to the check-in page.
+    var u = new URLSearchParams(location.search);
+    if (u.get('code') || u.get('place')) {
+      var q = new URLSearchParams();
+      if (u.get('place')) q.set('place', u.get('place'));
+      if (u.get('code')) q.set('code', u.get('code'));
+      history.replaceState(null, '', location.pathname + '#/checkin?' + q.toString());
+    }
+
+    window.addEventListener('hashchange', route);
+    route();
+    setTimeout(hideSplash, prefersReducedMotion() ? 0 : 1300);
+    loadPlaces();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  // Exposed for automated tests only (no secrets here).
+  window.SmileApp = { State: State, Passport: Passport, Install: Install, Modal: Modal, route: route, rankOf: rankOf };
+})();

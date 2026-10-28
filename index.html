@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>SMILE Iloilo</title>
+  <meta name="description" content="SMILE: See More of Iloilo's Landmarks and Events. Ask Isidro, accept challenges, collect stamps and rank from E to SSS.">
+  <meta name="theme-color" content="#0057D9">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SMILE">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta property="og:title" content="SMILE Iloilo">
+  <meta property="og:description" content="See More of Iloilo's Landmarks and Events">
+  <meta property="og:image" content="assets/poster.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preload" as="image" href="assets/poster.webp" type="image/webp">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#view">Skip to content</a>
+
+  <div id="splash" class="splash" aria-hidden="true">
+    <img class="splash__logo" src="assets/logo-512.webp" alt="" width="512" height="512">
+  </div>
+
+  <div id="demo-strip" class="demo-strip" hidden>Demo mode: sample data only. Paste your Apps Script URL in <code>config.js</code>.</div>
+
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="#/" aria-label="SMILE Iloilo, go to the home page">
+        <img class="brand__logo" src="assets/logo-160.webp" alt="" width="160" height="160">
+        <span class="brand__tag">See More of Iloilo's<br>Landmarks and Events</span>
+      </a>
+      <nav class="mainnav" id="mainnav" aria-label="Main"></nav>
+      <a class="passport-pill" href="#/ranks" id="passport-pill" aria-label="My passport">
+        <span class="passport-pill__rank" id="pill-rank">E</span>
+        <span class="passport-pill__pts"><b id="pill-pts">0</b> pts</span>
+      </a>
+    </div>
+  </header>
+
+  <main id="view" class="view" tabindex="-1">
+    <div class="state state--loading" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Opening Iloilo…</p>
+    </div>
+  </main>
+
+  <noscript>
+    <p class="noscript">SMILE Iloilo needs JavaScript. Please turn it on in your browser settings.</p>
+  </noscript>
+
+  <footer class="site-footer">
+    <img src="assets/logo-512.webp" alt="SMILE" width="120" height="120" loading="lazy">
+    <p id="dateline"></p>
+    <p>Places, festivals and food of Iloilo. Always follow site rules and dress codes when you visit.</p>
+    <p>We keep only your display name and points on this device and on the SMILE server. No emails or phone numbers.</p>
+    <p class="site-footer__links">
+      <a href="#" id="install-link" data-icon="install">Install the app</a>
+      <a href="download.html" data-icon="globe">Download page</a>
+    </p>
+  </footer>
+
+  <nav class="tabbar" id="tabbar" aria-label="Quick"></nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="config.js"></script>
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
