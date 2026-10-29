@@ -148,7 +148,7 @@
     { id: 'pancit-molo', label: 'Pancit Molo', icon: 'food', x: 87, y: 75 }
   ];
 
-  var ROTATING = ['landmarks.', 'beaches.', 'festivals.', 'food trips.', 'islands.', 'heritage streets.'];
+  var ROTATING = ['landmarks.', 'beaches.', 'festivals.', 'food trips.', 'culture.', 'heritage streets.'];
 
   var State = {
     places: FALLBACK.slice(),
@@ -955,8 +955,8 @@
           el('div', { class: 'hero__copy' }, [
             el('img', { class: 'hero__logo anim-rise', src: LOGO_SRC, alt: '', width: 512, height: 512 }),
             el('h1', { id: 'hero-h', class: 'hero__title anim-rise', style: '--d:120ms' }, [
-              el('span', { class: 'sr-only', text: 'SMILE: See More of Culture’s Landmarks and Events.' }),
-              el('span', { 'aria-hidden': 'true' }, ['See more of Culture’s ', el('br'), rotator, el('span', { class: 'caret' })])
+              el('span', { class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events.' }),
+              el('span', { 'aria-hidden': 'true' }, ['See more of the Islands’ ', el('br'), rotator, el('span', { class: 'caret' })])
             ]),
             el('p', { class: 'hero__lead anim-rise', style: '--d:220ms', text: 'Boracay, Iloilo, Guimaras, Bacolod, Dumaguete, Siquijor and more. Pick a province, ask Isidro, accept a challenge, scan your postcard, collect stamps and rank up from E to SSS.' }),
             el('div', { class: 'hero__cta anim-rise', style: '--d:320ms' }, [
