@@ -653,3 +653,37 @@ body.has-cam { overflow: hidden; }
 .isidro-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
 .chat__avatar { flex-basis: 38px; height: 38px; overflow: hidden; background: #fff; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(20, 33, 61, .2); }
 .chat__avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+
+/* ---------- home: app-style landing (v14) ---------- */
+.home-hero { position: relative; overflow: hidden; background: #6fb6ea; }
+.home-hero::before { content: ''; position: absolute; inset: -40px; background: url('assets/home-hero.jpg') center / cover; filter: blur(30px) saturate(1.3); transform: scale(1.1); }
+.home-hero__art { position: relative; max-width: 760px; margin: 0 auto; }
+.home-hero__img { display: block; width: 100%; height: auto; aspect-ratio: 714 / 697; }
+.home-hero__isidro { position: absolute; left: 20%; top: 60%; width: 80%; height: 40%; border-radius: 40px 0 0 0; }
+.home-hero__isidro:focus-visible { outline: 4px solid var(--yellow); outline-offset: -4px; }
+.home-hero__mic { position: absolute; left: 47.5%; top: 70%; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(31, 95, 224, .0); animation: micPulse 2.4s ease-out infinite; }
+.home-hero__mic .icon { opacity: 0; }
+@keyframes micPulse { 0% { box-shadow: 0 0 0 0 rgba(31, 95, 224, .45); } 70% { box-shadow: 0 0 0 18px rgba(31, 95, 224, 0); } 100% { box-shadow: 0 0 0 0 rgba(31, 95, 224, 0); } }
+
+.home-sheet { position: relative; z-index: 2; max-width: 760px; margin: -12px auto 0; background: #fff; border-radius: 26px 26px 0 0; padding: 16px 12px 8px; box-shadow: 0 -8px 24px rgba(20, 33, 61, .10); }
+.home-tiles { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.home-tile__link { height: 100%; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 3px 10px; text-decoration: none; color: var(--ink); text-align: center; border-radius: 18px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 7%, #fff), #fff 70%); box-shadow: 0 4px 14px rgba(20, 33, 61, .08); border: 1px solid rgba(20, 33, 61, .05); transition: transform .2s, box-shadow .2s; }
+.home-tile__link:hover, .home-tile__link:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(20, 33, 61, .14); }
+.home-tile__icon .icon { width: 42px; height: 42px; color: var(--c); filter: drop-shadow(0 3px 4px color-mix(in srgb, var(--c) 30%, transparent)); }
+.home-tile__label { font-size: 12.5px; font-weight: 800; line-height: 1.2; }
+
+.home-dest { padding: 22px 2px 6px; }
+.home-dest__title { font-size: 22px; margin: 0; color: var(--navy); }
+.home-dest__all { color: var(--blue-2); font-weight: 800; text-decoration: none; }
+.dest-row { list-style: none; margin: 12px 0 0; padding: 0 0 6px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.dest { scroll-snap-align: start; }
+.dest__btn { all: unset; cursor: pointer; display: grid; gap: 8px; width: 100%; text-align: center; }
+.dest__img { width: 100%; aspect-ratio: 150 / 164; object-fit: cover; border-radius: 14px; box-shadow: 0 6px 14px rgba(20, 33, 61, .15); transition: transform .25s; }
+.dest__btn:hover .dest__img, .dest__btn:focus-visible .dest__img { transform: scale(1.04); }
+.dest__btn:focus-visible { outline: 3px solid var(--blue-2); outline-offset: 3px; border-radius: 14px; }
+.dest__name { font-weight: 800; font-size: 13px; line-height: 1.2; color: var(--ink); }
+
+@media (max-width: 899px) { body[data-page="home"] .topbar { display: none; } }
+@media (max-width: 380px) { .home-tile__label { font-size: 12px; } .home-tile__icon .icon { width: 38px; height: 38px; } .home-sheet { padding-left: 10px; padding-right: 10px; } .home-tiles { gap: 7px; } }
+@media (min-width: 760px) { .home-hero__art, .home-sheet { max-width: 640px; } .home-tile__label { font-size: 14px; } .home-hero { padding-top: 24px; } .home-hero__art { border-radius: 28px 28px 0 0; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, .3); } }

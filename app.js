@@ -233,6 +233,12 @@
 
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var ICONS = {
+    calendar: 'M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2ZM5 9v10h14V9H5Zm2 2h2v2H7v-2Zm4 0h2v2h-2v-2Zm4 0h2v2h-2v-2Zm-8 4h2v2H7v-2Zm4 0h2v2h-2v-2Zm4 0h2v2h-2v-2Z',
+    cutlery: 'M12 1a11 11 0 1 1 0 22 11 11 0 0 1 0-22ZM7.5 5v5.2c0 .9.6 1.6 1.4 1.8V19h1.6v-7c.8-.2 1.4-.9 1.4-1.8V5h-1.2v4.5h-.8V5h-1.2v4.5h-.8V5H7.5Zm7.7 0c-1.3.4-2.2 2.2-2.2 4.6V14h1.6v5h1.6V5h-1Z',
+    bag: 'M5 2h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Zm4.2 7V8a2.8 2.8 0 0 1 5.6 0v1h-1.4V8a1.4 1.4 0 0 0-2.8 0v1H9.2ZM6.5 10l-.8 8.5h12.6l-.8-8.5H6.5Z',
+    rstamp: 'M10 2h4a2 2 0 0 1 2 2c0 2.2-1.6 3.6-1.6 6H17a3 3 0 0 1 3 3v2H4v-2a3 3 0 0 1 3-3h2.6C9.6 7.6 8 6.2 8 4a2 2 0 0 1 2-2ZM4 17h16v4H4v-4Z',
+    people: 'M12 3.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Zm-7 2.5a2.6 2.6 0 1 1 0 5.2A2.6 2.6 0 0 1 5 6Zm14 0a2.6 2.6 0 1 1 0 5.2A2.6 2.6 0 0 1 19 6ZM12 12c3.6 0 6.2 2.1 6.2 4.8V21H5.8v-4.2C5.8 14.1 8.4 12 12 12Zm-7 .4c.6 0 1.1.1 1.6.2a5.5 5.5 0 0 0-2.3 4.2V21H0v-4.4c0-2.4 2.2-4.2 5-4.2Zm14 0c2.8 0 5 1.8 5 4.2V21h-4.3v-4.2a5.5 5.5 0 0 0-2.3-4.2c.5-.1 1-.2 1.6-.2Z',
+    badge: 'M12 2l2.4 1.6 2.9-.1.9 2.7 2.3 1.8-.9 2.8.9 2.8-2.3 1.8-.9 2.7-2.9-.1L12 20l-2.4-1.6-2.9.1-.9-2.7-2.3-1.8.9-2.8-.9-2.8 2.3-1.8.9-2.7 2.9.1L12 2Zm0 4.5 1.6 3.2 3.5.5-2.6 2.5.6 3.5L12 14.5l-3.1 1.7.6-3.5-2.6-2.5 3.5-.5L12 6.5Z',
     pin: 'M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z',
     church: 'M11 2h2v3h3v2h-3v2h-2V7H8V5h3V2ZM12 10l7 5v7h-5v-5h-4v5H5v-7l7-5Z',
     heritage: 'M12 2 2 7v2h20V7L12 2ZM4 10v7H2v3h20v-3h-2v-7h-3v7h-3v-7h-4v7H7v-7H4Z',
@@ -735,13 +741,22 @@
     { key: 'shop', href: '#/shop', text: 'Shop', icon: 'shop' }
   ];
 
+  // Phone tab bar, as in the SMILE app design.
+  var TABS = [
+    { key: '', href: '#/', text: 'Home', icon: 'home' },
+    { key: 'explore', href: '#/explore', text: 'Map', icon: 'map' },
+    { key: 'checkin', href: '#/checkin', text: 'Camera', icon: 'camera' },
+    { key: 'ranks', href: '#/ranks', text: 'Badges', icon: 'badge' },
+    { key: 'me', href: '#/me', text: 'Profile', icon: 'user' }
+  ];
+
   function renderNav() {
     var section = parseHash().parts[0] || '';
     ['#mainnav', '#tabbar'].forEach(function (sel) {
       var nav = $(sel);
       if (!nav) return;
       nav.textContent = '';
-      NAV.forEach(function (n) {
+      (sel === '#tabbar' ? TABS : NAV).forEach(function (n) {
         nav.appendChild(el('a', { href: n.href, class: n.main ? 'is-main' : null, 'aria-current': section === n.key ? 'page' : null }, [
           el('span', { class: 'nav-icon' }, icon(n.icon)), el('span', { class: 'nav-text', text: n.text })
         ]));
@@ -920,53 +935,64 @@
   }
 
   function renderHome(token) {
-    var rotator = el('span', { class: 'rotator', 'aria-hidden': 'true' });
-    var feature = function (ic, color, title, text, href, i) {
-      return el('li', { class: 'feature reveal', style: '--d:' + (i * 80) + 'ms' }, [
-        el('a', { href: href, class: 'feature__link' }, [
-          el('span', { class: 'feature__icon', style: 'background:' + color }, icon(ic)),
-          el('h3', { text: title }),
-          el('p', { text: text })
+
+    var pv = provinceInfo(currentProvince());
+    var tile = function (ic, color, label, sub, href, i) {
+      return el('li', { class: 'home-tile reveal', style: '--c:' + color + ';--d:' + (i * 50) + 'ms' }, [
+        el('a', { href: href, class: 'home-tile__link' }, [
+          el('span', { class: 'home-tile__icon' }, icon(ic)),
+          el('span', { class: 'home-tile__label' }, [label, el('br'), sub])
         ])
       ]);
     };
-    var hotspots = HOTSPOTS.map(function (h, i) {
-      return el('button', {
-        type: 'button', class: 'hotspot', style: 'left:' + h.x + '%;top:' + h.y + '%;--d:' + (i * 0.25) + 's',
-        'aria-label': h.label + ': open place', onclick: function () { openPlace(h.id); }
-      }, [icon(h.icon), el('span', { class: 'hotspot__label', text: h.label })]);
-    });
+    var dest = function (id, img, label, i) {
+      return el('li', { class: 'dest reveal', style: '--d:' + (i * 70) + 'ms' }, [
+        el('button', { type: 'button', class: 'dest__btn', onclick: function () { openPlace(id); } }, [
+          el('img', { class: 'dest__img', src: 'assets/dest-' + img + '.webp', alt: '', width: 150, height: 164, loading: 'lazy' }),
+          el('span', { class: 'dest__name', text: label })
+        ])
+      ]);
+    };
 
     setView([
-      el('section', { class: 'hero', 'aria-labelledby': 'hero-h' }, [
-        el('div', { class: 'hero__bg', 'aria-hidden': 'true' }),
-        el('div', { class: 'hero__grid' }, [
-          el('div', { class: 'hero__art anim-pop', style: '--d:120ms' }, [
-            el('div', { class: 'poster-frame' }, [
-              el('picture', null, [
-                el('source', { srcset: POSTER_SRC, type: 'image/webp' }),
-                el('img', { class: 'poster-frame__img', src: 'assets/poster.jpg', alt: 'SMILE poster, See More of Islands’ Landmarks and Events, Western Visayas and Negros Island Region: Dinagyang Festival, Iloilo Provincial Capitol, Miag-ao Church, Carles Islands, Mt. Kanlaon, Jaro Cathedral, Silay heritage houses, MassKara Festival, Batchoy, Chicken Inasal, Capiz seafood and Pancit Molo.', width: 1024, height: 1536 })
-              ]),
-              el('span', { class: 'poster-frame__shine', 'aria-hidden': 'true' }),
-              hotspots
-            ]),
-            el('p', { class: 'hero__hint' }, [icon('pin', 'icon--inline'), 'Tap the glowing pins to open a place'])
+      el('section', { class: 'home-hero', 'aria-labelledby': 'hero-h' }, [
+        el('h1', { id: 'hero-h', class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events. Western Visayas and the Negros Island Region.' }),
+        el('div', { class: 'home-hero__art anim-pop' }, [
+          el('picture', null, [
+            el('source', { srcset: 'assets/home-hero.webp', type: 'image/webp' }),
+            el('img', { class: 'home-hero__img', src: 'assets/home-hero.jpg', alt: 'SMILE, See More of Islands’ Landmarks and Events, Western Visayas and Negros Island Region. Meet Isidro, your AI tour guide: talk to me and plan your day in English, Tagalog or Hiligaynon.', width: 714, height: 697 })
           ]),
-          el('div', { class: 'hero__copy' }, [
-            el('img', { class: 'hero__logo anim-rise', src: LOGO_SRC, alt: '', width: 512, height: 512 }),
-            el('h1', { id: 'hero-h', class: 'hero__title anim-rise', style: '--d:120ms' }, [
-              el('span', { class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events.' }),
-              el('span', { 'aria-hidden': 'true' }, ['See more of the Islands’ ', el('br'), rotator, el('span', { class: 'caret' })])
-            ]),
-            el('p', { class: 'hero__lead anim-rise', style: '--d:220ms', text: 'Boracay, Iloilo, Guimaras, Bacolod, Dumaguete, Siquijor and more. Pick a province, ask Isidro, accept a challenge, scan your postcard, collect stamps and rank up from E to SSS.' }),
-            el('div', { class: 'hero__cta anim-rise', style: '--d:320ms' }, [
-              button('Pick your province', 'pin', { variant: 'glow', onclick: function () { var t = $('#home-provinces'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }),
-              button('Ask Isidro', 'compass', { href: '#/isidro', variant: 'yellow' }),
-              button('Check-In', 'postcard', { href: '#/checkin', variant: 'green' })
-            ])
+          el('a', { class: 'home-hero__isidro', href: '#/isidro', 'aria-label': 'Talk to Isidro, your AI tour guide' }, [
+            el('span', { class: 'home-hero__mic', 'aria-hidden': 'true' }, icon('mic'))
+          ])
+        ])
+      ]),
+
+      el('div', { class: 'home-sheet' }, [
+        el('nav', { 'aria-label': 'What do you want to do?' }, [
+          el('ul', { class: 'home-tiles' }, [
+            tile('pin', '#02A04F', 'Explore', 'Landmarks', '#/explore?cat=landmark', 0),
+            tile('calendar', '#E2141E', 'Events &', 'Festivals', '#/events', 1),
+            tile('cutlery', '#FF6A03', 'Eats &', 'Food Trips', '#/explore?cat=food', 2),
+            tile('bag', '#1F5FE0', 'Shops &', 'Pasalubong', '#/shop', 3),
+            tile('camera', '#7B2CBF', 'Visit & Earn', '(Camera)', '#/checkin', 4),
+            tile('rstamp', '#E2141E', 'Postcards', '& Stamps', '#/postcards', 5),
+            tile('trophy', '#8A2BE2', 'My Badges', 'E to SSS', '#/ranks', 6),
+            tile('people', '#ED0460', 'Leaderboard', pv ? pv.name : 'Western Visayas', '#/ranks', 7)
           ])
         ]),
-        el('a', { class: 'scroll-down', href: '#/', 'aria-label': 'Scroll to the provinces', onclick: function (e) { e.preventDefault(); var t = $('#home-provinces'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }, icon('chevronDown'))
+        el('section', { class: 'home-dest', 'aria-labelledby': 'dest-h' }, [
+          el('div', { class: 'row-between' }, [
+            el('h2', { id: 'dest-h', class: 'home-dest__title', text: 'Featured Destinations' }),
+            el('a', { class: 'home-dest__all', href: '#/explore', text: 'See All' })
+          ]),
+          el('ul', { class: 'dest-row' }, [
+            dest('miagao-church', 'miagao', 'Miag-ao Church', 0),
+            dest('gigantes', 'carles', 'Carles Islands', 1),
+            dest('balay-negrense', 'silay', 'Silay Heritage Houses', 2),
+            dest('mt-kanlaon', 'kanlaon', 'Mt. Kanlaon', 3)
+          ])
+        ])
       ]),
 
       el('section', { class: 'section', id: 'home-provinces', 'aria-labelledby': 'prov-h' }, [
@@ -993,20 +1019,6 @@
       ]),
 
       el('div', { class: 'section stack-lg', id: 'home-passport' }, [passportCard(false), stampAlbum()]),
-
-      el('section', { class: 'section', 'aria-labelledby': 'what-h' }, [
-        el('h2', { id: 'what-h', class: 'section__title reveal', text: 'Everything you can do with SMILE' }),
-        el('ul', { class: 'feature-grid' }, [
-          feature('guide', '#FF6B00', 'Ask Isidro', 'Your AI guide plans your day in any province, in Hiligaynon, English or Tagalog.', '#/isidro', 0),
-          feature('trophy', '#ED0460', 'Accept challenges', 'Pick a landmark, festival or food stop, and get directions in Google Maps.', '#/explore', 1),
-          feature('qr', '#00A651', 'One-use QR check-in', 'Scan your SMILE postcard at the place to collect a stamp and points.', '#/checkin', 2),
-          feature('camera', '#7B2CBF', 'AI Photobooth', 'Turn a selfie into a "CONQUERED" postcard, with your outfit or an AI one.', '#/explore', 3),
-          feature('mailbox', '#0057D9', 'Mail across PH', 'Paste a PhilPost stamp and mail it. It travels to a surprise destination.', '#/postcards', 4),
-          feature('star', '#FDB603', 'Rank E to SSS', 'Every stamp counts. Climb the leaderboard with fellow explorers.', '#/ranks', 5),
-          feature('mic', '#ED0460', 'Travel journal & SMILE Hub', 'Say your story out loud, add a selfie and a clip, and share it with your rank on the SMILE Hub.', '#/hub', 7),
-          feature('shop', '#02A04F', 'Pasalubong & souvenirs', 'Biscocho, butterscotch, shirts and crafts from local stores and nano entrepreneurs.', '#/shop', 6)
-        ])
-      ]),
 
       el('section', { class: 'section section--tint', 'aria-labelledby': 'how-h' }, [
         el('p', { class: 'eyebrow reveal', text: 'The post office is back, and it is an adventure' }),
@@ -1039,10 +1051,14 @@
           el('span', { class: 'promo__icon' }, icon('shop')),
           el('h3', { text: 'For merchants and LGUs' }),
           el('p', { text: 'Write product listings, captions and visitor insights.' })
+        ]),
+        el('a', { class: 'card promo promo--pink reveal', style: '--d:200ms', href: '#/hub' }, [
+          el('span', { class: 'promo__icon' }, icon('mic')),
+          el('h3', { text: 'Travel journal & SMILE Hub' }),
+          el('p', { text: 'Say your story out loud and share it with your rank.' })
         ])
       ])
     ]);
-    startTypewriter(rotator, token);
     focusHeading();
   }
 
