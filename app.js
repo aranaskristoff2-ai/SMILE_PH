@@ -77,7 +77,9 @@
     {"id": "salagdoong-beach", "province": "siquijor", "name": "Salagdoong Beach", "cat": "stay", "barangay": "Maria", "desc": "White-sand beach with cliff-jumping platforms.", "points": 15, "lat": 9.204, "lng": 123.67, "maps_url": "https://www.google.com/maps/search/?api=1&query=Salagdoong+Beach+Siquijor"},
     {"id": "century-old-balete", "province": "siquijor", "name": "Century-Old Balete Tree", "cat": "nature", "barangay": "Lena, San Juan", "desc": "Giant balete tree with a fish-spa spring at its roots.", "points": 10, "lat": 9.164, "lng": 123.522, "maps_url": "https://www.google.com/maps/search/?api=1&query=Century+Old+Balete+Tree+Siquijor"},
     {"id": "healing-festival", "province": "siquijor", "name": "Healing Festival", "cat": "festival", "barangay": "San Antonio", "desc": "Holy Week gathering of Siquijor's folk healers and their herbal oils.", "points": 25, "lat": 9.17, "lng": 123.58, "maps_url": "https://www.google.com/maps/search/?api=1&query=Siquijor+Healing+Festival+San+Antonio"},
-    {"id": "mt-kanlaon", "province": "negros-oriental", "name": "Mt. Kanlaon", "cat": "nature", "barangay": "Canlaon City", "desc": "Negros' highest peak and an active volcano. Enjoy the view from Canlaon City; climbing is closed during volcanic activity, so check PHIVOLCS advisories first.", "points": 10, "lat": 10.412, "lng": 123.132, "maps_url": "https://www.google.com/maps/search/?api=1&query=Canlaon+City+Negros+Oriental"}
+    {"id": "mt-kanlaon", "province": "negros-oriental", "name": "Mt. Kanlaon", "cat": "nature", "barangay": "Canlaon City", "desc": "Negros' highest peak and an active volcano. Enjoy the view from Canlaon City; climbing is closed during volcanic activity, so check PHIVOLCS advisories first.", "points": 10, "lat": 10.412, "lng": 123.132, "maps_url": "https://www.google.com/maps/search/?api=1&query=Canlaon+City+Negros+Oriental"},
+    {"id": "paraw-regatta", "province": "iloilo", "name": "Paraw Regatta", "cat": "festival", "barangay": "Villa Arevalo shoreline, Iloilo City", "desc": "Asia's oldest traditional sailing event: colorful paraw sailboats race across the Iloilo Strait between Iloilo and Guimaras.", "points": 25, "lat": 10.6877, "lng": 122.5135, "maps_url": "https://www.google.com/maps/search/?api=1&query=Villa+Arevalo+beach+Iloilo+City"},
+    {"id": "panaad", "province": "negros-occidental", "name": "Panaad sa Negros Festival", "cat": "festival", "barangay": "Panaad Park, Bacolod City", "desc": "Negros Occidental's festival of festivals: every town brings its dances, food and products to Panaad Park.", "points": 25, "lat": 10.6265, "lng": 122.9555, "maps_url": "https://www.google.com/maps/search/?api=1&query=Panaad+Park+and+Stadium+Bacolod"}
   ];
 
   var CATS = {
@@ -244,6 +246,7 @@
     globe: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-1.6 2.2A8 8 0 0 0 4.1 11H8c.1-2.6.9-5 2.4-6.8ZM12 4.3C10.9 5.8 10.1 8.2 10 11h4c-.1-2.8-.9-5.2-2-6.7Zm1.6-.1C15.1 6 15.9 8.4 16 11h3.9a8 8 0 0 0-6.3-6.8ZM4.1 13a8 8 0 0 0 6.3 6.8C8.9 18 8.1 15.6 8 13H4.1Zm5.9 0c.1 2.8.9 5.2 2 6.7 1.1-1.5 1.9-3.9 2-6.7h-4Zm6 0c-.1 2.6-.9 5-2.4 6.8a8 8 0 0 0 6.3-6.8H16Z',
     alert: 'M12 2 1 21h22L12 2Zm-1 7h2v6h-2V9Zm0 8h2v2h-2v-2Z',
     user: 'M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z',
+    mic: 'M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z',
     refresh: 'M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 1 0 22 13h-2a8 8 0 1 1-8-9Z',
     chevronDown: 'M12 16.5 3.5 8 5 6.5l7 7 7-7L20.5 8 12 16.5Z',
     qr: 'M3 3h8v8H3V3Zm2 2v4h4V5H5Zm8-2h8v8h-8V3Zm2 2v4h4V5h-4ZM3 13h8v8H3v-8Zm2 2v4h4v-4H5Zm8-2h2v2h-2v-2Zm2 2h2v2h-2v-2Zm2-2h4v2h-2v2h-2v-4Zm-4 4h2v4h-2v-4Zm4 2h4v2h-4v-2Zm2-2h2v2h-2v-2Z'
@@ -326,7 +329,8 @@
     } }, [
       el('p', { class: 'muted', text: 'This name shows on your stamps, postcards and the leaderboard.' }),
       formField('name-input', 'Your display name', input),
-      el('button', { type: 'submit', class: 'btn btn--block' }, [icon('check'), 'Save and continue'])
+      el('button', { type: 'submit', class: 'btn btn--block' }, [icon('check'), 'Save and continue']),
+      el('p', { class: 'muted small center' }, ['Want to keep a travel journal? ', el('a', { href: '#', text: 'Sign in or create an account', onclick: function (e) { e.preventDefault(); Auth.open('signup', function (u) { then(u.name); }); } })])
     ]);
     Modal.open({ title: 'What should we call you, explorer?', body: form, name: 'name', initialFocus: input });
   }
@@ -550,7 +554,8 @@
       button(accepted ? 'Go now' : 'Accept Challenge', accepted ? 'route' : 'trophy', { block: true, onclick: function () { acceptChallenge(p.id, opts.onChange); } }),
       button('Directions', 'map', { variant: 'blue', href: mapsUrl(p), target: '_blank' }),
       button('Check-In', 'qr', { variant: 'green', href: '#/checkin?place=' + encodeURIComponent(p.id) }),
-      button('Photobooth', 'camera', { variant: 'orange', onclick: function () { openPhotobooth(p.id); } })
+      button('Photobooth', 'camera', { variant: 'orange', onclick: function () { openPhotobooth(p.id); } }),
+      mediaButton('place', p.id, p.name, false)
     ]);
   }
 
@@ -571,6 +576,7 @@
           : Passport.hasAccepted(p.id) ? el('span', { class: 'badge', text: 'Accepted' }) : null
       ]),
       p.desc ? el('p', { class: 'place-card__desc', text: p.desc }) : null,
+      mediaStrip('place', p.id, p.name),
       placeActions(p, opts)
     ]);
   }
@@ -695,8 +701,8 @@
     { key: 'explore', href: '#/explore', text: 'Explore', icon: 'map' },
     { key: 'checkin', href: '#/checkin', text: 'Check-In', icon: 'postcard' },
     { key: 'isidro', href: '#/isidro', text: 'Isidro', icon: 'compass', main: true },
-    { key: 'shop', href: '#/shop', text: 'Shop', icon: 'shop' },
-    { key: 'ranks', href: '#/ranks', text: 'Ranks', icon: 'trophy' }
+    { key: 'hub', href: '#/hub', text: 'Hub', icon: 'heart' },
+    { key: 'shop', href: '#/shop', text: 'Shop', icon: 'shop' }
   ];
 
   function renderNav() {
@@ -939,6 +945,23 @@
         provincePicker(function () { location.hash = '#/explore'; })
       ]),
 
+      el('section', { class: 'section', 'aria-labelledby': 'fest-h' }, [
+        el('div', { class: 'row-between' }, [
+          el('h2', { id: 'fest-h', class: 'section__title reveal' }, [icon('festival'), ' Festivals coming up']),
+          button('Full calendar', 'festival', { small: true, variant: 'light', href: '#/events' })
+        ]),
+        el('div', { class: 'fest-strip' }, upcomingEvents(3).map(function (ev, i) {
+          var p = findPlace(ev.place);
+          if (!p) return null;
+          var pv = provinceInfo(provinceOf(p)) || { color: '#ED0460', name: '' };
+          var d = nextEventDate(ev);
+          return el('a', { class: 'fest-chip reveal', href: '#/events?month=' + (d ? d.getUTCMonth() + 1 : ev.months[0]), style: '--c:' + pv.color + ';--d:' + (i * 80) + 'ms' }, [
+            el('b', { text: p.name }),
+            el('span', { text: (d ? (ev.approx ? 'About ' : '') + fmtDay(d) : ev.when) + ' • ' + pv.name })
+          ]);
+        }))
+      ]),
+
       el('div', { class: 'section stack-lg', id: 'home-passport' }, [passportCard(false), stampAlbum()]),
 
       el('section', { class: 'section', 'aria-labelledby': 'what-h' }, [
@@ -950,6 +973,7 @@
           feature('camera', '#7B2CBF', 'AI Photobooth', 'Turn a selfie into a "CONQUERED" postcard, with your outfit or an AI one.', '#/explore', 3),
           feature('mailbox', '#0057D9', 'Mail across PH', 'Paste a PhilPost stamp and mail it. It travels to a surprise destination.', '#/postcards', 4),
           feature('star', '#FDB603', 'Rank E to SSS', 'Every stamp counts. Climb the leaderboard with fellow explorers.', '#/ranks', 5),
+          feature('mic', '#ED0460', 'Travel journal & SMILE Hub', 'Say your story out loud, add a selfie and a clip, and share it with your rank on the SMILE Hub.', '#/hub', 7),
           feature('shop', '#02A04F', 'Pasalubong & souvenirs', 'Biscocho, butterscotch, shirts and crafts from local stores and nano entrepreneurs.', '#/shop', 6)
         ])
       ]),
@@ -1112,6 +1136,7 @@
       el('section', { class: 'section' }, [
         head,
         provincePicker(function () { paint(); }, true),
+        el('div', { class: 'btn-row' }, [button('Festival calendar', 'festival', { small: true, variant: 'light', href: '#/events' }), button('Ask Isidro', 'compass', { small: true, variant: 'light', href: '#/isidro' })]),
         el('div', { class: 'toolbar' }, [
           el('label', { class: 'searchbox' }, [icon('search'), el('span', { class: 'sr-only', text: 'Search places' }), search]),
           chips
@@ -1126,77 +1151,282 @@
     ]);
     paint();
     focusHeading();
-    Promise.all([loadPlaces(), loadShops()]).then(function () { if (token === renderToken) paint(); });
+    Promise.all([loadPlaces(), loadShops(), loadMedia()]).then(function () { if (token === renderToken) paint(); });
   }
 
   // ---------------------------------------------------------------------------
-  // Isidro: Ilonggo AI guide
+  // Isidro: chat with memory (Muse Spark). Follow-ups work; picks become place cards.
+  // The conversation is kept for this browser tab only (sessionStorage).
   // ---------------------------------------------------------------------------
 
-  function renderIsidro(token) {
+  var ISIDRO_KEY = 'smile.isidro.chat';
+  function loadChat() {
+    try { var v = JSON.parse(window.sessionStorage.getItem(ISIDRO_KEY) || '[]'); return Array.isArray(v) ? v.slice(-30) : []; }
+    catch (e) { return []; }
+  }
+  function saveChat(list) { try { window.sessionStorage.setItem(ISIDRO_KEY, JSON.stringify(list.slice(-30))); } catch (e) { /* optional */ } }
+
+  /** Small place card inside a chat reply. */
+  function miniPlaceCard(p) {
+    var c = catOf(p);
+    return el('article', { class: 'mini-place' }, [
+      el('button', { type: 'button', class: 'mini-place__main', onclick: function () { openPlace(p.id); } }, [
+        el('span', { class: 'card-icon card-icon--sm', style: 'background:' + c.color }, icon(c.icon)),
+        el('span', { class: 'mini-place__text' }, [
+          el('b', { text: p.name }),
+          el('small', { text: (p.barangay ? p.barangay + ', ' : '') + provinceName(provinceOf(p)) + ' • +' + (p.points || 0) + ' pts' })
+        ])
+      ]),
+      el('div', { class: 'btn-row' }, [
+        button(Passport.hasAccepted(p.id) ? 'Go now' : 'Accept', Passport.hasAccepted(p.id) ? 'route' : 'trophy', { small: true, onclick: function () { acceptChallenge(p.id); } }),
+        mediaButton('place', p.id, p.name)
+      ])
+    ]);
+  }
+
+  /** Offline answer: places whose words match the question (used in demo mode or when the AI is down). */
+  function localPicks(text, pool) {
+    var words = String(text || '').toLowerCase().split(/[^a-zñ]+/).filter(function (w) { return w.length > 3; });
+    var scored = pool.map(function (p) {
+      var hay = (p.name + ' ' + p.cat + ' ' + (p.desc || '') + ' ' + (p.barangay || '')).toLowerCase();
+      return { p: p, n: words.filter(function (w) { return hay.indexOf(w) !== -1; }).length };
+    }).sort(function (a, b) { return b.n - a.n; });
+    return scored.slice(0, 3).map(function (x) { return x.p; });
+  }
+
+  function renderIsidro(token, query) {
     var lang = el('select', { id: 'isidro-lang' }, [
       el('option', { value: 'hil', text: 'Hiligaynon' }), el('option', { value: 'en', text: 'English' }), el('option', { value: 'tl', text: 'Tagalog' })
     ]);
     lang.value = storageGet('smile.lang') || 'hil';
     lang.addEventListener('change', function () { storageSet('smile.lang', lang.value); });
-    var q = el('textarea', { id: 'isidro-q', rows: '3', maxlength: '500', placeholder: 'I have 4 hours and love food. Where should I go?' });
-    var prov = el('select', { id: 'isidro-province' }, [el('option', { value: '', text: 'Anywhere in Western Visayas' })].concat(PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); })));
+    var prov = el('select', { id: 'isidro-province' }, [el('option', { value: '', text: 'Anywhere' })].concat(PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); })));
     prov.value = currentProvince();
     prov.addEventListener('change', function () { if (prov.value) setProvince(prov.value); });
-    var out = outputBox();
-    var recs = el('div', { class: 'grid' });
-    var ask = button('Ask Isidro', 'compass', { type: 'submit', block: true, variant: 'glow' });
 
-    var showRecs = function (list) {
-      recs.textContent = '';
-      appendChildren(recs, (list || []).map(function (p, i) { return placeCard(p, i, { onChange: function () { showRecs(list); } }); }));
-      Motion.reveal(recs);
+    var msgs = loadChat();
+    var log = el('div', { class: 'chat', role: 'log', 'aria-live': 'polite', 'aria-label': 'Conversation with Isidro' });
+    var q = el('textarea', { id: 'isidro-q', rows: '2', maxlength: '500', placeholder: 'Ask Isidro anything: a day plan, food, festivals, how to get there…', 'aria-label': 'Your message to Isidro' });
+    var send = button('Send', 'send', { type: 'submit', variant: 'glow' });
+    var avatar = function () { return el('span', { class: 'chat__avatar', 'aria-hidden': 'true' }, icon('guide')); };
+    var typing = el('div', { class: 'chat__row' }, [avatar(), el('div', { class: 'chat__bubble chat__typing', 'aria-label': 'Isidro is typing' }, [el('span'), el('span'), el('span')])]);
+
+    var bubble = function (m) {
+      var mine = m.role === 'user';
+      var places = (m.places || []).map(findPlace).filter(Boolean);
+      return el('div', { class: 'chat__row' + (mine ? ' chat__row--me' : '') }, [
+        mine ? null : avatar(),
+        el('div', { class: 'chat__bubble' + (m.error ? ' chat__bubble--warn' : '') }, [
+          el('p', { class: 'chat__text', text: m.content }),
+          places.length ? el('div', { class: 'chat__places' }, places.map(miniPlaceCard)) : null
+        ])
+      ]);
+    };
+    var paint = function (busy) {
+      log.textContent = '';
+      if (!msgs.length) {
+        log.appendChild(bubble({ role: 'assistant', content: 'Maayong adlaw! Ako si Isidro. Tell me where you are, how much time you have and what you love, and I will plan your SMILE adventure. You can ask follow-up questions too, like "and where do we eat after?"' }));
+      }
+      msgs.forEach(function (m) { log.appendChild(bubble(m)); });
+      if (busy) log.appendChild(typing);
+      log.scrollTop = log.scrollHeight;
     };
 
-    var submit = function (e) {
-      if (e) e.preventDefault();
-      var question = q.value.trim();
-      if (!question) { q.focus(); toast('Type a question for Isidro first.'); return; }
-      setBusy(ask, true, 'Isidro is planning…');
-      out.loading('Isidro is planning your trip…');
-      recs.textContent = '';
-      Api.recommend(question, lang.value, prov.value).then(function (r) {
-        if (token !== renderToken) return;
-        out.show((r.reply || 'Here are my picks for you.') + (r.demo ? '\n\n(Isidro is in demo mode: the AI key is not set on the server yet.)' : ''), r.demo ? 'warn' : null);
-        showRecs(Array.isArray(r.places) ? r.places : []);
+    var ask = function (text) {
+      text = String(text || '').trim();
+      if (!text) { q.focus(); toast('Type a question for Isidro first.'); return; }
+      var history = msgs.filter(function (m) { return !m.error; }).slice(-10).map(function (m) { return { role: m.role, content: m.content }; });
+      msgs.push({ role: 'user', content: text });
+      q.value = '';
+      saveChat(msgs);
+      paint(true);
+      setBusy(send, true, '…');
+      Api.chat(text, lang.value, prov.value, history).then(function (r) {
+        (r.places || []).forEach(function (p) { if (p && p.id && !findPlace(p.id)) State.places.push(p); });
+        msgs.push({ role: 'assistant', content: (r.reply || 'Here are my picks for you.') + (r.demo ? '\n\n(Isidro is in demo mode: the AI key is not set on the server yet.)' : ''), places: (r.places || []).map(function (p) { return p.id; }) });
       }, function (err) {
-        if (token !== renderToken) return;
-        // Demo fallback (same as before): a sample answer with the first four places.
         var pool = State.places.filter(function (p) { return !prov.value || provinceOf(p) === prov.value; });
-        var picks = pool.slice(0, 4);
-        out.show((State.demo ? 'Demo answer: ' : friendlyError(err) + '\n\nMeanwhile, here is a classic route: ') +
-          picks.map(function (p) { return p.name; }).join(', then ') + '. #SMILEPH', State.demo ? null : 'warn');
-        showRecs(picks);
-      }).then(function () { setBusy(ask, false); });
+        var picks = localPicks(text, pool);
+        msgs.push({ role: 'assistant', error: true, content: (State.demo ? 'Demo answer: these places match your question.' : friendlyError(err) + '\n\nWhile I reconnect, these places match your question.'), places: picks.map(function (p) { return p.id; }) });
+      }).then(function () {
+        saveChat(msgs);
+        if (token !== renderToken) return;
+        paint(false);
+        setBusy(send, false);
+      });
     };
 
-    var prompts = ['I have 4 hours and love food', 'Heritage walk in the city', 'Beach weekend in Boracay', 'Mango trip to Guimaras', 'When is MassKara and what should I wear?'];
+    var mic = micButton({ label: 'Speak', small: true, maxSec: 60, lang: function () { return lang.value; }, onText: function (t) { ask(t); } });
+    var form = el('form', { class: 'chat-form', onsubmit: function (e) { e.preventDefault(); ask(q.value); } }, [q, send]);
+    q.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(q.value); } });
+    var prompts = ['I have 4 hours and love food', 'What festivals are on this month?', 'Beach weekend in Boracay on a budget', 'Mango trip to Guimaras', 'Heritage walk in Silay and Bacolod'];
 
     setView(el('section', { class: 'section section--narrow' }, [
       el('div', { class: 'isidro-hero' }, [
         el('div', { class: 'isidro-avatar' }, icon('guide')),
-        el('h1', { class: 'page-head__title', text: 'Isidro, your Western Visayas AI guide' }),
-        el('p', { class: 'muted', text: 'Maayong adlaw! Tell me where you are, how much time you have and what you love. I will plan your SMILE route.' })
+        el('h1', { class: 'page-head__title', text: 'Isidro, your AI travel buddy' }),
+        el('p', { class: 'muted', text: 'Powered by Meta\'s Muse Spark. Isidro only suggests real places in SMILE, and remembers your chat so you can ask follow-ups.' })
       ]),
-      el('form', { class: 'card stack', onsubmit: submit }, [
-        formField('isidro-province', 'Province', prov),
-        formField('isidro-lang', 'Language', lang),
-        formField('isidro-q', 'Your question', q),
-        el('div', { class: 'chips chips--wrap', 'aria-label': 'Ideas' }, prompts.map(function (p) {
-          return el('button', { type: 'button', class: 'chip-btn chip-btn--soft', onclick: function () { q.value = p; q.focus(); } }, p);
-        })),
-        ask,
-        out
-      ]),
-      recs
+      el('div', { class: 'chat-settings' }, [formField('isidro-province', 'Province', prov), formField('isidro-lang', 'Language', lang)]),
+      log,
+      el('div', { class: 'chips chips--wrap', 'aria-label': 'Ideas' }, prompts.map(function (p) {
+        return el('button', { type: 'button', class: 'chip-btn chip-btn--soft', onclick: function () { ask(p); } }, p);
+      })),
+      form,
+      el('div', { class: 'chat-mic' }, [mic, el('span', { class: 'muted small', text: 'Tap Speak, ask your question, tap Stop. Muse Voice writes it down and Isidro answers. (English and Tagalog work best.)' })]),
+      el('div', { class: 'btn-row chat-tools' }, [
+        button('New chat', 'refresh', { small: true, variant: 'light', onclick: function () { msgs = []; saveChat(msgs); paint(false); q.focus(); } }),
+        button('Festival calendar', 'festival', { small: true, variant: 'light', href: '#/events' })
+      ])
     ]));
+    paint(false);
+    if (query && query.q) q.value = String(query.q).slice(0, 500);
     focusHeading();
-    loadPlaces();
+    Promise.all([loadPlaces(), loadMedia()]).then(function () { if (token === renderToken) paint(false); });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Festival calendar: every province's big festivals by month, with "remind me" (.ics)
+  // ---------------------------------------------------------------------------
+
+  // rule: how to work out the date. nth = nth weekday of a month (wd 0 = Sunday); easter = days from Easter Sunday.
+  var EVENTS = [
+    { id: 'ati-atihan', place: 'ati-atihan', months: [1], rule: { type: 'nth', month: 1, n: 3, wd: 0 }, when: 'Third Sunday of January (week-long)' },
+    { id: 'dinagyang', place: 'dinagyang', months: [1], rule: { type: 'nth', month: 1, n: 4, wd: 0 }, when: 'Fourth Sunday of January (festival weekend)' },
+    { id: 'paraw-regatta', place: 'paraw-regatta', months: [2], rule: { type: 'nth', month: 2, n: 3, wd: 0 }, approx: true, when: 'Usually the third weekend of February' },
+    { id: 'panaad', place: 'panaad', months: [3, 4], when: 'March or April (dates set each year)' },
+    { id: 'healing-festival', place: 'healing-festival', months: [3, 4], rule: { type: 'easter', offset: -1 }, when: 'Holy Week, highlight on Black Saturday' },
+    { id: 'manggahan', place: 'manggahan', months: [5], when: 'May (activities can start in late April)' },
+    { id: 'masskara', place: 'masskara', months: [10], rule: { type: 'nth', month: 10, n: 4, wd: 0 }, when: 'October, climax on the fourth Sunday' },
+    { id: 'buglasan', place: 'buglasan', months: [10], when: 'October (dates set each year)' },
+    { id: 'sinadya', place: 'sinadya', months: [12], rule: { type: 'fixed', month: 12, day: 8 }, approx: true, when: 'Early December, around December 8' },
+    { id: 'binirayan', place: 'binirayan', months: [12], when: 'December (dates set each year)' }
+  ];
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  function manilaToday() {
+    try {
+      var parts = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).split('-');
+      return { y: +parts[0], m: +parts[1], d: +parts[2] };
+    } catch (e) { var n = new Date(); return { y: n.getFullYear(), m: n.getMonth() + 1, d: n.getDate() }; }
+  }
+  function utcDay(y, m, d) { return new Date(Date.UTC(y, m - 1, d)); }
+  function nthWeekday(y, m, n, wd) { var first = utcDay(y, m, 1); return utcDay(y, m, 1 + ((wd - first.getUTCDay() + 7) % 7) + (n - 1) * 7); }
+  /** Easter Sunday (Gregorian calendar, anonymous algorithm). */
+  function easterSunday(y) {
+    var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+    var h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+    var month = Math.floor((h + l - 7 * m + 114) / 31), day = ((h + l - 7 * m + 114) % 31) + 1;
+    return utcDay(y, month, day);
+  }
+  function ruleDate(rule, y) {
+    if (!rule) return null;
+    if (rule.type === 'nth') return nthWeekday(y, rule.month, rule.n, rule.wd);
+    if (rule.type === 'easter') return new Date(easterSunday(y).getTime() + rule.offset * 86400000);
+    if (rule.type === 'fixed') return utcDay(y, rule.month, rule.day);
+    return null;
+  }
+  /** Next date (UTC midnight) of an event with a rule, today included. */
+  function nextEventDate(ev) {
+    var t = manilaToday(), today = utcDay(t.y, t.m, t.d).getTime();
+    for (var y = t.y; y <= t.y + 1; y++) { var d = ruleDate(ev.rule, y); if (d && d.getTime() >= today) return d; }
+    return null;
+  }
+  /** Sort key: the next date, or the start of the next month it is held in. */
+  function eventSortKey(ev) {
+    var d = nextEventDate(ev);
+    if (d) return d.getTime();
+    var t = manilaToday(), best = Infinity;
+    ev.months.forEach(function (m) {
+      var y = m < t.m ? t.y + 1 : t.y;
+      // In its own month, a festival without a set date counts as "now" only in the first half of the month.
+      if (m === t.m && t.d > 15) y = t.y + 1;
+      var key = m === t.m && t.d <= 15 ? utcDay(t.y, t.m, t.d).getTime() : utcDay(y, m, 1).getTime();
+      if (key < best) best = key;
+    });
+    return best;
+  }
+  function fmtDay(d) { try { return d.toLocaleDateString('en-PH', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return d.toDateString(); } }
+  function daysFromToday(d) { var t = manilaToday(); return Math.round((d.getTime() - utcDay(t.y, t.m, t.d).getTime()) / 86400000); }
+  function upcomingEvents(n) { return EVENTS.slice().sort(function (a, b) { return eventSortKey(a) - eventSortKey(b); }).slice(0, n || EVENTS.length); }
+
+  /** Calendar file for "Remind me": an all-day event with a reminder one week before. */
+  function downloadIcs(ev, place, d) {
+    var ymd = function (x) { return x.toISOString().slice(0, 10).replace(/-/g, ''); };
+    var esc = function (t) { return String(t || '').replace(/[\;,]/g, function (c) { return '\\' + c; }).replace(/\n/g, '\\n'); };
+    var end = new Date(d.getTime() + 86400000);
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SMILE//Festival calendar//EN', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
+      'UID:' + ev.id + '-' + ymd(d) + '@smile-ph', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, ''),
+      'DTSTART;VALUE=DATE:' + ymd(d), 'DTEND;VALUE=DATE:' + ymd(end),
+      'SUMMARY:' + esc(place.name), 'LOCATION:' + esc((place.barangay ? place.barangay + ', ' : '') + provinceName(provinceOf(place)) + ', Philippines'),
+      'DESCRIPTION:' + esc(ev.when + (ev.approx ? ' (check the official schedule).' : '.') + ' ' + (place.desc || '') + ' Open SMILE: ' + location.origin + location.pathname + '#/events'),
+      'BEGIN:VALARM', 'TRIGGER:-P7D', 'ACTION:DISPLAY', 'DESCRIPTION:' + esc(place.name + ' is in one week'), 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'];
+    var blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    var a = el('a', { href: URL.createObjectURL(blob), download: ev.id + '.ics' });
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    toast('Calendar reminder saved. Open it to add ' + place.name + '.');
+  }
+
+  function eventCard(ev, i) {
+    var p = findPlace(ev.place);
+    if (!p) return null;
+    var pv = provinceInfo(provinceOf(p)) || { color: '#ED0460', name: '' };
+    var d = nextEventDate(ev);
+    var mine = currentProvince() === provinceOf(p);
+    var when = d ? (ev.approx ? 'About ' : 'Next: ') + fmtDay(d) + ' • ' + (daysFromToday(d) === 0 ? 'today!' : 'in ' + daysFromToday(d) + ' day' + (daysFromToday(d) === 1 ? '' : 's')) : ev.when;
+    return el('article', { class: 'card event-card reveal', style: '--c:' + pv.color + ';--d:' + Math.min(i || 0, 8) * 60 + 'ms' }, [
+      el('div', { class: 'event-card__date' }, [el('b', { text: MONTHS[ev.months[0] - 1].slice(0, 3) + (ev.months.length > 1 ? '–' + MONTHS[ev.months[ev.months.length - 1] - 1].slice(0, 3) : '') }), el('span', { text: d ? String(d.getUTCDate()) : '•' })]),
+      el('div', { class: 'event-card__body' }, [
+        el('h3', { class: 'place-card__name', text: p.name }),
+        el('p', { class: 'place-card__meta' }, [el('span', { class: 'chip chip--sm', style: '--c:' + pv.color, text: pv.name }), mine ? el('span', { class: 'chip chip--sm chip--featured', text: 'Your province' }) : null]),
+        el('p', { class: 'event-card__when', text: when }),
+        d ? el('p', { class: 'muted small', text: ev.when + (ev.approx ? '. Check the official schedule.' : '.') }) : null,
+        p.desc ? el('p', { class: 'place-card__desc', text: p.desc }) : null,
+        el('div', { class: 'btn-row' }, [
+          button(Passport.hasAccepted(p.id) ? 'Go now' : 'Accept Challenge', 'trophy', { small: true, onclick: function () { acceptChallenge(p.id); } }),
+          d ? button('Remind me', 'send', { small: true, variant: 'yellow', onclick: function () { downloadIcs(ev, p, d); } }) : null,
+          button('Ask Isidro', 'compass', { small: true, variant: 'light', href: '#/isidro?q=' + encodeURIComponent('Plan my trip for ' + p.name + ' (' + pv.name + ')') }),
+          mediaButton('place', p.id, p.name)
+        ])
+      ])
+    ]);
+  }
+
+  function renderEvents(token, query) {
+    var t = manilaToday();
+    var month = Math.min(12, Math.max(1, parseInt(query.month, 10) || t.m));
+    var list = el('div', { class: 'stack' });
+    var tabs = el('div', { class: 'chips month-tabs', role: 'tablist', 'aria-label': 'Month' });
+    var paint = function () {
+      tabs.textContent = '';
+      MONTHS.forEach(function (name, idx) {
+        var m = idx + 1, n = EVENTS.filter(function (e) { return e.months.indexOf(m) !== -1; }).length;
+        tabs.appendChild(el('button', { type: 'button', class: 'chip-btn' + (n ? '' : ' chip-btn--empty'), role: 'tab', 'aria-selected': String(m === month), 'aria-pressed': String(m === month),
+          onclick: function () { month = m; paint(); } }, [name.slice(0, 3), n ? el('span', { class: 'month-tabs__n', text: String(n) }) : null]));
+      });
+      var sel = currentProvince();
+      var evs = EVENTS.filter(function (e) { return e.months.indexOf(month) !== -1; })
+        .sort(function (a, b) { var pa = provinceOf(findPlace(a.place) || {}) === sel, pb = provinceOf(findPlace(b.place) || {}) === sel; return (pb - pa) || (eventSortKey(a) - eventSortKey(b)); });
+      list.textContent = '';
+      list.appendChild(el('h2', { class: 'section__title', text: MONTHS[month - 1] + (month === t.m ? ' (this month)' : '') }));
+      appendChildren(list, evs.length ? evs.map(eventCard) : el('p', { class: 'empty', text: 'No big festival this month, but every province has landmarks and food to enjoy. Ask Isidro!' }));
+      Motion.reveal(view());
+    };
+    var next = upcomingEvents(3);
+    setView([
+      el('section', { class: 'section' }, [
+        pageHead('festival', '#ED0460', 'Festival calendar', 'The big festivals of Western Visayas and the Negros Island Region. Tap "Remind me" to add one to your phone\'s calendar.'),
+        el('h2', { class: 'section__title' }, [icon('star'), ' Coming up next']),
+        el('div', { class: 'grid' }, next.map(eventCard)),
+        el('p', { class: 'muted small', text: 'Festival dates are set by each city or province every year. Dates shown follow the usual schedule; check the official announcement before you travel.' })
+      ]),
+      el('section', { class: 'section' }, [tabs, list])
+    ]);
+    paint();
+    focusHeading();
+    Promise.all([loadPlaces(), loadMedia()]).then(function () { if (token === renderToken) paint(); });
   }
 
   // ---------------------------------------------------------------------------
@@ -1477,7 +1707,7 @@
   function shopCard(s, i) {
     var t = SHOP_TYPES[s.type] || SHOP_TYPES.other;
     var items = Array.isArray(s.items) ? s.items : [];
-    return el('article', { class: 'card shop-card reveal' + (isFeatured(s) ? ' shop-card--featured' : ''), style: '--d:' + Math.min(i, 10) * 60 + 'ms' }, [
+    var card = el('article', { class: 'card shop-card reveal' + (isFeatured(s) ? ' shop-card--featured' : ''), style: '--d:' + Math.min(i, 10) * 60 + 'ms' }, [
       el('div', { class: 'place-card__top' }, [
         el('span', { class: 'card-icon', style: 'background:' + t.color }, icon(t.icon)),
         el('div', null, [
@@ -1486,6 +1716,7 @@
         ])
       ]),
       s.desc ? el('p', { class: 'place-card__desc', text: s.desc }) : null,
+      mediaStrip('shop', s.shop_id, s.name),
       items.length ? el('ul', { class: 'shop-items' }, items.map(function (x) {
         return el('li', { class: 'shop-item' }, [
           el('div', { class: 'shop-item__head' }, [el('b', { text: x.name }), el('span', { class: 'shop-item__price', text: x.price ? String(x.price) : 'Price in store' })]),
@@ -1493,15 +1724,23 @@
         ]);
       })) : null,
       el('div', { class: 'btn-row shop-card__actions' }, [
-        button('Directions', 'map', { variant: 'blue', small: true, href: s.maps_url || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' ' + provinceName(provinceOf(s)))), target: '_blank' }),
-        contactNode(s.contact),
+        button('Directions', 'map', { variant: 'blue', small: true, href: s.maps_url || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' ' + provinceName(provinceOf(s)))), target: '_blank', onclick: function () { Track.add(s.shop_id, 'directions'); } }),
+        tracked(contactNode(s.contact), s.shop_id, 'contact'),
+        mediaButton('shop', s.shop_id, s.name),
         button('Share', 'share', { variant: 'light', small: true, onclick: function () {
+          Track.add(s.shop_id, 'share');
           var text = s.name + ' (' + t.label + ', ' + provinceName(provinceOf(s)) + '): ' + items.map(function (x) { return x.name; }).join(', ') + ' #SMILEPH';
           if (navigator.share) navigator.share({ title: s.name, text: text, url: location.origin + location.pathname + '#/shop' }).catch(function () { /* cancelled */ });
           else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast('Copied!'); });
         } })
       ])
     ]);
+    return Track.watch(card, s.shop_id);
+  }
+
+  function tracked(node, shopId, type) {
+    if (node && node.tagName === 'A') node.addEventListener('click', function () { Track.add(shopId, type); });
+    return node;
   }
 
   function renderShop(token, query) {
@@ -1561,7 +1800,7 @@
     ]);
     paint();
     focusHeading();
-    loadShops().then(function () { if (token === renderToken) paint(); });
+    Promise.all([loadShops(), loadMedia()]).then(function () { if (token === renderToken) paint(); });
   }
 
   /** "Sell on SMILE" sign-up for nano entrepreneurs and pasalubong stores. */
@@ -1606,10 +1845,17 @@
       if (!contact.value.trim()) { toast('Add a contact so tourists can reach you.'); contact.focus(); return; }
       var items = rows.map(function (r) { return { name: r.name.value.trim(), price: r.price.value.trim(), desc: r.desc.value.trim(), category: type.value }; }).filter(function (x) { return x.name; });
       if (!items.length) { toast('Add at least one product.'); return; }
+      var shopName = name.value.trim(), firstItem = items[0].name;
       setBusy(submit, true, 'Sending…');
       out.loading('Sending your shop…');
       Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, province: prov.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim() }, items).then(function (r) {
-        out.show(r.message || 'Salamat! Your shop was sent for review.', 'ok');
+        out.show((r.message || 'Salamat! Your shop was sent for review.') + (r.manage_code ? '\n\nYour shop code: ' + r.manage_code + '\nSave it! Use it on the Shop dashboard to see your views and postcard sales, and to add photos later.' : '') + (r.upload_token ? '\n\nNext: add your photos and promo video below.' : ''), 'ok');
+        if (r.manage_code) storageSet('smile.shopCode', r.manage_code);
+        if (r.upload_token && r.shop_id) {
+          var step = mediaStep({ auth: { owner_type: 'shop', owner_id: r.shop_id, token: r.upload_token }, ownerName: shopName, phrase: firstItem });
+          form.parentNode.appendChild(step);
+          step.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+        }
         form.reset(); itemsBox.textContent = ''; rows = []; addItem();
       }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(submit, false); });
     } }, [
@@ -1625,11 +1871,1039 @@
       itemsBox,
       button('Add another product', 'plusSquare', { variant: 'light', onclick: addItem }),
       submit, out,
-      el('p', { class: 'muted small' }, ['Need captions or listings for social media? ', el('a', { href: '#/tools', text: 'Open merchant tools' }), '.'])
+      el('p', { class: 'muted small' }, ['Already selling on SMILE? ', el('a', { href: '#/dashboard', text: 'Open your shop dashboard' }), '. Need captions or listings for social media? ', el('a', { href: '#/tools', text: 'Open merchant tools' }), '.'])
     ]);
     return el('section', { class: 'section section--narrow', id: 'sell' }, form);
   }
 
+
+  // ---------------------------------------------------------------------------
+  // Media: shop and place photos (up to 5) and a 15-second promo video, stored in Google Drive.
+  // SAM 3.1 (Meta's Segment Anything Model, via the backend) finds the product in a photo
+  // (close-up crop) and counts how many seconds it is on screen in the promo video.
+  // ---------------------------------------------------------------------------
+
+  State.media = [];
+  State.mediaLoaded = false;
+  var MEDIA_MAX_PHOTOS = 5;
+  var VIDEO_MAX_SECONDS = 15;
+
+  function loadMedia() {
+    if (State.mediaLoaded || State.demo) return Promise.resolve(State.media);
+    return Api.media().then(function (r) {
+      if (r && Array.isArray(r.media)) State.media = r.media.filter(function (m) { return m && /^[\w-]{10,}$/.test(String(m.file_id)); });
+      State.mediaLoaded = true;
+      return State.media;
+    }, function () { return State.media; });
+  }
+  function mediaFor(type, id) { return State.media.filter(function (m) { return m.owner_type === type && m.owner_id === id; }); }
+  function driveThumb(id, w) { return 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (w || 1000); }
+  function driveView(id) { return 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/view'; }
+  function drivePreview(id) { return 'https://drive.google.com/file/d/' + encodeURIComponent(id) + '/preview'; }
+  function driveImg(id, w, alt, cls) {
+    var img = el('img', { class: cls || null, src: driveThumb(id, w), alt: alt || '', loading: 'lazy', referrerpolicy: 'no-referrer' });
+    var fallback = function () { img.removeEventListener('error', fallback); img.src = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1000); };
+    img.addEventListener('error', fallback);
+    return img;
+  }
+
+  function mediaLabel(items) {
+    var nI = items.filter(function (m) { return m.kind === 'image'; }).length;
+    var nV = items.length - nI;
+    return [nI ? nI + ' photo' + (nI === 1 ? '' : 's') : '', nV ? 'video' : ''].filter(String).join(' & ');
+  }
+
+  /** Photos and the promo video of one shop or place, in a modal. */
+  function openGallery(title, items) {
+    var imgs = items.filter(function (m) { return m.kind === 'image'; });
+    var vids = items.filter(function (m) { return m.kind === 'video'; });
+    Modal.open({
+      title: title,
+      name: 'gallery',
+      wide: true,
+      body: [
+        vids.map(function (v) {
+          return el('div', { class: 'gallery__video' }, el('iframe', { src: drivePreview(v.file_id), title: 'Promo video: ' + title, allow: 'autoplay; fullscreen', allowfullscreen: true, loading: 'lazy' }));
+        }),
+        imgs.length ? el('div', { class: 'gallery__grid' }, imgs.map(function (m, i) {
+          return el('a', { class: 'gallery__item', href: driveView(m.file_id), target: '_blank', rel: 'noopener', 'aria-label': 'Open photo ' + (i + 1) + ' in Google Drive' },
+            driveImg(m.file_id, 900, m.title || title));
+        })) : null,
+        el('p', { class: 'muted small', text: 'Stored in Google Drive. Tap a photo to open it full size. A new video can take a few minutes before it plays.' })
+      ]
+    });
+  }
+
+  /** "2 photos & video" button for a shop or place, or null when it has no media yet. */
+  function mediaButton(type, id, title, small) {
+    var items = mediaFor(type, id);
+    if (!items.length) return null;
+    return button(mediaLabel(items), 'camera', { variant: 'light', small: small !== false, onclick: function () { if (type === 'shop') Track.add(id, 'gallery'); openGallery(title, items); } });
+  }
+
+  /** Up to 3 thumbnails that open the gallery. */
+  function mediaStrip(type, id, title) {
+    var items = mediaFor(type, id);
+    if (!items.length) return null;
+    var shown = items.filter(function (m) { return m.kind === 'image'; }).slice(0, 3);
+    var hasVideo = items.some(function (m) { return m.kind === 'video'; });
+    return el('button', { type: 'button', class: 'media-strip', 'aria-label': 'Open ' + mediaLabel(items) + ' of ' + title, onclick: function () { if (type === 'shop') Track.add(id, 'gallery'); openGallery(title, items); } },
+      shown.map(function (m) { return driveImg(m.file_id, 400, '', 'media-strip__img'); }).concat(
+        hasVideo ? [el('span', { class: 'media-strip__play' }, [icon('camera'), ' Video'])] : []));
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { reject(new Error('Could not read the file.')); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  function pickRecorderType() {
+    if (!window.MediaRecorder || typeof MediaRecorder.isTypeSupported !== 'function') return '';
+    var c = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+    for (var i = 0; i < c.length; i++) if (MediaRecorder.isTypeSupported(c[i])) return c[i];
+    return '';
+  }
+
+  /**
+   * Readies the promo video for upload: keeps an MP4/MOV that is already 15 s or shorter and small;
+   * otherwise re-records the first 15 seconds at up to 720 px (about 1.5 Mbps) in the browser.
+   * Resolves {dataUrl, blob, mime, duration, fps, reencoded}.
+   */
+  function prepareVideo(file, onProgress) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var v = document.createElement('video');
+      v.preload = 'auto';
+      v.playsInline = true;
+      v.setAttribute('playsinline', '');
+      v.onerror = function () { URL.revokeObjectURL(url); reject(new Error('This video could not be opened. Please use an MP4 or MOV video.')); };
+      v.onloadedmetadata = function () {
+        var dur = isFinite(v.duration) && v.duration > 0 ? v.duration : VIDEO_MAX_SECONDS;
+        var useDur = Math.min(dur, VIDEO_MAX_SECONDS);
+        if (/^video\/(mp4|quicktime)$/.test(file.type) && dur <= VIDEO_MAX_SECONDS + 0.5 && file.size <= 8e6) {
+          URL.revokeObjectURL(url);
+          blobToDataUrl(file).then(function (d) { resolve({ dataUrl: d, blob: file, mime: file.type, duration: dur, fps: 30, reencoded: false }); }, reject);
+          return;
+        }
+        var type = pickRecorderType();
+        var c = document.createElement('canvas');
+        if (!type || typeof c.captureStream !== 'function' || !v.videoWidth) {
+          URL.revokeObjectURL(url);
+          reject(new Error('This browser cannot shorten videos. Please trim it to 15 seconds or less (MP4, under 8 MB) and try again.'));
+          return;
+        }
+        var scale = Math.min(1, 720 / Math.max(v.videoWidth, v.videoHeight));
+        c.width = Math.round(v.videoWidth * scale / 2) * 2;
+        c.height = Math.round(v.videoHeight * scale / 2) * 2;
+        var ctx = c.getContext('2d');
+        var stream = c.captureStream(30);
+        var actx = null;
+        try {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          actx = new AC();
+          var src = actx.createMediaElementSource(v);
+          var dest = actx.createMediaStreamDestination();
+          src.connect(dest);   // recorded, not played aloud
+          dest.stream.getAudioTracks().forEach(function (t) { stream.addTrack(t); });
+        } catch (e) { v.muted = true; }
+        var rec;
+        try { rec = new MediaRecorder(stream, { mimeType: type, videoBitsPerSecond: 1500000, audioBitsPerSecond: 96000 }); }
+        catch (e) { URL.revokeObjectURL(url); reject(new Error('This browser cannot prepare the video. Please trim it to 15 seconds (MP4) and try again.')); return; }
+        var chunks = [], done = false, safety = null;
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = function () {
+          clearTimeout(safety);
+          try { if (actx) actx.close(); } catch (e) { /* ignore */ }
+          URL.revokeObjectURL(url);
+          var mime = type.split(';')[0];
+          var blob = new Blob(chunks, { type: mime });
+          if (!blob.size) { reject(new Error('The video came out empty. Please try another video.')); return; }
+          if (blob.size > 10e6) { reject(new Error('The video is still too large. Please use a shorter or smaller video.')); return; }
+          blobToDataUrl(blob).then(function (d) { resolve({ dataUrl: d, blob: blob, mime: mime, duration: useDur, fps: 30, reencoded: true }); }, reject);
+        };
+        var stop = function () { if (done) return; done = true; try { v.pause(); } catch (e) { /* ignore */ } if (rec.state !== 'inactive') rec.stop(); };
+        var draw = function () {
+          if (done) return;
+          ctx.drawImage(v, 0, 0, c.width, c.height);
+          if (typeof onProgress === 'function') onProgress(Math.min(1, v.currentTime / useDur));
+          if (v.currentTime >= useDur || v.ended) { stop(); return; }
+          window.requestAnimationFrame(draw);
+        };
+        v.onended = stop;
+        safety = setTimeout(stop, useDur * 1000 + 15000);
+        rec.start(500);
+        var started = function () { window.requestAnimationFrame(draw); };
+        var p = v.play();
+        if (p && typeof p.then === 'function') {
+          p.then(started, function () {
+            v.muted = true;
+            v.play().then(started, function () { stop(); reject(new Error('Could not play the video to prepare it.')); });
+          });
+        } else started();
+      };
+      v.src = url;
+    });
+  }
+
+  function loadImage(src) {
+    return new Promise(function (resolve, reject) {
+      var i = new Image();
+      i.onload = function () { resolve(i); };
+      i.onerror = function () { reject(new Error('Could not open the photo.')); };
+      i.src = src;
+    });
+  }
+
+  /** Photo preview on a canvas, with SAM 3.1's box drawn on top when there is one. */
+  function drawPreview(canvas, ph) {
+    loadImage(ph.dataUrl).then(function (img) {
+      var s = Math.min(1, 600 / Math.max(img.naturalWidth, img.naturalHeight));
+      canvas.width = Math.round(img.naturalWidth * s);
+      canvas.height = Math.round(img.naturalHeight * s);
+      var x = canvas.getContext('2d');
+      x.drawImage(img, 0, 0, canvas.width, canvas.height);
+      var b = ph.sam && ph.sam.best;
+      if (b && b.w && b.h) {
+        var sx = canvas.width / b.w, sy = canvas.height / b.h;
+        x.lineWidth = Math.max(3, canvas.width / 120);
+        x.strokeStyle = '#FDB603';
+        x.setLineDash([12, 8]);
+        x.strokeRect(b.x1 * sx, b.y1 * sy, (b.x2 - b.x1) * sx, (b.y2 - b.y1) * sy);
+      }
+    }, function () { /* preview only */ });
+  }
+
+  /** Crops the photo to SAM 3.1's box with some breathing room, as a product close-up. */
+  function makeCloseUp(ph) {
+    var b = ph.sam && ph.sam.best;
+    if (!b) return Promise.resolve();
+    return loadImage(ph.dataUrl).then(function (img) {
+      var kx = img.naturalWidth / b.w, ky = img.naturalHeight / b.h;
+      var bw = (b.x2 - b.x1) * kx, bh = (b.y2 - b.y1) * ky;
+      var pad = 0.18 * Math.max(bw, bh);
+      var x0 = Math.max(0, b.x1 * kx - pad), y0 = Math.max(0, b.y1 * ky - pad);
+      var x1 = Math.min(img.naturalWidth, b.x2 * kx + pad), y1 = Math.min(img.naturalHeight, b.y2 * ky + pad);
+      var w = x1 - x0, h = y1 - y0;
+      if (w < 40 || h < 40) return;
+      var s = Math.min(1, 1280 / Math.max(w, h));
+      var c = document.createElement('canvas');
+      c.width = Math.round(w * s); c.height = Math.round(h * s);
+      c.getContext('2d').drawImage(img, x0, y0, w, h, 0, 0, c.width, c.height);
+      ph.original = ph.dataUrl;
+      ph.originalSam = ph.sam;
+      ph.dataUrl = c.toDataURL('image/jpeg', 0.9);
+      ph.sam = { found: true, count: ph.sam.count, closeup: true };
+      ph.cropped = true;
+      ph.note = 'Close-up made from the box SAM 3.1 found.';
+    });
+  }
+
+  function compactSam(s) {
+    if (!s) return null;
+    var o = {};
+    ['found', 'count', 'closeup', 'frames_with_product', 'total_frames', 'share'].forEach(function (k) { if (s[k] !== undefined) o[k] = s[k]; });
+    if (s.best && s.best.c != null) o.confidence = s.best.c;
+    return o;
+  }
+
+  /**
+   * Upload step for one shop or place: up to 5 photos and one 15-second promo video, with SAM 3.1.
+   * o: {auth:{owner_type, owner_id, token|code}, ownerName, phrase, admin}
+   */
+  function mediaStep(o) {
+    var photos = [];
+    var video = null;
+    var phrase = el('input', { id: 'media-phrase-' + o.auth.owner_id, type: 'text', maxlength: '60', value: o.phrase || '', placeholder: 'e.g. piaya box, butterscotch, souvenir shirt' });
+    var grid = el('div', { class: 'media-grid' });
+    var fileIn = el('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true });
+    var vidIn = el('input', { type: 'file', accept: 'video/mp4,video/quicktime,video/*', hidden: true });
+    var vidBox = el('div', { class: 'stack' });
+    var vidOut = outputBox();
+    var out = outputBox();
+    var needPhrase = function () {
+      var w = phrase.value.trim();
+      if (!w) { toast('Type what SAM 3.1 should look for, e.g. "piaya box".'); phrase.focus(); }
+      return w;
+    };
+
+    var paintPhotos = function () {
+      grid.textContent = '';
+      photos.forEach(function (ph, i) {
+        var cv = el('canvas', { class: 'media-tile__img', role: 'img', 'aria-label': 'Photo ' + (i + 1) + (ph.sam && ph.sam.found ? ', product found by SAM 3.1' : '') });
+        drawPreview(cv, ph);
+        var status = el('p', { class: 'media-tile__note small', text: ph.note || '' });
+        var samBtn = button(ph.sam ? 'Check again' : 'Find with SAM 3.1', 'sparkle', { small: true, variant: 'blue', onclick: function () {
+          var w = needPhrase(); if (!w) return;
+          setBusy(samBtn, true, 'SAM 3.1…');
+          status.textContent = 'SAM 3.1 is looking for "' + w + '"…';
+          Api.samImage(o.auth, w, ph.dataUrl).then(function (r) {
+            var s = r.result || {};
+            ph.sam = s; ph.samPhrase = w;
+            var conf = s.best && s.best.c != null ? ' (' + Math.round(s.best.c * 100) + '% sure)' : '';
+            ph.note = s.found ? 'SAM 3.1 found "' + w + '"' + conf + (s.count > 1 ? ', ' + s.count + ' in this photo' : '') + '. Tap "Use close-up" to zoom in on it.'
+              : 'SAM 3.1 could not find "' + w + '" in this photo. Try a different word, or a clearer photo.';
+            paintPhotos();
+          }, function (err) { status.textContent = friendlyError(err); setBusy(samBtn, false); });
+        } });
+        var actions = [samBtn];
+        if (ph.sam && ph.sam.found && ph.sam.best && !ph.cropped) actions.push(button('Use close-up', 'search', { small: true, variant: 'light', onclick: function () { makeCloseUp(ph).then(paintPhotos); } }));
+        if (ph.cropped) actions.push(button('Undo close-up', 'refresh', { small: true, variant: 'light', onclick: function () { ph.dataUrl = ph.original; ph.sam = ph.originalSam; ph.cropped = false; ph.note = ''; paintPhotos(); } }));
+        actions.push(button('Remove', 'close', { small: true, variant: 'light', onclick: function () { photos.splice(i, 1); paintPhotos(); } }));
+        grid.appendChild(el('figure', { class: 'media-tile' }, [cv, status, el('div', { class: 'btn-row' }, actions)]));
+      });
+      if (photos.length < MEDIA_MAX_PHOTOS) {
+        grid.appendChild(el('button', { type: 'button', class: 'media-add', onclick: function () { fileIn.click(); } },
+          [icon('plusSquare'), el('span', { text: 'Add photo (' + photos.length + '/' + MEDIA_MAX_PHOTOS + ')' })]));
+      }
+    };
+    fileIn.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(fileIn.files || [], 0, MEDIA_MAX_PHOTOS - photos.length);
+      fileIn.value = '';
+      files.reduce(function (p, f) {
+        return p.then(function () { return shrinkImage(f, 1280, 0.85).then(function (r) { if (r) photos.push({ dataUrl: r.dataUrl }); }); });
+      }, Promise.resolve()).then(paintPhotos);
+    });
+
+    var paintVideo = function () {
+      vidBox.textContent = '';
+      if (!video) {
+        vidBox.appendChild(button('Choose or record a video (up to 15 s)', 'camera', { variant: 'light', onclick: function () { vidIn.click(); } }));
+        return;
+      }
+      var samOk = /^video\/(mp4|quicktime)$/.test(video.mime);
+      var player = el('video', { class: 'media-video', controls: true, playsinline: true, preload: 'metadata', src: video.previewUrl });
+      var samBtn = button(video.sam ? 'Check again' : 'Check with SAM 3.1', 'sparkle', { small: true, variant: 'blue', disabled: !samOk, onclick: function () {
+        var w = needPhrase(); if (!w) return;
+        setBusy(samBtn, true, 'SAM 3.1…');
+        vidOut.loading('SAM 3.1 is following "' + w + '" through your video. This can take a minute…');
+        Api.samVideo(o.auth, w, video.dataUrl, Math.round(video.duration * video.fps)).then(function (r) {
+          var s = r.result || {};
+          video.sam = s; video.samPhrase = w;
+          var secs = Math.round((s.share || 0) * video.duration);
+          vidOut.show(s.found ? 'SAM 3.1 saw "' + w + '" in about ' + secs + ' of ' + Math.round(video.duration) + ' seconds (' + Math.round((s.share || 0) * 100) + '%).' +
+            ((s.share || 0) < 0.5 ? ' Tip: keep your product on screen for most of the video.' : ' Great, your product is the star!')
+            : 'SAM 3.1 did not see "' + w + '" in this video. Show your product clearly, or try a different word.', s.found ? 'ok' : 'warn');
+          setBusy(samBtn, false);
+        }, function (err) { vidOut.show(friendlyError(err), 'error'); setBusy(samBtn, false); });
+      } });
+      vidBox.appendChild(player);
+      vidBox.appendChild(el('p', { class: 'muted small', text: Math.round(video.duration) + ' s video, ' + (video.blob.size / 1048576).toFixed(1) + ' MB' + (video.reencoded ? ', shortened for upload' : '') + '.' +
+        (samOk ? '' : ' SAM 3.1 needs MP4; this browser made a different format, so the check is skipped (it still uploads).') }));
+      vidBox.appendChild(el('div', { class: 'btn-row' }, [samBtn, button('Remove video', 'close', { small: true, variant: 'light', onclick: function () { if (video.previewUrl) URL.revokeObjectURL(video.previewUrl); video = null; vidOut.hidden = true; paintVideo(); } })]));
+      vidBox.appendChild(vidOut);
+    };
+    vidIn.addEventListener('change', function () {
+      var f = vidIn.files && vidIn.files[0];
+      vidIn.value = '';
+      if (!f) return;
+      vidBox.textContent = '';
+      var prog = el('p', { class: 'muted small', role: 'status', text: 'Preparing your video…' });
+      vidBox.appendChild(prog);
+      prepareVideo(f, function (p) { prog.textContent = 'Preparing your video… ' + Math.round(p * 100) + '%'; }).then(function (r) {
+        r.previewUrl = URL.createObjectURL(r.blob);
+        video = r;
+        paintVideo();
+      }, function (err) { video = null; paintVideo(); vidOut.show(err.message, 'error'); vidBox.appendChild(vidOut); });
+    });
+
+    var uploadBtn = button(o.admin ? 'Upload (goes live now)' : 'Upload photos & video', 'send', { variant: 'green', block: true, onclick: function () {
+      var jobs = photos.map(function (ph, i) { return { kind: 'image', data: ph.dataUrl, title: (o.ownerName || 'SMILE') + ' photo ' + (i + 1), samPhrase: ph.samPhrase, sam: compactSam(ph.sam), ref: ph }; });
+      if (video) jobs.push({ kind: 'video', data: video.dataUrl, title: (o.ownerName || 'SMILE') + ' promo video', samPhrase: video.samPhrase, sam: compactSam(video.sam), ref: video });
+      if (!jobs.length) { toast('Add at least one photo or the video first.'); return; }
+      setBusy(uploadBtn, true, 'Uploading…');
+      var done = 0;
+      jobs.reduce(function (p, j) {
+        return p.then(function () {
+          out.loading('Uploading ' + (done + 1) + ' of ' + jobs.length + ' to Google Drive…');
+          return Api.mediaUpload({ auth: o.auth, kind: j.kind, data: j.data, title: j.title, samPhrase: j.samPhrase, sam: j.sam }).then(function () {
+            done++;
+            if (j.kind === 'video') { if (video && video.previewUrl) URL.revokeObjectURL(video.previewUrl); video = null; }
+            else photos.splice(photos.indexOf(j.ref), 1);
+          });
+        });
+      }, Promise.resolve()).then(function () {
+        out.show('Uploaded ' + done + ' file' + (done === 1 ? '' : 's') + ' to Google Drive. ' + (o.admin ? 'They are live in the app now.' : 'They appear in the app once the SMILE team approves them.'), 'ok');
+        State.mediaLoaded = false;
+      }, function (err) {
+        out.show((done ? done + ' uploaded. ' : '') + friendlyError(err), 'error');
+      }).then(function () { paintPhotos(); paintVideo(); setBusy(uploadBtn, false); });
+    } });
+
+    paintPhotos();
+    paintVideo();
+    return el('section', { class: 'card stack media-step' }, [
+      el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#0057D9' }, icon('camera')), 'Photos & promo video']),
+      el('p', { class: 'muted', text: 'Add up to 5 photos and one promo video of up to 15 seconds. Meta\'s SAM 3.1 finds your product in each photo for a sharp close-up, and checks how long it shows in your video.' }),
+      formField(phrase.id, 'What should SAM 3.1 look for?', phrase, 'A short name of the product, like "piaya box" or "woven bag".'),
+      el('h3', { class: 'sell-items__title', text: 'Photos' }), grid, fileIn,
+      el('h3', { class: 'sell-items__title', text: 'Promo video (15 seconds)' }), vidBox, vidIn,
+      uploadBtn, out
+    ]);
+  }
+
+  /** #/media: the SMILE team adds approved photos and videos to any place or shop (needs ADMIN_CODE). */
+  function renderMediaAdmin(token) {
+    var code = el('input', { id: 'admin-code', type: 'password', autocomplete: 'off', placeholder: 'SMILE team passcode' });
+    var owner = el('select', { id: 'admin-owner' });
+    var slot = el('div');
+    var fill = function () {
+      owner.textContent = '';
+      PROVINCES.forEach(function (pv) {
+        var ps = State.places.filter(function (p) { return provinceOf(p) === pv.id; });
+        if (ps.length) owner.appendChild(el('optgroup', { label: 'Places: ' + pv.name }, ps.map(function (p) { return el('option', { value: 'place|' + p.id, text: p.name }); })));
+      });
+      owner.appendChild(el('optgroup', { label: 'Shops' }, State.shops.map(function (s) { return el('option', { value: 'shop|' + s.shop_id, text: s.name }); })));
+    };
+    fill();
+    var start = button('Add photos & video', 'camera', { variant: 'blue', onclick: function () {
+      if (!code.value.trim()) { toast('Type the SMILE team passcode.'); code.focus(); return; }
+      var v = owner.value.split('|');
+      var name = v[0] === 'place' ? (findPlace(v[1]) || {}).name : (State.shops.filter(function (s) { return s.shop_id === v[1]; })[0] || {}).name;
+      slot.textContent = '';
+      slot.appendChild(mediaStep({ auth: { owner_type: v[0], owner_id: v[1], code: code.value.trim() }, ownerName: name, phrase: name, admin: true }));
+    } });
+    setView(el('section', { class: 'section section--narrow' }, [
+      pageHead('camera', '#0057D9', 'Media manager', 'For the SMILE team: add photos and promo videos to places and shops. They are saved in Google Drive and go live right away.'),
+      el('div', { class: 'card stack' }, [formField('admin-code', 'Passcode', code, 'The ADMIN_CODE in the backend Script Properties.'), formField('admin-owner', 'Place or shop', owner), start]),
+      slot
+    ]));
+    focusHeading();
+    Promise.all([loadPlaces(), loadShops()]).then(function () { if (token === renderToken) fill(); });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shop stats (anonymous): views, gallery opens, directions, contact taps, shares.
+  // Sent in small batches; nothing about the visitor is stored.
+  // ---------------------------------------------------------------------------
+
+  var Track = {
+    q: [],
+    timer: null,
+    observer: null,
+    seenKey: 'smile.seenShops',
+    seen: function () { try { return JSON.parse(window.sessionStorage.getItem(Track.seenKey) || '{}') || {}; } catch (e) { return {}; } },
+    add: function (shopId, type) {
+      if (!shopId || State.demo) return;
+      if (type === 'views') {
+        var s = Track.seen();
+        if (s[shopId]) return;
+        s[shopId] = 1;
+        try { window.sessionStorage.setItem(Track.seenKey, JSON.stringify(s)); } catch (e) { /* optional */ }
+      }
+      Track.q.push({ shop_id: shopId, type: type });
+      if (!Track.timer) Track.timer = setTimeout(function () { Track.flush(false); }, 15000);
+    },
+    flush: function (closing) {
+      clearTimeout(Track.timer); Track.timer = null;
+      if (!Track.q.length) return;
+      var ev = Track.q.splice(0, 60);
+      if (closing && Api.beacon(ev)) return;
+      Api.track(ev).catch(function () { /* stats are best-effort */ });
+    },
+    /** Counts a shop card as viewed once it is half on screen. */
+    watch: function (node, shopId) {
+      if (State.demo || typeof window.IntersectionObserver !== 'function') return node;
+      if (!Track.observer) Track.observer = new window.IntersectionObserver(function (entries) {
+        entries.forEach(function (en) { if (en.isIntersecting) { Track.add(en.target.getAttribute('data-shop'), 'views'); Track.observer.unobserve(en.target); } });
+      }, { threshold: 0.5 });
+      node.setAttribute('data-shop', shopId);
+      Track.observer.observe(node);
+      return node;
+    }
+  };
+  window.addEventListener('pagehide', function () { Track.flush(true); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') Track.flush(true); });
+
+  // ---------------------------------------------------------------------------
+  // Merchant dashboard (#/dashboard): opened with the shop code given at sign-up (SM-XXXXXX).
+  // ---------------------------------------------------------------------------
+
+  var STAT_LABELS = [['views', 'Shop views', 'eye'], ['gallery', 'Photo & video opens', 'camera'], ['directions', 'Directions', 'map'], ['contact', 'Contact taps', 'send'], ['share', 'Shares', 'share']];
+
+  function renderDashboard(token, query) {
+    var code = el('input', { id: 'dash-code', type: 'text', autocomplete: 'off', autocapitalize: 'characters', maxlength: '20', placeholder: 'SM-XXXXXX', value: query.code || storageGet('smile.shopCode') || '' });
+    var remember = el('input', { id: 'dash-remember', type: 'checkbox', checked: !!storageGet('smile.shopCode') });
+    var out = outputBox();
+    var body = el('div', { class: 'stack-lg' });
+    var openBtn = button('Open my dashboard', 'chart', { type: 'submit', variant: 'blue' });
+    var lang = storageGet('smile.lang') || 'hil';
+
+    var show = function (d) {
+      body.textContent = '';
+      var s = d.shop, st = d.stats || { totals: {}, days: [] };
+      var live = String(s.status).toLowerCase() === 'approved';
+      var maxV = Math.max(1, Math.max.apply(null, st.days.map(function (x) { return x.views; })));
+      var tipsOut = outputBox();
+      var tipsBtn = button('Get selling tips (Muse Spark)', 'sparkle', { variant: 'glow', onclick: function () {
+        setBusy(tipsBtn, true, 'Thinking…');
+        tipsOut.loading('Muse Spark is reading your numbers…');
+        Api.merchantTips(code.value.trim(), lang).then(function (r) { tipsOut.show(r.tips || 'No tips right now.', r.demo ? 'warn' : null); },
+          function (err) { tipsOut.show(friendlyError(err), 'error'); }).then(function () { setBusy(tipsBtn, false); });
+      } });
+      appendChildren(body, [
+        el('section', { class: 'card stack' }, [
+          el('div', { class: 'dash-head' }, [
+            el('h2', { class: 'card__title', text: s.name }),
+            el('p', { class: 'place-card__meta' }, [
+              el('span', { class: 'chip chip--sm', style: '--c:' + (live ? '#02A04F' : '#E09A00'), text: live ? 'Live in the app' : (String(s.status).toLowerCase() === 'rejected' ? 'Not approved' : 'Waiting for review') }),
+              s.featured ? el('span', { class: 'chip chip--sm chip--featured' }, [icon('star'), 'Featured']) : null,
+              el('span', { text: provinceName(s.province) })
+            ])
+          ]),
+          el('div', { class: 'kpis' }, STAT_LABELS.map(function (k) {
+            return el('div', { class: 'kpi' }, [el('b', { text: String(st.totals[k[0]] || 0) }), el('span', { text: k[1] })]);
+          })),
+          el('p', { class: 'muted small', text: 'Last 30 days. Counted when tourists see your shop card or tap its buttons in SMILE.' }),
+          el('figure', { class: 'bars', 'aria-label': 'Shop views per day, last 30 days' }, [
+            el('figcaption', { class: 'small', text: 'Shop views per day' }),
+            el('div', { class: 'bars__row' }, st.days.map(function (x) {
+              return el('span', { class: 'bars__bar', style: 'height:' + Math.max(3, Math.round(x.views / maxV * 100)) + '%', title: x.date + ': ' + x.views + ' view' + (x.views === 1 ? '' : 's') });
+            }))
+          ])
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#ED0460' }, icon('postcard')), 'SMILE postcards']),
+          el('div', { class: 'kpis kpis--3' }, [
+            el('div', { class: 'kpi' }, [el('b', { text: String(d.postcards.bought) }), el('span', { text: 'Bought from PhilPost' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: String(d.postcards.used) }), el('span', { text: 'Used by tourists' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: String(d.postcards.left) }), el('span', { text: 'Still in stock' })])
+          ])
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#02A04F' }, icon('shop')), 'Products and media']),
+          el('ul', { class: 'shop-items' }, (d.items || []).map(function (x) {
+            return el('li', { class: 'shop-item' }, el('div', { class: 'shop-item__head' }, [el('b', { text: x.name }), el('span', { class: 'shop-item__price', text: (x.price ? x.price + ' • ' : '') + x.status })]));
+          })),
+          el('p', { class: 'muted small', text: 'Photos and videos: ' + (d.media.approved || 0) + ' live, ' + (d.media.pending || 0) + ' waiting for review.' })
+        ]),
+        d.upload_token ? mediaStep({ auth: { owner_type: 'shop', owner_id: s.shop_id, token: d.upload_token }, ownerName: s.name, phrase: (d.items[0] || {}).name || s.name }) : null,
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#FF6B00' }, icon('sparkle')), 'Sell more']),
+          el('p', { class: 'muted', text: 'Muse Spark looks at your views, photos and postcard sales and gives you three practical tips.' }),
+          tipsBtn, tipsOut,
+          s.featured ? null : el('p', { class: 'small', text: 'Want to appear first in your province? Ask the SMILE team about a featured listing: codesphereph@gmail.com' })
+        ])
+      ]);
+      Motion.reveal(body);
+    };
+
+    var form = el('form', { class: 'card stack', onsubmit: function (e) {
+      e.preventDefault();
+      var c = code.value.trim().toUpperCase();
+      if (!c) { toast('Type your shop code.'); code.focus(); return; }
+      code.value = c;
+      if (remember.checked) storageSet('smile.shopCode', c); else { try { window.localStorage.removeItem('smile.shopCode'); } catch (x) { /* optional */ } }
+      setBusy(openBtn, true, 'Opening…');
+      out.loading('Opening your dashboard…');
+      Api.dashboard(c).then(function (d) { out.hidden = true; if (token === renderToken) show(d); }, function (err) { out.show(friendlyError(err), 'error'); })
+        .then(function () { setBusy(openBtn, false); });
+    } }, [
+      formField('dash-code', 'Shop code', code, 'You got this code when you signed up on "Sell on SMILE". It starts with SM-.'),
+      el('label', { class: 'check', for: 'dash-remember' }, [remember, ' Remember on this phone']),
+      openBtn, out
+    ]);
+    setView(el('section', { class: 'section section--narrow' }, [
+      pageHead('chart', '#0057D9', 'Shop dashboard', 'See how tourists find your shop, add photos and a promo video, and get selling tips from Muse Spark.'),
+      form,
+      body
+    ]));
+    focusHeading();
+    if (code.value) form.requestSubmit ? form.requestSubmit() : openBtn.click();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Voice: records the microphone in the browser and builds a 16 kHz mono WAV,
+  // which the backend sends to Meta's Muse Voice Transcribe.
+  // ---------------------------------------------------------------------------
+
+  var Recorder = {
+    active: null,
+    supported: function () { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && (window.AudioContext || window.webkitAudioContext)); },
+    start: function () {
+      return navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }).then(function (stream) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        var ctx = new AC();
+        var src = ctx.createMediaStreamSource(stream);
+        var node = ctx.createScriptProcessor(4096, 1, 1);
+        var rec = { stream: stream, ctx: ctx, src: src, node: node, chunks: [], rate: ctx.sampleRate, t0: Date.now() };
+        node.onaudioprocess = function (e) { rec.chunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+        src.connect(node);
+        node.connect(ctx.destination);   // the processor only runs while connected; its output is silent
+        if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+        Recorder.active = rec;
+        return rec;
+      });
+    },
+    /** Stops and resolves {dataUrl, seconds} (WAV, 16 kHz, 16-bit mono). */
+    stop: function () {
+      var rec = Recorder.active;
+      Recorder.active = null;
+      if (!rec) return Promise.reject(new Error('Not recording.'));
+      try { rec.src.disconnect(); rec.node.disconnect(); } catch (e) { /* ignore */ }
+      rec.stream.getTracks().forEach(function (t) { t.stop(); });
+      try { rec.ctx.close(); } catch (e) { /* ignore */ }
+      var total = rec.chunks.reduce(function (n, c) { return n + c.length; }, 0);
+      var all = new Float32Array(total), off = 0;
+      rec.chunks.forEach(function (c) { all.set(c, off); off += c.length; });
+      var ratio = rec.rate / 16000, outLen = Math.floor(all.length / ratio);
+      var pcm = new Int16Array(outLen);
+      for (var i = 0; i < outLen; i++) {
+        var start = Math.floor(i * ratio), end = Math.min(all.length, Math.floor((i + 1) * ratio)), sum = 0;
+        for (var j = start; j < end; j++) sum += all[j];
+        var v = end > start ? sum / (end - start) : 0;
+        v = Math.max(-1, Math.min(1, v));
+        pcm[i] = v < 0 ? v * 0x8000 : v * 0x7FFF;
+      }
+      var buf = new ArrayBuffer(44 + pcm.length * 2), dv = new DataView(buf);
+      var str = function (o, t) { for (var k = 0; k < t.length; k++) dv.setUint8(o + k, t.charCodeAt(k)); };
+      str(0, 'RIFF'); dv.setUint32(4, 36 + pcm.length * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+      dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true); dv.setUint32(24, 16000, true);
+      dv.setUint32(28, 32000, true); dv.setUint16(32, 2, true); dv.setUint16(34, 16, true); str(36, 'data'); dv.setUint32(40, pcm.length * 2, true);
+      new Int16Array(buf, 44).set(pcm);
+      var seconds = pcm.length / 16000;
+      return blobToDataUrl(new Blob([buf], { type: 'audio/wav' })).then(function (d) { return { dataUrl: d, seconds: seconds }; });
+    }
+  };
+
+  /**
+   * "Speak" button: tap to record, tap again (or reach maxSec) to stop; the words come back as text.
+   * o: {lang: () => 'en'|'tl'|'hil', onText(text), maxSec, label}
+   */
+  function micButton(o) {
+    var maxSec = o.maxSec || 60;
+    var status = el('span', { class: 'mic__status small', role: 'status', 'aria-live': 'polite' });
+    var btn = button(o.label || 'Speak', 'mic', { variant: 'light', small: !!o.small, label: 'Speak instead of typing' });
+    var timer = null, busy = false;
+    var finish = function () {
+      clearInterval(timer);
+      btn.classList.remove('is-recording');
+      setBusy(btn, true, 'Writing…');
+      status.textContent = 'Muse Voice is writing down what you said…';
+      Recorder.stop().then(function (r) {
+        if (r.seconds < 0.6) throw new Error('That was too short. Hold on a bit longer and try again.');
+        return Api.transcribe(r.dataUrl, o.lang ? o.lang() : 'en');
+      }).then(function (res) {
+        var t = String(res.text || '').trim();
+        status.textContent = t ? '' : 'We did not catch any words. Please try again a little closer to the phone.';
+        if (t) o.onText(t);
+      }, function (err) { status.textContent = err && err.name === 'ApiError' ? friendlyError(err) : (err && err.message) || 'Could not transcribe.'; })
+        .then(function () { busy = false; setBusy(btn, false); });
+    };
+    btn.addEventListener('click', function () {
+      if (busy && !Recorder.active) return;
+      if (Recorder.active) { finish(); return; }
+      if (!Recorder.supported()) { toast('This browser cannot record audio. Please type instead.'); return; }
+      busy = true;
+      Recorder.start().then(function () {
+        btn.classList.add('is-recording');
+        var t = btn.querySelector('.btn__text');
+        var tick = function () {
+          var s = (Date.now() - Recorder.active.t0) / 1000;
+          if (t) t.textContent = 'Stop  ' + Math.floor(s / 60) + ':' + ('0' + Math.floor(s % 60)).slice(-2);
+          if (s >= maxSec) finish();
+        };
+        status.textContent = 'Listening… tap Stop when you are done (up to ' + maxSec + ' s).';
+        tick();
+        timer = setInterval(function () { if (Recorder.active) tick(); }, 250);
+      }, function () {
+        busy = false;
+        status.textContent = 'Microphone not allowed. Allow the microphone for this site in your browser settings, or type instead.';
+      });
+    });
+    return el('span', { class: 'mic' }, [btn, status]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Accounts: sign up / sign in. The token stays on this device; the account name is the leaderboard name.
+  // ---------------------------------------------------------------------------
+
+  var Auth = {
+    KEY: 'smile.auth',
+    get: function () { var v = readJson(Auth.KEY, null); return v && v.token && v.user ? v : null; },
+    user: function () { var v = Auth.get(); return v ? v.user : null; },
+    token: function () { var v = Auth.get(); return v ? v.token : ''; },
+    set: function (r) {
+      storageSet(Auth.KEY, JSON.stringify({ token: r.token, user: r.user }));
+      Passport.setName(r.user.name);
+      if (r.points !== undefined) Passport.setPoints(r.points);
+      Auth.paint();
+    },
+    clear: function () { try { window.localStorage.removeItem(Auth.KEY); } catch (e) { /* optional */ } Auth.paint(); },
+    signOut: function () {
+      var t = Auth.token();
+      Auth.clear();
+      if (t) Api.signout(t).catch(function () { /* already signed out locally */ });
+      toast('Signed out. See you on your next adventure!');
+      location.hash = '#/';
+    },
+    paint: function () {
+      var a = $('#account-btn');
+      if (!a) return;
+      var u = Auth.user();
+      a.querySelector('.account-btn__avatar').textContent = u ? u.name.charAt(0).toUpperCase() : '';
+      a.querySelector('.account-btn__avatar').classList.toggle('is-guest', !u);
+      a.querySelector('.account-btn__text').textContent = u ? u.name.split(' ')[0] : 'Sign in';
+      a.setAttribute('aria-label', u ? 'My profile: ' + u.name : 'Sign in or sign up');
+      a.setAttribute('href', '#/me');
+    },
+    /** Sign in / sign up modal. then(user) runs after success. */
+    open: function (mode, then) {
+      var isUp = mode === 'signup';
+      var out = outputBox();
+      var email = el('input', { id: 'auth-email', type: 'email', autocomplete: 'email', required: true, maxlength: '120' });
+      var pw = el('input', { id: 'auth-pw', type: 'password', autocomplete: isUp ? 'new-password' : 'current-password', required: true, minlength: isUp ? '8' : null, maxlength: '100' });
+      var name = el('input', { id: 'auth-name', type: 'text', autocomplete: 'nickname', maxlength: '40', placeholder: 'e.g. Kris of Jaro', value: isUp ? (Passport.name() || '') : '' });
+      var prov = el('select', { id: 'auth-prov' }, PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); }));
+      prov.value = currentProvince() || DEFAULT_PROVINCE;
+      var submit = button(isUp ? 'Create my account' : 'Sign in', isUp ? 'star' : 'user', { type: 'submit', block: true, variant: isUp ? 'glow' : 'blue' });
+      var form = el('form', { class: 'stack', onsubmit: function (e) {
+        e.preventDefault();
+        setBusy(submit, true, isUp ? 'Creating…' : 'Signing in…');
+        out.hidden = true;
+        var req = isUp ? Api.signup({ name: name.value.trim(), email: email.value.trim(), password: pw.value, province: prov.value }) : Api.signin(email.value.trim(), pw.value);
+        req.then(function (r) {
+          Auth.set(r);
+          Modal.close();
+          toast(isUp ? 'Welcome to SMILE, ' + r.user.name + '!' : 'Welcome back, ' + r.user.name + '!');
+          if (typeof then === 'function') then(r.user); else route();
+        }, function (err) { out.show(friendlyError(err), 'error'); setBusy(submit, false); });
+      } }, [
+        isUp ? formField('auth-name', 'Display name (shown on the SMILE Hub)', name) : null,
+        formField('auth-email', 'Email', email),
+        formField('auth-pw', 'Password', pw, isUp ? 'At least 8 characters.' : null),
+        isUp ? formField('auth-prov', 'Home province (or where you are exploring)', prov) : null,
+        submit, out,
+        el('p', { class: 'muted small center' }, [isUp ? 'Already have an account? ' : 'New to SMILE? ',
+          el('a', { href: '#', text: isUp ? 'Sign in' : 'Create an account', onclick: function (e) { e.preventDefault(); Auth.open(isUp ? 'signin' : 'signup', then); } })]),
+        isUp ? el('p', { class: 'muted small', text: 'We keep your name, email, points and journal. Your password is stored only as a secure hash.' }) : null
+      ]);
+      Modal.open({ title: isUp ? 'Join SMILE' : 'Sign in to SMILE', name: 'auth', body: form, initialFocus: isUp ? name : email });
+    }
+  };
+
+  /** Card shown on pages that need an account. */
+  function signInCard(why) {
+    return el('div', { class: 'card stack center' }, [
+      el('span', { class: 'state__icon' }, icon('user')),
+      el('h2', { class: 'card__title', text: 'Sign in to continue' }),
+      el('p', { class: 'muted', text: why }),
+      el('div', { class: 'btn-row btn-row--center' }, [
+        button('Sign in', 'user', { variant: 'blue', onclick: function () { Auth.open('signin'); } }),
+        button('Create an account', 'star', { variant: 'glow', onclick: function () { Auth.open('signup'); } })
+      ])
+    ]);
+  }
+
+  var RANK_COLORS = { E: '#8A93A6', D: '#00A651', C: '#0096C7', B: '#0057D9', A: '#7B2CBF', S: '#ED0460', SS: '#FF6A03', SSS: '#E09A00' };
+  function rankBadge(rank, points) {
+    rank = rank || 'E';
+    return el('span', { class: 'rank-badge', style: '--r:' + (RANK_COLORS[rank] || '#8A93A6'), title: 'Rank ' + rank + (points != null ? ', ' + points + ' points' : '') }, [
+      el('b', { text: rank }), points != null ? el('span', { text: points + ' pts' }) : null
+    ]);
+  }
+  function timeAgo(iso) {
+    var t = Date.parse(iso);
+    if (isNaN(t)) return '';
+    var s = Math.max(0, (Date.now() - t) / 1000);
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + ' min ago';
+    if (s < 86400) return Math.floor(s / 3600) + ' h ago';
+    if (s < 86400 * 7) return Math.floor(s / 86400) + ' d ago';
+    try { return new Date(t).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }); } catch (e) { return ''; }
+  }
+
+  /** One journal post: on the SMILE Hub (public) or in the traveler's own profile (with status and delete). */
+  function postCard(p, opts) {
+    opts = opts || {};
+    var pv = provinceInfo(p.province);
+    var liked = readJson('smile.liked', {});
+    var likeBtn = button(String(p.likes || 0), 'heart', { small: true, variant: liked[p.post_id] ? 'pink' : 'light', label: 'Like this post' });
+    likeBtn.classList.add('like-btn');
+    likeBtn.addEventListener('click', function () {
+      var l = readJson('smile.liked', {}), undo = !!l[p.post_id];
+      if (undo) delete l[p.post_id]; else l[p.post_id] = 1;
+      storageSet('smile.liked', JSON.stringify(l));
+      p.likes = Math.max(0, (p.likes || 0) + (undo ? -1 : 1));
+      likeBtn.querySelector('.btn__text').textContent = String(p.likes);
+      likeBtn.classList.toggle('btn--pink', !undo); likeBtn.classList.toggle('btn--light', undo);
+      Api.hubLike(p.post_id, undo).catch(function () { /* the count catches up next time */ });
+    });
+    var videoSlot = el('div');
+    var text = el('p', { class: 'post__text', text: p.text });
+    var long = p.text && p.text.length > 260;
+    if (long) text.classList.add('is-clamped');
+    var statusChip = opts.mine ? el('span', { class: 'chip chip--sm', style: '--c:' + (p.visibility === 'private' ? '#5B6478' : p.status === 'live' ? '#02A04F' : '#E09A00'),
+      text: p.visibility === 'private' ? 'Private' : p.status === 'live' ? 'On the SMILE Hub' : 'Waiting for review' }) : null;
+    return el('article', { class: 'card post reveal' }, [
+      el('header', { class: 'post__head' }, [
+        el('span', { class: 'post__avatar', 'aria-hidden': 'true', text: String(p.name || '?').charAt(0).toUpperCase() }),
+        el('div', { class: 'post__who' }, [
+          el('b', { text: p.name }),
+          el('span', { class: 'small muted', text: [p.place_name, pv ? pv.name : '', timeAgo(p.created)].filter(String).join(' • ') })
+        ]),
+        p.rank ? rankBadge(p.rank, p.points) : null
+      ]),
+      p.photo_id ? el('a', { class: 'post__photo', href: driveView(p.photo_id), target: '_blank', rel: 'noopener', 'aria-label': 'Open photo full size' }, driveImg(p.photo_id, 1000, 'Photo by ' + p.name + (p.place_name ? ' at ' + p.place_name : ''))) : null,
+      p.video_id ? el('div', null, [videoSlot, button('Play video clip', 'camera', { small: true, variant: 'light', onclick: function (e) {
+        e.currentTarget.remove();
+        videoSlot.appendChild(el('div', { class: 'gallery__video' }, el('iframe', { src: drivePreview(p.video_id), title: 'Video clip by ' + p.name, allow: 'autoplay; fullscreen', allowfullscreen: true })));
+      } })]) : null,
+      p.text ? text : null,
+      long ? button('Read more', 'chevronDown', { small: true, variant: 'light', onclick: function (e) { text.classList.remove('is-clamped'); e.currentTarget.remove(); } }) : null,
+      p.caption ? el('p', { class: 'post__caption', text: p.caption }) : null,
+      el('div', { class: 'btn-row post__actions' }, [
+        opts.mine ? statusChip : likeBtn,
+        p.place_id && findPlace(p.place_id) ? button('Visit ' + (findPlace(p.place_id) || {}).name, 'pin', { small: true, variant: 'light', onclick: function () { openPlace(p.place_id); } }) : null,
+        opts.mine ? button('Delete', 'close', { small: true, variant: 'light', onclick: function (e) {
+          if (!window.confirm || window.confirm('Delete this journal post?')) {
+            var b = e.currentTarget; setBusy(b, true, 'Deleting…');
+            Api.journalDelete(Auth.token(), p.post_id).then(function () { toast('Post deleted.'); if (opts.onChange) opts.onChange(); }, function (err) { toast(friendlyError(err)); setBusy(b, false); });
+          }
+        } }) : null
+      ])
+    ]);
+  }
+
+  /** #/me: profile, rank, stamp album and the traveler's own journal history. */
+  function renderMe(token) {
+    if (!Auth.user()) {
+      setView(el('section', { class: 'section section--narrow' }, [pageHead('user', '#0057D9', 'My SMILE profile', 'Your rank, stamps and travel journal in one place.'), signInCard('Sign in or create a free account to keep a travel journal and share your adventures on the SMILE Hub.')]));
+      focusHeading();
+      return;
+    }
+    var u = Auth.user();
+    var list = el('div', { class: 'stack' }, el('p', { class: 'muted', text: 'Loading your journal…' }));
+    var head = el('div');
+    var load = function () {
+      Api.me(Auth.token()).then(function (r) {
+        if (token !== renderToken) return;
+        storageSet(Auth.KEY, JSON.stringify({ token: Auth.token(), user: r.user }));
+        Passport.setPoints(r.points);
+        head.textContent = '';
+        head.appendChild(profileHead(r));
+        list.textContent = '';
+        appendChildren(list, r.posts.length ? r.posts.map(function (p) { return postCard(p, { mine: true, onChange: load }); })
+          : el('p', { class: 'empty' }, ['No journal entries yet. ', el('a', { href: '#/journal', text: 'Write your first one' }), '!']));
+        Motion.reveal(list);
+      }, function (err) {
+        if (err && err.code === 'SIGNED_OUT') { Auth.clear(); route(); return; }
+        list.textContent = '';
+        list.appendChild(el('p', { class: 'empty', text: friendlyError(err) }));
+      });
+    };
+    var profileHead = function (r) {
+      var bio = el('textarea', { id: 'me-bio', rows: '2', maxlength: '200', placeholder: 'A line about you, e.g. "Chasing every festival in Western Visayas"' });
+      bio.value = r.user.bio || '';
+      var save = button('Save', 'check', { small: true, variant: 'light', onclick: function () {
+        setBusy(save, true, 'Saving…');
+        Api.me(Auth.token(), { bio: bio.value.trim() }).then(function () { toast('Profile saved.'); }, function (err) { toast(friendlyError(err)); }).then(function () { setBusy(save, false); });
+      } });
+      return el('section', { class: 'card stack profile' }, [
+        el('div', { class: 'profile__top' }, [
+          el('span', { class: 'post__avatar post__avatar--big', 'aria-hidden': 'true', text: r.user.name.charAt(0).toUpperCase() }),
+          el('div', null, [el('h2', { class: 'card__title', text: r.user.name }), el('p', { class: 'muted small', text: provinceName(r.user.province) + ' • ' + r.posts.length + ' journal entr' + (r.posts.length === 1 ? 'y' : 'ies') })]),
+          rankBadge(r.rank, r.points)
+        ]),
+        formField('me-bio', 'About me', bio), save
+      ]);
+    };
+    head.appendChild(el('section', { class: 'card' }, el('h2', { class: 'card__title', text: u.name })));
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [
+      pageHead('user', '#0057D9', 'My SMILE profile', 'Your rank, stamps and travel journal.'),
+      head,
+      el('div', { class: 'btn-row' }, [
+        button('New journal entry', 'mic', { variant: 'glow', href: '#/journal' }),
+        button('SMILE Hub', 'heart', { variant: 'light', href: '#/hub' }),
+        button('Sign out', 'close', { variant: 'light', onclick: Auth.signOut })
+      ]),
+      stampAlbum(),
+      el('h2', { class: 'section__title' }, [icon('postcard'), ' My travel journal']),
+      list
+    ]));
+    focusHeading();
+    load();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Travel journal (#/journal): speak or type, Muse Spark tidies or translates it, add a selfie or photo
+  // and a short clip, generate a caption, then keep it private or share it on the SMILE Hub.
+  // ---------------------------------------------------------------------------
+
+  var JOURNAL_LANGS = [['en', 'English'], ['tl', 'Tagalog'], ['hil', 'Hiligaynon']];
+
+  function renderJournal(token, query) {
+    var head = pageHead('mic', '#ED0460', 'My travel journal', 'Tell your story out loud or type it. Muse Voice writes down what you say, Muse Spark polishes or translates it, and you can share it on the SMILE Hub.');
+    if (!Auth.user()) {
+      setView(el('section', { class: 'section section--narrow' }, [head, signInCard('Your travel journal is saved to your account, so you can read it again on any phone.')]));
+      focusHeading();
+      return;
+    }
+    var place = el('select', { id: 'j-place' });
+    var fillPlaces = function () {
+      var keep = place.value || query.place || '';
+      place.textContent = '';
+      place.appendChild(el('option', { value: '', text: 'Somewhere else / not a SMILE place' }));
+      PROVINCES.forEach(function (pv) {
+        var ps = State.places.filter(function (p) { return provinceOf(p) === pv.id; });
+        if (ps.length) place.appendChild(el('optgroup', { label: pv.name }, ps.map(function (p) { return el('option', { value: p.id, text: p.name }); })));
+      });
+      place.value = keep;
+    };
+    fillPlaces();
+    var location2 = el('input', { id: 'j-loc', type: 'text', maxlength: '80', placeholder: 'e.g. Sugar Beach, Sipalay' });
+    var locField = formField('j-loc', 'Where were you?', location2);
+    var syncLoc = function () { locField.hidden = !!place.value; };
+    place.addEventListener('change', syncLoc);
+    var lang = el('select', { id: 'j-lang' }, JOURNAL_LANGS.map(function (l) { return el('option', { value: l[0], text: l[1] }); }));
+    lang.value = storageGet('smile.lang') === 'tl' ? 'tl' : (storageGet('smile.lang') === 'hil' ? 'hil' : 'en');
+    var story = el('textarea', { id: 'j-text', rows: '6', maxlength: '3000', placeholder: 'What did you see, taste and feel today?' });
+    var undoText = null;
+    var mic = micButton({ label: 'Speak my story', maxSec: 120, lang: function () { return lang.value; }, onText: function (t) {
+      story.value = (story.value.trim() ? story.value.trim() + ' ' : '') + t;
+      toast('Added what you said. You can edit it, or let Muse Spark polish it.');
+    } });
+    var tidyOut = outputBox();
+    var tidy = button('Polish / translate with Muse Spark', 'sparkle', { small: true, variant: 'blue', onclick: function () {
+      if (!story.value.trim()) { toast('Say or type your story first.'); return; }
+      setBusy(tidy, true, 'Writing…');
+      tidyOut.loading('Muse Spark is writing your entry in ' + lang.options[lang.selectedIndex].text + '…');
+      Api.translate(story.value.trim(), lang.value).then(function (r) {
+        undoText = story.value; story.value = r.text || story.value;
+        tidyOut.show('Done. Edit anything you like.' + (r.demo ? ' (Demo mode: AI key not set.)' : ''), r.demo ? 'warn' : 'ok');
+        undoBtn.hidden = false;
+      }, function (err) { tidyOut.show(friendlyError(err), 'error'); }).then(function () { setBusy(tidy, false); });
+    } });
+    var undoBtn = button('Undo', 'refresh', { small: true, variant: 'light', onclick: function () { if (undoText != null) { story.value = undoText; undoText = null; undoBtn.hidden = true; tidyOut.hidden = true; } } });
+    undoBtn.hidden = true;
+
+    var photo = null, video = null;
+    var photoPrev = el('img', { class: 'proof-preview', alt: 'Your journal photo', hidden: true });
+    var photoRemove = button('Remove photo', 'close', { small: true, variant: 'light', onclick: function () { photo = null; photoPrev.hidden = true; photoRemove.hidden = true; } });
+    photoRemove.hidden = true;
+    var picker = photoPicker({ id: 'j-photo', facing: 'user', cameraLabel: 'Take a selfie', title: 'Journal selfie', hint: 'Smile! Tap the round button, or use the timer.', variant: 'orange', max: 1600,
+      onPhoto: function (r) { photo = r; photoPrev.src = r.dataUrl; photoPrev.hidden = false; photoRemove.hidden = false; } });
+    var vidIn = el('input', { type: 'file', accept: 'video/*', hidden: true });
+    var vidBox = el('div', { class: 'stack' });
+    var paintVideo = function (msg) {
+      vidBox.textContent = '';
+      if (video) {
+        vidBox.appendChild(el('video', { class: 'media-video', controls: true, playsinline: true, src: video.previewUrl }));
+        vidBox.appendChild(button('Remove clip', 'close', { small: true, variant: 'light', onclick: function () { URL.revokeObjectURL(video.previewUrl); video = null; paintVideo(); } }));
+      } else vidBox.appendChild(button('Add a short clip (up to 15 s)', 'camera', { variant: 'light', onclick: function () { vidIn.click(); } }));
+      if (msg) vidBox.appendChild(el('p', { class: 'muted small', text: msg }));
+    };
+    vidIn.addEventListener('change', function () {
+      var f = vidIn.files && vidIn.files[0]; vidIn.value = '';
+      if (!f) return;
+      vidBox.textContent = '';
+      var prog = el('p', { class: 'muted small', role: 'status', text: 'Preparing your clip…' });
+      vidBox.appendChild(prog);
+      prepareVideo(f, function (p) { prog.textContent = 'Preparing your clip… ' + Math.round(p * 100) + '%'; })
+        .then(function (r) { r.previewUrl = URL.createObjectURL(r.blob); video = r; paintVideo(); }, function (err) { video = null; paintVideo(err.message); });
+    });
+    paintVideo();
+
+    var caption = el('textarea', { id: 'j-cap', rows: '2', maxlength: '400', placeholder: 'A short caption for your post' });
+    var capBtn = button('Generate caption', 'caption', { small: true, variant: 'yellow', onclick: function () {
+      if (!story.value.trim() && !photo) { toast('Add your story or a photo first.'); return; }
+      setBusy(capBtn, true, 'Writing…');
+      Api.journalCaption({ text: story.value.trim(), place_id: place.value, location: location2.value.trim(), photo: photo ? photo.dataUrl : '' })
+        .then(function (r) { caption.value = r.caption || caption.value; }, function (err) { toast(friendlyError(err)); })
+        .then(function () { setBusy(capBtn, false); });
+    } });
+    var vis = 'public';
+    var visRadio = function (value, label, sub) {
+      var input = el('input', { type: 'radio', name: 'j-vis', value: value, checked: value === 'public' });
+      input.addEventListener('change', function () { vis = value; });
+      return el('label', { class: 'radio-card' }, [input, el('span', null, [el('b', { text: label }), el('small', { text: sub })])]);
+    };
+    var out = outputBox();
+    var save = button('Save to my journal', 'save', { type: 'submit', block: true, variant: 'green' });
+    var form = el('form', { class: 'card stack', onsubmit: function (e) {
+      e.preventDefault();
+      if (!story.value.trim() && !photo && !video) { toast('Add your story, a photo or a clip first.'); return; }
+      setBusy(save, true, 'Saving…');
+      out.loading(video ? 'Saving your entry and uploading your clip…' : 'Saving your entry…');
+      Api.journalSave({ token: Auth.token(), place_id: place.value, location: location2.value.trim(), province: place.value ? '' : currentProvince(),
+        text: story.value.trim(), caption: caption.value.trim(), lang: lang.value, photo: photo ? photo.dataUrl : '', video: video ? video.dataUrl : '', visibility: vis })
+        .then(function (r) {
+          var msg = r.visibility === 'private' ? 'Saved in your private journal.' : (r.status === 'live' ? 'Posted! Your adventure is now on the SMILE Hub.' : 'Saved. ' + (r.note || 'It will show on the SMILE Hub after a quick review.'));
+          out.show(msg, r.status === 'live' || r.visibility === 'private' ? 'ok' : 'warn');
+          story.value = ''; caption.value = ''; photo = null; photoPrev.hidden = true; photoRemove.hidden = true;
+          if (video) { URL.revokeObjectURL(video.previewUrl); video = null; } paintVideo();
+          out.appendChild(el('div', { class: 'btn-row' }, [button('See my journal', 'user', { small: true, variant: 'light', href: '#/me' }), button('Open SMILE Hub', 'heart', { small: true, variant: 'light', href: '#/hub' })]));
+        }, function (err) {
+          if (err && err.code === 'SIGNED_OUT') Auth.clear();
+          out.show(friendlyError(err), 'error');
+        }).then(function () { setBusy(save, false); });
+    } }, [
+      formField('j-place', 'Where are you?', place), locField,
+      el('h3', { class: 'sell-items__title', text: 'Your story' }),
+      el('div', { class: 'journal-voice' }, [formField('j-lang', 'Write it in', lang), mic]),
+      story,
+      el('div', { class: 'btn-row' }, [tidy, undoBtn]), tidyOut,
+      el('h3', { class: 'sell-items__title', text: 'Selfie or photo' }), picker, photoPrev, photoRemove,
+      el('h3', { class: 'sell-items__title', text: 'Short video clip' }), vidBox, vidIn,
+      formField('j-cap', 'Caption', caption), capBtn,
+      el('fieldset', { class: 'radio-group' }, [el('legend', { class: 'field__label', text: 'Who can see it?' }),
+        visRadio('public', 'Share on the SMILE Hub', 'Everyone can see it with your name and rank.'),
+        visRadio('private', 'Only me', 'Kept in your private journal.')]),
+      save, out
+    ]);
+    setView(el('section', { class: 'section section--narrow' }, [head, form]));
+    syncLoc();
+    focusHeading();
+    loadPlaces().then(function () { if (token === renderToken) { fillPlaces(); syncLoc(); } });
+  }
+
+  // ---------------------------------------------------------------------------
+  // SMILE Hub (#/hub): everyone's public travel posts, with the traveler's rank.
+  // ---------------------------------------------------------------------------
+
+  function renderHub(token, query) {
+    var filter = query.province && provinceInfo(query.province) ? query.province : '';
+    var feed = el('div', { class: 'feed' });
+    var chips = el('div', { class: 'prov-chips', role: 'group', 'aria-label': 'Province' });
+    var paintChips = function () {
+      chips.textContent = '';
+      [{ id: '', name: 'All', icon: 'globe', color: '#14213d' }].concat(PROVINCES).forEach(function (pv) {
+        chips.appendChild(el('button', { type: 'button', class: 'prov-chip', style: '--c:' + pv.color, 'aria-pressed': String(filter === pv.id), onclick: function () { filter = pv.id; paintChips(); load(); } }, [icon(pv.icon), pv.name]));
+      });
+    };
+    var load = function () {
+      feed.textContent = '';
+      feed.appendChild(el('p', { class: 'muted', text: 'Loading the latest adventures…' }));
+      Api.hub(filter).then(function (r) {
+        if (token !== renderToken) return;
+        feed.textContent = '';
+        var posts = Array.isArray(r.posts) ? r.posts : [];
+        appendChildren(feed, posts.length ? posts.map(function (p) { return postCard(p); })
+          : el('p', { class: 'empty' }, ['No posts here yet. ', el('a', { href: '#/journal', text: 'Be the first to share your adventure' }), '!']));
+        Motion.reveal(feed);
+      }, function (err) {
+        if (token !== renderToken) return;
+        feed.textContent = '';
+        feed.appendChild(el('p', { class: 'empty', text: State.demo ? 'The SMILE Hub needs the server connection (demo mode).' : friendlyError(err) }));
+      });
+    };
+    setView(el('section', { class: 'section section--narrow' }, [
+      pageHead('heart', '#ED0460', 'SMILE Hub', 'Real trips by SMILE explorers across Western Visayas and the Negros Island Region. Every post shows the traveler\'s rank, so keep collecting stamps!'),
+      el('div', { class: 'btn-row' }, [
+        button('Share your adventure', 'mic', { variant: 'glow', href: '#/journal' }),
+        button('Ranks', 'trophy', { variant: 'light', href: '#/ranks' })
+      ]),
+      chips,
+      feed
+    ]));
+    paintChips();
+    focusHeading();
+    loadPlaces();
+    load();
+  }
 
   function renderTools() {
     var capPlace = el('select', { id: 'cap-place' }, State.places.map(function (p) { return el('option', { text: p.name }); }));
@@ -2176,7 +3450,13 @@
     postcards: renderPostcards,
     tools: renderTools,
     shop: renderShop,
-    ranks: renderRanks
+    ranks: renderRanks,
+    media: renderMediaAdmin,
+    events: renderEvents,
+    dashboard: renderDashboard,
+    me: renderMe,
+    journal: renderJournal,
+    hub: renderHub
   };
 
   function route() {
@@ -2234,6 +3514,8 @@
     route();
     setTimeout(hideSplash, prefersReducedMotion() ? 0 : 1300);
     loadPlaces();
+    loadMedia();
+    Auth.paint();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
