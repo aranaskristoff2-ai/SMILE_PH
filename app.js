@@ -114,7 +114,7 @@
 
   // Provinces: the tourist picks one on the home page; its places and shops show first,
   // and every other province stays listed below it (never hidden).
-  var PROVINCES = [ { "id": "aklan", "name": "Aklan", "sub": "Boracay · Kalibo", "color": "#0096C7", "icon": "island" }, { "id": "antique", "name": "Antique", "sub": "San Jose · Tibiao · Culasi", "color": "#00A651", "icon": "palm" }, { "id": "capiz", "name": "Capiz", "sub": "Roxas City · Panay", "color": "#7B2CBF", "icon": "food" }, { "id": "guimaras", "name": "Guimaras", "sub": "Jordan · Nueva Valencia", "color": "#E09A00", "icon": "heart" }, { "id": "iloilo", "name": "Iloilo", "sub": "Iloilo City · Miagao · Gigantes", "color": "#FF6B00", "icon": "church" }, { "id": "negros-occidental", "name": "Negros Occidental", "sub": "Bacolod · Silay · Talisay", "color": "#ED0460", "icon": "festival" }, { "id":  "negros-oriental", "name":  "Negros Oriental", "sub":  "Dumaguete · Apo Island · Manjuyod", "color":  "#0057D9", "icon":  "globe" }, { "id":  "siquijor", "name":  "Siquijor", "sub":  "Lazi · San Juan · Maria", "color":  "#5B2A86", "icon":  "sparkle" } ];
+  var PROVINCES = [ { "id": "aklan", "name": "Aklan", "sub": "Boracay · Kalibo", "color": "#0096C7", "icon": "drum" }, { "id": "antique", "name": "Antique", "sub": "San Jose · Tibiao · Culasi", "color": "#00A651", "icon": "boat" }, { "id": "capiz", "name": "Capiz", "sub": "Roxas City · Panay", "color": "#7B2CBF", "icon": "shell" }, { "id": "guimaras", "name": "Guimaras", "sub": "Jordan · Nueva Valencia", "color": "#E09A00", "icon": "mango" }, { "id": "iloilo", "name": "Iloilo", "sub": "Iloilo City · Miagao · Gigantes", "color": "#FF6B00", "icon": "headdress" }, { "id": "negros-occidental", "name": "Negros Occidental", "sub": "Bacolod · Silay · Talisay", "color": "#ED0460", "icon": "mask" }, { "id":  "negros-oriental", "name":  "Negros Oriental", "sub":  "Dumaguete · Apo Island · Manjuyod", "color":  "#0057D9", "icon":  "bunting" }, { "id":  "siquijor", "name":  "Siquijor", "sub":  "Lazi · San Juan · Maria", "color":  "#5B2A86", "icon":  "potion" } ];
   var DEFAULT_PROVINCE = 'iloilo';
   function provinceOf(x) { var id = String((x && x.province) || DEFAULT_PROVINCE).toLowerCase().trim(); return PROVINCES.some(function (p) { return p.id === id; }) ? id : DEFAULT_PROVINCE; }
   function provinceInfo(id) { return PROVINCES.filter(function (p) { return p.id === id; })[0] || null; }
@@ -267,6 +267,15 @@
     globe: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-1.6 2.2A8 8 0 0 0 4.1 11H8c.1-2.6.9-5 2.4-6.8ZM12 4.3C10.9 5.8 10.1 8.2 10 11h4c-.1-2.8-.9-5.2-2-6.7Zm1.6-.1C15.1 6 15.9 8.4 16 11h3.9a8 8 0 0 0-6.3-6.8ZM4.1 13a8 8 0 0 0 6.3 6.8C8.9 18 8.1 15.6 8 13H4.1Zm5.9 0c.1 2.8.9 5.2 2 6.7 1.1-1.5 1.9-3.9 2-6.7h-4Zm6 0c-.1 2.6-.9 5-2.4 6.8a8 8 0 0 0 6.3-6.8H16Z',
     alert: 'M12 2 1 21h22L12 2Zm-1 7h2v6h-2V9Zm0 8h2v2h-2v-2Z',
     user: 'M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.5-9 6v2h18v-2c0-3.5-4-6-9-6Z',
+    drum: 'M4 8.2c0-1.8 3.6-3.2 8-3.2s8 1.4 8 3.2v8.6c0 1.8-3.6 3.2-8 3.2s-8-1.4-8-3.2V8.2Zm2 0c0 .8 2.7 1.5 6 1.5s6-.7 6-1.5-2.7-1.5-6-1.5-6 .7-6 1.5Zm1.2 4.3 2 4.8h1.5l2-4.8h-1.6l-1.2 3-1.1-3H7.2Zm7.4 0 2 4.8 2-4.8h-1.5l-.5 1.4-.5-1.4h-1.5Z M2.6 1.6l4.9 2.6-.5.9-4.9-2.6.5-.9Zm18.8 0 .5.9-4.9 2.6-.5-.9 4.9-2.6Z',
+    boat: 'M2.5 15.5h19l-2.6 4.5H5.1l-2.6-4.5Z M11 2.5h1.5v12H11v-12Z M13.2 4.2l6.6 9.3h-6.6V4.2Z M10.3 6.3 5 13.5h5.3V6.3Z',
+    fireworks: 'M12 1.5 13.38 8.67 19.42 4.58 15.33 10.62 22.5 12 15.33 13.38 19.42 19.42 13.38 15.33 12 22.5 10.62 15.33 4.58 19.42 8.67 13.38 1.5 12 8.67 10.62 4.58 4.58 10.62 8.67Z M12 10.4a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2Z',
+    mango: 'M12.3 7.4c4.5 0 8.2 3.3 8.2 7.5 0 3.8-3 6.6-6.9 6.6-4.8 0-9.6-3.6-9.6-8.2 0-3.5 3.6-5.9 8.3-5.9Z M11.8 6.6c.3-1.9 1.3-3.3 3.1-4.1l.6 1c-1.4.7-2.2 1.8-2.4 3.2l-1.3-.1Z M16.1 3.6c2-.9 4.1-.6 5.3.5-1 1.8-3.1 2.5-5.1 2-.4-.8-.5-1.7-.2-2.5Z',
+    headdress: 'M7.59 16.44 3.89 12.66 -1.14 10.99 2.56 14.78Z M9.48 14.65 8.08 9.54 4.49 5.64 5.89 10.75Z M12 14 13.25 8.85 12 3.7 10.75 8.85Z M14.52 14.65 18.11 10.75 19.51 5.64 15.92 9.54Z M16.41 16.44 21.44 14.78 25.14 10.99 20.11 12.66Z M5.5 17.6h13a1.2 1.2 0 0 1 1.2 1.2v1.6a1.2 1.2 0 0 1-1.2 1.2h-13a1.2 1.2 0 0 1-1.2-1.2v-1.6a1.2 1.2 0 0 1 1.2-1.2Z',
+    mask: 'M12 3c5.2 0 9 3.1 9 8.6C21 17 16.9 21 12 21s-9-4-9-9.4C3 6.1 6.8 3 12 3Zm-5.6 7.3 3.8-1.3 1 2.3-3.9.8-.9-1.8Zm11.2 0-3.8-1.3-1 2.3 3.9.8.9-1.8ZM7.6 14.2h8.8c-.6 2.5-2.3 3.9-4.4 3.9s-3.8-1.4-4.4-3.9Z',
+    bunting: 'M2 4.5h20V6H2V4.5Z M3 7h4.2L5.1 12.4 3 7Z M8.6 7h4.2l-2.1 5.4L8.6 7Z M14.2 7h4.2l-2.1 5.4L14.2 7Z M19.8 7H22v1.2l-1.2 3.1-1-4.3Z M5 13.5h4.2l-2.1 5.4L5 13.5Z M10.9 13.5h4.2L13 18.9l-2.1-5.4Z M16.8 13.5H21l-2.1 5.4-2.1-5.4Z',
+    potion: 'M9.5 2h5v2h-1.2v3.1c3 .9 5.2 3.7 5.2 7 0 4.1-3.1 7.4-6.5 7.4S5.5 18.2 5.5 14.1c0-3.3 2.2-6.1 5.2-7V4H9.5V2Zm2.3 8.6c-.5 2.4.4 4.3 2.6 5.1.6-2.4-.4-4.3-2.6-5.1Zm-1.6 3c-1.8.5-2.6 1.9-2.2 3.6 1.7-.3 2.6-1.6 2.2-3.6Z',
+    shell: 'M12 19.4 1.54 14.98 1.84 14.59 2.13 14.22 2.39 13.84 2.6 13.44 2.77 13.02 2.89 12.56 2.97 12.07 3.04 11.54 3.1 10.99 3.48 10.75 3.84 10.5 4.18 10.25 4.48 9.96 4.74 9.62 4.96 9.23 5.16 8.8 5.34 8.32 5.53 7.83 5.95 7.75 6.36 7.66 6.74 7.55 7.09 7.4 7.42 7.18 7.72 6.9 8.01 6.57 8.3 6.19 8.6 5.8 9.02 5.89 9.42 5.97 9.81 6.02 10.18 6.01 10.54 5.94 10.9 5.79 11.26 5.59 11.62 5.35 12 5.1 12.38 5.35 12.74 5.59 13.1 5.79 13.46 5.94 13.82 6.01 14.19 6.02 14.58 5.97 14.98 5.89 15.4 5.8 15.7 6.19 15.99 6.57 16.28 6.9 16.58 7.18 16.91 7.4 17.26 7.55 17.64 7.66 18.05 7.75 18.47 7.83 18.66 8.32 18.84 8.8 19.04 9.23 19.26 9.62 19.52 9.96 19.82 10.25 20.16 10.5 20.52 10.75 20.9 10.99 20.96 11.54 21.03 12.07 21.11 12.56 21.23 13.02 21.4 13.44 21.61 13.84 21.87 14.22 22.16 14.59 22.46 14.98Z M9.41 16.95 4.21 12.57 4.59 11.88Z M10.12 16.03 6.21 9.77 6.74 9.27Z M11.01 15.44 8.79 7.92 9.41 7.65Z M12 15.24 11.67 7.19 12.33 7.19Z M12.99 15.44 14.59 7.65 15.21 7.92Z M13.88 16.03 17.26 9.27 17.79 9.77Z M14.59 16.95 19.41 11.88 19.79 12.57Z M8.4 19.9h7.2l1.3 2.6H7.1l1.3-2.6Z',
     mic: 'M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z',
     refresh: 'M12 4a8 8 0 0 1 7.4 5H17v2h6V5h-2v2.3A10 10 0 1 0 22 13h-2a8 8 0 1 1-8-9Z',
     chevronDown: 'M12 16.5 3.5 8 5 6.5l7 7 7-7L20.5 8 12 16.5Z',
@@ -946,8 +955,8 @@
           el('div', { class: 'hero__copy' }, [
             el('img', { class: 'hero__logo anim-rise', src: LOGO_SRC, alt: '', width: 512, height: 512 }),
             el('h1', { id: 'hero-h', class: 'hero__title anim-rise', style: '--d:120ms' }, [
-              el('span', { class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events.' }),
-              el('span', { 'aria-hidden': 'true' }, ['See more of the Islands’ ', el('br'), rotator, el('span', { class: 'caret' })])
+              el('span', { class: 'sr-only', text: 'SMILE: See More of Culture’s Landmarks and Events.' }),
+              el('span', { 'aria-hidden': 'true' }, ['See more of Culture’s ', el('br'), rotator, el('span', { class: 'caret' })])
             ]),
             el('p', { class: 'hero__lead anim-rise', style: '--d:220ms', text: 'Boracay, Iloilo, Guimaras, Bacolod, Dumaguete, Siquijor and more. Pick a province, ask Isidro, accept a challenge, scan your postcard, collect stamps and rank up from E to SSS.' }),
             el('div', { class: 'hero__cta anim-rise', style: '--d:320ms' }, [
@@ -2895,16 +2904,9 @@
   // SMILE Hub (#/hub): everyone's public travel posts, with the traveler's rank.
   // ---------------------------------------------------------------------------
 
-  function renderHub(token, query) {
-    var filter = query.province && provinceInfo(query.province) ? query.province : '';
+  function renderHub(token) {
+    var filter = '';
     var feed = el('div', { class: 'feed' });
-    var chips = el('div', { class: 'prov-chips', role: 'group', 'aria-label': 'Province' });
-    var paintChips = function () {
-      chips.textContent = '';
-      [{ id: '', name: 'All', icon: 'globe', color: '#14213d' }].concat(PROVINCES).forEach(function (pv) {
-        chips.appendChild(el('button', { type: 'button', class: 'prov-chip', style: '--c:' + pv.color, 'aria-pressed': String(filter === pv.id), onclick: function () { filter = pv.id; paintChips(); load(); } }, [icon(pv.icon), pv.name]));
-      });
-    };
     var load = function () {
       feed.textContent = '';
       feed.appendChild(el('p', { class: 'muted', text: 'Loading the latest adventures…' }));
@@ -2927,10 +2929,8 @@
         button('Share your adventure', 'mic', { variant: 'glow', href: '#/journal' }),
         button('Ranks', 'trophy', { variant: 'light', href: '#/ranks' })
       ]),
-      chips,
       feed
     ]));
-    paintChips();
     focusHeading();
     loadPlaces();
     load();

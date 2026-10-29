@@ -52,7 +52,7 @@ model training.
 | **Festival calendar.** Ati-Atihan, Dinagyang, Paraw Regatta, Panaad sa Negros, the Siquijor Healing Festival, Manggahan, MassKara, Buglasan, Sinadya sa Halaran and Binirayan by month, with the next date and a "Remind me" calendar file. | |
 | **Account.** Sign up / sign in from the header on every page; the profile shows rank, points, bio, stamp album and journal history. | |
 | **Travel journal.** Say or type your story, let Muse Spark polish it or translate it to English, Tagalog or Hiligaynon, add a selfie or photo and a 15-second clip, generate a caption, and keep it private or share it. | Muse Voice Transcribe + Muse Spark |
-| **SMILE Hub.** Everyone's public journal posts with the traveler's rank badge and points, likes and a province filter, to inspire more travel. Public posts pass a safety check first. | Muse Spark |
+| **SMILE Hub.** Everyone's public journal posts with the traveler's rank badge and points, and likes, to inspire more travel. Public posts pass a safety check first. | Muse Spark |
 
 ### For merchants and nano entrepreneurs
 
