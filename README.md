@@ -41,7 +41,7 @@ model training.
 
 | Feature | Meta model |
 |---|---|
-| **Pick a province.** 8 provinces (Aklan with Boracay, Antique, Capiz, Guimaras, Iloilo, Negros Occidental, Negros Oriental, Siquijor) and 52 places. The chosen province's landmarks, festivals, food and shops show first; every other province stays listed below. | |
+| **Pick a province.** 8 provinces (Aklan with Boracay, Antique, Capiz, Guimaras, Iloilo, Negros Occidental, Negros Oriental, Siquijor) and 73 places. The chosen province's landmarks, festivals, food and shops show first; every other province stays listed below. | |
 | **Landing poster.** A poster of the region with tappable pins for 12 places. | |
 | **Isidro, the AI travel buddy.** A chat that remembers the conversation and answers follow-ups in Hiligaynon, English or Tagalog. It suggests only real places from SMILE, knows the festival calendar and today's date, and shows its picks as place cards with photos and video. | Muse Spark |
 | **Talk to Isidro.** Tap Speak, ask, tap Stop: your words are written down and Isidro answers. | Muse Voice Transcribe |
