@@ -160,7 +160,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .field { display: grid; gap: 4px; }
 .field__label { font-weight: 800; font-size: 14px; padding: 0; }
 .field__hint { font-size: 13px; color: var(--muted); margin: 0; }
-input[type="text"], input[type="search"], select, textarea {
+input[type="text"], input[type="search"], input[type="email"], input[type="password"], select, textarea {
   width: 100%; padding: 12px 14px; border-radius: 14px; border: 2px solid var(--line); background: #fff; font-size: 16px; transition: border-color .2s, box-shadow .2s;
 }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue-2); box-shadow: 0 0 0 4px rgba(0, 87, 217, .15); }
@@ -647,3 +647,9 @@ body.has-cam { overflow: hidden; }
 .profile__top { display: flex; align-items: center; gap: 12px; }
 .profile__top .card__title { margin: 0; }
 @media (max-width: 420px) { .account-btn__text { display: none; } .account-btn { padding: 3px; } }
+
+/* Isidro's portrait */
+.isidro-avatar { width: 132px; height: 132px; padding: 0; overflow: hidden; background: #fff; }
+.isidro-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.chat__avatar { flex-basis: 38px; height: 38px; overflow: hidden; background: #fff; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(20, 33, 61, .2); }
+.chat__avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }

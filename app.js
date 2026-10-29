@@ -1238,7 +1238,7 @@
     var log = el('div', { class: 'chat', role: 'log', 'aria-live': 'polite', 'aria-label': 'Conversation with Isidro' });
     var q = el('textarea', { id: 'isidro-q', rows: '2', maxlength: '500', placeholder: 'Ask Isidro anything: a day plan, food, festivals, how to get there…', 'aria-label': 'Your message to Isidro' });
     var send = button('Send', 'send', { type: 'submit', variant: 'glow' });
-    var avatar = function () { return el('span', { class: 'chat__avatar', 'aria-hidden': 'true' }, icon('guide')); };
+    var avatar = function () { return el('span', { class: 'chat__avatar', 'aria-hidden': 'true' }, el('img', { src: 'assets/isidro-64.webp', alt: '', width: 64, height: 64 })); };
     var typing = el('div', { class: 'chat__row' }, [avatar(), el('div', { class: 'chat__bubble chat__typing', 'aria-label': 'Isidro is typing' }, [el('span'), el('span'), el('span')])]);
 
     var bubble = function (m) {
@@ -1293,7 +1293,7 @@
 
     setView(el('section', { class: 'section section--narrow' }, [
       el('div', { class: 'isidro-hero' }, [
-        el('div', { class: 'isidro-avatar' }, icon('guide')),
+        el('div', { class: 'isidro-avatar' }, el('img', { src: 'assets/isidro-512.webp', alt: 'Isidro, your SMILE tour guide', width: 512, height: 512 })),
         el('h1', { class: 'page-head__title', text: 'Isidro, your AI travel buddy' }),
         el('p', { class: 'muted', text: 'Powered by Meta\'s Muse Spark. Isidro only suggests real places in SMILE, and remembers your chat so you can ask follow-ups.' })
       ]),
@@ -2597,14 +2597,14 @@
       var email = el('input', { id: 'auth-email', type: 'email', autocomplete: 'email', required: true, maxlength: '120' });
       var pw = el('input', { id: 'auth-pw', type: 'password', autocomplete: isUp ? 'new-password' : 'current-password', required: true, minlength: isUp ? '8' : null, maxlength: '100' });
       var name = el('input', { id: 'auth-name', type: 'text', autocomplete: 'nickname', maxlength: '40', placeholder: 'e.g. Kris of Jaro', value: isUp ? (Passport.name() || '') : '' });
-      var prov = el('select', { id: 'auth-prov' }, PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); }));
-      prov.value = currentProvince() || DEFAULT_PROVINCE;
+      var nationality = el('input', { id: 'auth-nat', type: 'text', autocomplete: 'off', maxlength: '40', placeholder: 'e.g. Filipino, Korean, American' });
+      var hometown = el('input', { id: 'auth-home', type: 'text', autocomplete: 'address-level1', maxlength: '60', placeholder: 'e.g. Iloilo, Cebu, Seoul, California' });
       var submit = button(isUp ? 'Create my account' : 'Sign in', isUp ? 'star' : 'user', { type: 'submit', block: true, variant: isUp ? 'glow' : 'blue' });
       var form = el('form', { class: 'stack', onsubmit: function (e) {
         e.preventDefault();
         setBusy(submit, true, isUp ? 'Creating…' : 'Signing in…');
         out.hidden = true;
-        var req = isUp ? Api.signup({ name: name.value.trim(), email: email.value.trim(), password: pw.value, province: prov.value }) : Api.signin(email.value.trim(), pw.value);
+        var req = isUp ? Api.signup({ name: name.value.trim(), email: email.value.trim(), password: pw.value, nationality: nationality.value.trim(), hometown: hometown.value.trim(), province: currentProvince() }) : Api.signin(email.value.trim(), pw.value);
         req.then(function (r) {
           Auth.set(r);
           Modal.close();
@@ -2615,7 +2615,8 @@
         isUp ? formField('auth-name', 'Display name (shown on the SMILE Hub)', name) : null,
         formField('auth-email', 'Email', email),
         formField('auth-pw', 'Password', pw, isUp ? 'At least 8 characters.' : null),
-        isUp ? formField('auth-prov', 'Home province (or where you are exploring)', prov) : null,
+        isUp ? formField('auth-nat', 'Nationality', nationality, 'Everyone is welcome to SMILE.') : null,
+        isUp ? formField('auth-home', 'Province or state you are from', hometown, 'Optional.') : null,
         submit, out,
         el('p', { class: 'muted small center' }, [isUp ? 'Already have an account? ' : 'New to SMILE? ',
           el('a', { href: '#', text: isUp ? 'Sign in' : 'Create an account', onclick: function (e) { e.preventDefault(); Auth.open(isUp ? 'signin' : 'signup', then); } })]),
@@ -2745,7 +2746,7 @@
       return el('section', { class: 'card stack profile' }, [
         el('div', { class: 'profile__top' }, [
           el('span', { class: 'post__avatar post__avatar--big', 'aria-hidden': 'true', text: r.user.name.charAt(0).toUpperCase() }),
-          el('div', null, [el('h2', { class: 'card__title', text: r.user.name }), el('p', { class: 'muted small', text: provinceName(r.user.province) + ' • ' + r.posts.length + ' journal entr' + (r.posts.length === 1 ? 'y' : 'ies') })]),
+          el('div', null, [el('h2', { class: 'card__title', text: r.user.name }), el('p', { class: 'muted small', text: [r.user.nationality, r.user.hometown].filter(Boolean).join(' • ') + (r.user.nationality || r.user.hometown ? ' • ' : '') + r.posts.length + ' journal entr' + (r.posts.length === 1 ? 'y' : 'ies') })]),
           rankBadge(r.rank, r.points)
         ]),
         formField('me-bio', 'About me', bio), save
