@@ -233,6 +233,14 @@
 
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var ICONS = {
+    phone: 'M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.12.37 2.32.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8Z',
+    shield: 'M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-1 5h2v4h4v2h-4v4h-2v-4H7v-2h4V7Z',
+    hospital: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm5 4v3H7v4h3v3h4v-3h3v-4h-3V7h-4Z',
+    clinic: 'M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm-1.5 5v3.5H7v3h3.5V17h3v-3.5H17v-3h-3.5V7h-3Z',
+    paw: 'M7 8.5a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4Zm10 0a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4ZM4.2 13.4a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4Zm15.6 0a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4ZM12 11c3 0 6.2 4.6 6.2 7.2a2.6 2.6 0 0 1-3.1 2.5c-1.1-.2-2-.6-3.1-.6s-2 .4-3.1.6a2.6 2.6 0 0 1-3.1-2.5C5.8 15.6 9 11 12 11Z',
+    pill: 'M4.6 12.4 12.4 4.6a5 5 0 0 1 7 7l-7.8 7.8a5 5 0 0 1-7-7Zm1.4 1.4a3 3 0 0 0 4.2 4.2l3.5-3.5-4.2-4.2L6 13.8Z',
+    minus: 'M5 11h14v2H5v-2Z',
+    plus: 'M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z',
     bulb: 'M12 2a7 7 0 0 1 4 12.7V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.3A7 7 0 0 1 12 2Zm-3 17h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 20.5V19Z',
     calendar: 'M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2ZM5 9v10h14V9H5Zm2 2h2v2H7v-2Zm4 0h2v2h-2v-2Zm4 0h2v2h-2v-2Zm-8 4h2v2H7v-2Zm4 0h2v2h-2v-2Zm4 0h2v2h-2v-2Z',
     cutlery: 'M12 1a11 11 0 1 1 0 22 11 11 0 0 1 0-22ZM7.5 5v5.2c0 .9.6 1.6 1.4 1.8V19h1.6v-7c.8-.2 1.4-.9 1.4-1.8V5h-1.2v4.5h-.8V5h-1.2v4.5h-.8V5H7.5Zm7.7 0c-1.3.4-2.2 2.2-2.2 4.6V14h1.6v5h1.6V5h-1Z',
@@ -515,10 +523,30 @@
     return box;
   }
 
-  function mapsUrl(p) {
-    if (p.maps_url && /^https:\/\//.test(p.maps_url)) return p.maps_url;
-    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(p.lat + ',' + p.lng);
+  // Directions open Google Maps with the blue route already drawn (phone and desktop). The destination is the
+  // place's name from its maps link (more exact than our pin), or its pin. When the app already knows where the
+  // traveler is (Near me), that becomes the start, so desktop browsers draw the route too.
+  function routeDest(p) {
+    var u = String((p && p.maps_url) || '');
+    var m = u.match(/[?&](?:query|destination)=([^&]+)/);
+    if (m) { try { return decodeURIComponent(m[1].replace(/\+/g, ' ')); } catch (e) { /* use the pin */ } }
+    if (p && hasLatLng(p)) return Number(p.lat) + ',' + Number(p.lng);
+    return p && p.name ? p.name + ', ' + provinceName(provinceOf(p)) + ', Philippines' : '';
   }
+  function routeUrl(dest) {
+    var url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest);
+    var h = typeof Geo !== 'undefined' && Geo.here && Date.now() - Geo.here.t < 15 * 60000 ? Geo.here : null;
+    if (h) url += '&origin=' + encodeURIComponent(h.lat.toFixed(5) + ',' + h.lng.toFixed(5));
+    return url;
+  }
+  function mapsUrl(p) { return routeUrl(routeDest(p)); }
+  /** Turns a link-button into a route button (blue line in Google Maps). */
+  function routeButton(btn, dest) { btn.setAttribute('href', routeUrl(dest)); btn.setAttribute('data-route', dest); btn.setAttribute('rel', 'noopener'); return btn; }
+  // Links marked data-route get the freshest start point at the moment they are tapped.
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[data-route]') : null;
+    if (a) a.href = routeUrl(a.getAttribute('data-route'));
+  }, true);
 
   function findPlace(id) { return State.places.filter(function (p) { return p.id === id; })[0] || FALLBACK.filter(function (p) { return p.id === id; })[0] || null; }
   function catOf(p) { return CATS[p && p.cat] || { label: 'Place', icon: 'pin', color: '#0057D9' }; }
@@ -589,7 +617,7 @@
     var accepted = Passport.hasAccepted(p.id);
     return el('div', { class: 'card__actions' }, [
       button(accepted ? 'Go now' : 'Accept Challenge', accepted ? 'route' : 'trophy', { block: true, onclick: function () { acceptChallenge(p.id, opts.onChange); } }),
-      button('Directions', 'map', { variant: 'blue', href: mapsUrl(p), target: '_blank' }),
+      routeButton(button('Directions', 'map', { variant: 'blue', href: '#', target: '_blank' }), routeDest(p)),
       button('Check-In', 'qr', { variant: 'green', href: '#/checkin?place=' + encodeURIComponent(p.id) }),
       button('Photobooth', 'camera', { variant: 'orange', onclick: function () { openPhotobooth(p.id); } }),
       mediaButton('place', p.id, p.name, false)
@@ -1009,6 +1037,7 @@
 
       // Phones: the app-style hero, tiles and featured destinations.
       el('section', { class: 'home-hero home-mobile', 'aria-labelledby': 'hero-h-m' }, [
+        el('button', { type: 'button', class: 'hero-sos', 'aria-label': 'Emergency hotlines', onclick: function () { Hotline.open(); } }, [icon('phone'), el('span', { text: 'Hotline' })]),
         el('h1', { id: 'hero-h-m', class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events. Western Visayas and the Negros Island Region.' }),
         el('div', { class: 'home-hero__art anim-pop' }, [
           el('picture', null, [
@@ -1092,11 +1121,11 @@
         el('h2', { id: 'how-h', class: 'section__title reveal', text: 'Your postal adventure' }),
         el('p', { class: 'muted reveal', text: 'Every postcard is a quest. Every mailbox is a finish line.' }),
         el('ol', { class: 'how-steps' }, [
-          ['postcard', 'Grab your postcard', 'Get an official SMILE postcard from a partner shop. It is your game piece.'],
+          ['postcard', 'Grab your postcard', 'Buy an official SMILE postcard, stamp included, from an authorized SMILE merchant. It is your game piece.'],
           ['trophy', 'Take the challenge', 'Pick a landmark, festival or food stop and follow the map.'],
           ['qr', 'Scan and collect', 'Scan your postcard at the place to earn its stamp and points.'],
-          ['mailbox', 'Stamp it and mail it', 'Paste a PhilPost stamp and drop it in the mailbox: quest complete!'],
-          ['heart', 'Pass it on', 'It lands somewhere new in the Philippines, where someone adopts it and plays.'],
+          ['mailbox', 'Mail it at the post office', 'Isidro shows you the nearest post office. Drop your postcard there: quest complete!'],
+          ['heart', 'Adopt one', 'Pick a random postcard from the SMILE box at the post office, adopt it and follow that traveler\'s journey.'],
           ['star', 'Rank up', 'Fill your stamp album and climb from E to SSS.']
         ].map(function (s, i) {
           return el('li', { class: 'how-step reveal', style: '--d:' + (i * 100) + 'ms' }, [
@@ -1281,7 +1310,7 @@
   function saveChat(list) { try { window.sessionStorage.setItem(ISIDRO_KEY, JSON.stringify(list.slice(-30))); } catch (e) { /* optional */ } }
 
   /** Small place card inside a chat reply. */
-  function miniPlaceCard(p) {
+  function miniPlaceCard(p, km) {
     var c = catOf(p);
     return el('article', { class: 'mini-place' }, [
       el('button', { type: 'button', class: 'mini-place__main', onclick: function () { openPlace(p.id); } }, [
@@ -1289,11 +1318,93 @@
         el('span', { class: 'mini-place__text' }, [
           el('b', { text: p.name }),
           el('small', { text: (p.barangay ? p.barangay + ', ' : '') + provinceName(provinceOf(p)) + ' • +' + (p.points || 0) + ' pts' })
-        ])
+        ]),
+        isFinite(km) ? el('span', { class: 'dist-badge', text: kmText(km) }) : null
       ]),
       el('div', { class: 'btn-row' }, [
         button(Passport.hasAccepted(p.id) ? 'Go now' : 'Accept', Passport.hasAccepted(p.id) ? 'route' : 'trophy', { small: true, onclick: function () { acceptChallenge(p.id); } }),
         mediaButton('place', p.id, p.name)
+      ])
+    ]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // GPS "near me": the phone's location, asked only when the traveler taps the pin. Never saved.
+  // ---------------------------------------------------------------------------
+  var Geo = {
+    here: null,
+    supported: function () { return !!(window.navigator && window.navigator.geolocation); },
+    get: function () {
+      return new Promise(function (resolve, reject) {
+        if (!Geo.supported()) { reject(new Error('This browser cannot share your location.')); return; }
+        window.navigator.geolocation.getCurrentPosition(function (pos) {
+          Geo.here = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy || 0), t: Date.now() };
+          resolve(Geo.here);
+        }, function (e) {
+          reject(new Error(e && e.code === 1 ? 'Location is blocked. Allow location for this site in your browser settings, then tap the pin again.' : 'We could not find you. Turn on GPS or location, step outside if you can, and try again.'));
+        }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+      });
+    },
+    /** A location from the last 2 minutes, or a new one. */
+    fresh: function () { return Geo.here && Date.now() - Geo.here.t < 120000 ? Promise.resolve(Geo.here) : Geo.get(); }
+  };
+  function distKm(a, b) {
+    var t = Math.PI / 180, dLa = (b.lat - a.lat) * t, dLn = (b.lng - a.lng) * t;
+    var h = Math.sin(dLa / 2) * Math.sin(dLa / 2) + Math.cos(a.lat * t) * Math.cos(b.lat * t) * Math.sin(dLn / 2) * Math.sin(dLn / 2);
+    return 12742 * Math.asin(Math.min(1, Math.sqrt(h)));
+  }
+  function kmText(km) { return km < 1 ? Math.max(50, Math.round(km * 1000 / 50) * 50) + ' m' : (km < 10 ? km.toFixed(1) : String(Math.round(km))) + ' km'; }
+  function hasLatLng(x) { return x && isFinite(Number(x.lat)) && isFinite(Number(x.lng)) && !(Number(x.lat) === 0 && Number(x.lng) === 0) && x.lat !== '' && x.lat != null; }
+  // Approximate locations of the built-in shops (the server sends exact pins when merchants add them).
+  var SHOP_COORDS = {
+    'biscocho-haus': [10.7225, 122.5583], 'bongbongs-piaya': [10.6730, 122.9530], 'trappist-gift-shop': [10.6290, 122.6070],
+    'sans-rival-dumaguete': [9.3080, 123.3080], 'dela-cruz-pina': [11.7070, 122.3660], 'dtalipapa': [11.9600, 121.9260],
+    'bagtason-weavers': [11.0450, 122.0650], 'roxas-market': [11.5870, 122.7510], 'jordan-wharf-stalls': [10.6580, 122.5930],
+    'panaderia-de-molo': [10.6970, 122.5450], 'deocampo-barquillos': [10.7200, 122.5600], 'pendys': [10.6760, 122.9560],
+    'merci-pasalubong': [10.6740, 122.9500], 'siquijor-market': [9.2140, 123.5150]
+  };
+  function shopLatLng(s) {
+    if (hasLatLng(s)) return { lat: Number(s.lat), lng: Number(s.lng) };
+    var c = SHOP_COORDS[s.shop_id];
+    return c ? { lat: c[0], lng: c[1] } : null;
+  }
+  var NEAR_KINDS = [
+    { key: 'all', label: 'Everything', icon: 'compass', ask: 'What is good near me right now?', cats: null },
+    { key: 'food', label: 'Eats', icon: 'cutlery', ask: 'Where can I eat near me?', cats: ['food'] },
+    { key: 'landmark', label: 'Landmarks', icon: 'church', ask: 'What landmarks are near me?', cats: ['landmark', 'heritage', 'nature'] },
+    { key: 'event', label: 'Events', icon: 'festival', ask: 'What festivals and events are near me?', cats: ['festival'] },
+    { key: 'shop', label: 'Shops', icon: 'bag', ask: 'Where can I buy pasalubong near me?', cats: [] },
+    { key: 'inn', label: 'Inns', icon: 'home', ask: 'Where can I stay near me?', cats: ['stay'] },
+    { key: 'postoffice', label: 'Post office', icon: 'mailbox', ask: 'Where is the nearest post office to mail my SMILE postcard?', cats: [] }
+  ];
+  /** Nearest places and shops worked out on the phone (used when the AI is busy or offline). */
+  function localNearest(here, kind) {
+    var k = NEAR_KINDS.filter(function (n) { return n.key === kind; })[0] || NEAR_KINDS[0];
+    var dist = {};
+    var places = (k.key === 'shop' || k.key === 'postoffice') ? [] : State.places.filter(function (p) { return hasLatLng(p) && (!k.cats || k.cats.indexOf(p.cat) !== -1); })
+      .map(function (p) { dist[p.id] = distKm(here, { lat: Number(p.lat), lng: Number(p.lng) }); return p; })
+      .sort(function (a, b) { return dist[a.id] - dist[b.id]; }).slice(0, 3);
+    var shops = (k.key === 'all' || k.key === 'shop') ? (State.shops || []).map(function (s) { var ll = shopLatLng(s); return ll ? { shop_id: s.shop_id, name: s.name, type: s.type, barangay: s.barangay, maps_url: s.maps_url, distance_km: distKm(here, ll) } : null; })
+      .filter(function (s) { return s && s.distance_km <= 30; }).sort(function (a, b) { return a.distance_km - b.distance_km; }).slice(0, k.key === 'shop' ? 5 : 3) : [];
+    return { places: places, dist: dist, shops: shops };
+  }
+  function postOfficeUrl(here) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('post office near ' + here.lat.toFixed(4) + ',' + here.lng.toFixed(4)); }
+  function innSearchUrl(here) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('inns hotels near ' + here.lat.toFixed(4) + ',' + here.lng.toFixed(4)); }
+
+  /** A nearby shop in Isidro's answer: name, distance and directions. */
+  function miniShopCard(s) {
+    var t = SHOP_TYPES[s.type] || SHOP_TYPES.other || { label: 'Shop' };
+    return el('article', { class: 'mini-place' }, [
+      el('a', { class: 'mini-place__main', href: '#/shop' }, [
+        el('span', { class: 'card-icon card-icon--sm', style: 'background:#02A04F' }, icon('shop')),
+        el('span', { class: 'mini-place__text' }, [
+          el('b', { text: s.name }),
+          el('small', { text: (t.label || 'Shop') + (s.barangay ? ' • ' + s.barangay : '') })
+        ]),
+        isFinite(s.distance_km) ? el('span', { class: 'dist-badge', text: kmText(s.distance_km) }) : null
+      ]),
+      el('div', { class: 'btn-row' }, [
+        routeButton(button('Directions', 'route', { small: true, variant: 'light', href: '#', target: '_blank' }), routeDest(s))
       ])
     ]);
   }
@@ -1328,11 +1439,16 @@
     var bubble = function (m) {
       var mine = m.role === 'user';
       var places = (m.places || []).map(findPlace).filter(Boolean);
+      var dist = m.dist || {};
       return el('div', { class: 'chat__row' + (mine ? ' chat__row--me' : '') }, [
         mine ? null : avatar(),
         el('div', { class: 'chat__bubble' + (m.error ? ' chat__bubble--warn' : '') }, [
+          m.near && mine ? el('span', { class: 'near-tag' }, [icon('pin', 'icon--inline'), 'Near me']) : null,
           el('p', { class: 'chat__text', text: m.content }),
-          places.length ? el('div', { class: 'chat__places' }, places.map(miniPlaceCard)) : null
+          places.length ? el('div', { class: 'chat__places' }, places.map(function (p) { return miniPlaceCard(p, dist[p.id]); })) : null,
+          m.shops && m.shops.length ? el('div', { class: 'chat__places' }, m.shops.map(miniShopCard)) : null,
+          m.inn ? button('Find inns and hotels near me', 'map', { small: true, variant: 'light', href: m.inn, target: '_blank' }) : null,
+          m.po ? button('Nearest post office on the map', 'mailbox', { small: true, variant: 'blue', href: m.po, target: '_blank' }) : null
         ])
       ]);
     };
@@ -1346,19 +1462,34 @@
       log.scrollTop = log.scrollHeight;
     };
 
-    var ask = function (text) {
+    var nearOn = false;
+    var ask = function (text, kind) {
       text = String(text || '').trim();
       if (!text) { q.focus(); toast('Type a question for Isidro first.'); return; }
       var history = msgs.filter(function (m) { return !m.error; }).slice(-10).map(function (m) { return { role: m.role, content: m.content }; });
-      msgs.push({ role: 'user', content: text });
+      var useNear = nearOn || !!kind;
+      msgs.push({ role: 'user', content: text, near: useNear });
       q.value = '';
       saveChat(msgs);
       paint(true);
       setBusy(send, true, '…');
-      Api.chat(text, lang.value, prov.value, history).then(function (r) {
+      var here = null;
+      (useNear ? Geo.fresh().then(function (h) { here = h; return h; }, function (err) { toast(err.message); return null; }) : Promise.resolve(null)).then(function (loc) {
+        return Api.chat(text, lang.value, loc ? '' : prov.value, history, loc, kind || (loc ? 'all' : ''));
+      }).then(function (r) {
         (r.places || []).forEach(function (p) { if (p && p.id && !findPlace(p.id)) State.places.push(p); });
-        msgs.push({ role: 'assistant', content: (r.reply || 'Here are my picks for you.') + (r.demo ? '\n\n(Isidro is in demo mode: the AI key is not set on the server yet.)' : ''), places: (r.places || []).map(function (p) { return p.id; }) });
+        var dist = {};
+        (r.places || []).forEach(function (p) { if (p && isFinite(p.distance_km)) dist[p.id] = p.distance_km; });
+        msgs.push({ role: 'assistant', content: (r.reply || 'Here are my picks for you.') + (r.demo ? '\n\n(Isidro is in demo mode: the AI key is not set on the server yet.)' : ''),
+          places: (r.places || []).map(function (p) { return p.id; }), dist: dist, shops: r.shops || null, inn: kind === 'postoffice' ? null : (r.inn_search_url || (here && kind === 'inn' ? innSearchUrl(here) : null)),
+          po: r.post_office_search_url && (kind === 'postoffice' || !kind) ? r.post_office_search_url : (here && kind === 'postoffice' ? postOfficeUrl(here) : null) });
       }, function (err) {
+        if (here) {
+          var n = localNearest(here, kind || 'all');
+          msgs.push({ role: 'assistant', error: true, content: (State.demo ? 'Demo answer: here is what is closest to you.' : friendlyError(err) + '\n\nWhile I reconnect, here is what is closest to you.'),
+            places: n.places.map(function (p) { return p.id; }), dist: n.dist, shops: n.shops, inn: (kind === 'inn' || kind === 'all' || !kind) ? innSearchUrl(here) : null, po: kind === 'postoffice' ? postOfficeUrl(here) : null });
+          return;
+        }
         var pool = State.places.filter(function (p) { return !prov.value || provinceOf(p) === prov.value; });
         var picks = localPicks(text, pool);
         msgs.push({ role: 'assistant', error: true, content: (State.demo ? 'Demo answer: these places match your question.' : friendlyError(err) + '\n\nWhile I reconnect, these places match your question.'), places: picks.map(function (p) { return p.id; }) });
@@ -1380,9 +1511,36 @@
       bulb.setAttribute('aria-label', open ? 'Hide suggested plans' : 'Show suggested plans');
       bulb.classList.toggle('is-on', open);
     });
+    // Near me: tap the pin, allow location, then pick Eats, Landmarks, Events, Shops or Inns.
+    var nearStatus = el('span', { class: 'near-panel__status', role: 'status', 'aria-live': 'polite' });
+    var nearPanel = el('div', { id: 'isidro-near', class: 'near-panel', hidden: true }, [
+      el('div', { class: 'near-panel__head' }, [icon('pin'), el('b', { text: 'Near me' }), nearStatus]),
+      el('div', { class: 'chips chips--wrap' }, NEAR_KINDS.map(function (k) {
+        return el('button', { type: 'button', class: 'chip-btn near-chip', onclick: function () { ask(k.ask, k.key); } }, [icon(k.icon, 'icon--inline'), k.label]);
+      })),
+      el('p', { class: 'muted small', text: 'Your location is used only to find what is close to you. SMILE never saves it.' })
+    ]);
+    var pin = el('button', { type: 'button', class: 'bulb-btn pin-btn', 'aria-pressed': 'false', 'aria-controls': 'isidro-near', 'aria-label': 'Near me: use my location', title: 'Near me' }, icon('pin'));
+    var setNear = function (on) {
+      nearOn = on;
+      nearPanel.hidden = !on;
+      pin.classList.toggle('is-on', on);
+      pin.setAttribute('aria-pressed', String(on));
+      pin.setAttribute('aria-label', on ? 'Near me is on: tap to stop using my location' : 'Near me: use my location');
+    };
+    pin.addEventListener('click', function () {
+      if (nearOn) { setNear(false); toast('Near me is off.'); return; }
+      pin.classList.add('is-busy');
+      nearStatus.textContent = '';
+      Geo.get().then(function (h) {
+        setNear(true);
+        nearStatus.textContent = 'Using your location' + (h.acc ? ' (within about ' + kmText(h.acc / 1000) + ')' : '');
+        nearPanel.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
+      }, function (err) { toast(err.message); }).then(function () { pin.classList.remove('is-busy'); });
+    });
     var form = el('form', { class: 'chat-form', onsubmit: function (e) { e.preventDefault(); ask(q.value); } }, [
       q,
-      el('div', { class: 'chat-actions' }, [bulb, mic, el('span', { class: 'chat-actions__gap' }), send])
+      el('div', { class: 'chat-actions' }, [pin, bulb, mic, el('span', { class: 'chat-actions__gap' }), send])
     ]);
     q.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(q.value); } });
     var prompts = ['I have 4 hours and love food', 'What festivals are on this month?', 'Beach weekend in Boracay on a budget', 'Mango trip to Guimaras', 'Heritage walk in Silay and Bacolod'];
@@ -1398,9 +1556,10 @@
       ]),
       el('div', { class: 'chat-settings' }, [formField('isidro-province', 'Province', prov), formField('isidro-lang', 'Language', lang)]),
       log,
+      nearPanel,
       ideas,
       form,
-      el('p', { class: 'muted small chat-hint', text: 'Tap the bulb for suggested plans. Tap Speak, ask, then tap Stop: Muse Voice writes it down and Isidro answers (English and Tagalog work best).' }),
+      el('p', { class: 'muted small chat-hint', text: 'Tap the pin to find eats, landmarks, events, shops and inns near you. Tap the bulb for suggested plans. Tap Speak, ask, then tap Stop: Muse Voice writes it down and Isidro answers (English and Tagalog work best).' }),
       el('div', { class: 'btn-row chat-tools' }, [
         button('New chat', 'refresh', { small: true, variant: 'light', onclick: function () { msgs = []; saveChat(msgs); paint(false); q.focus(); } }),
         button('Festival calendar', 'festival', { small: true, variant: 'light', href: '#/events' })
@@ -1408,6 +1567,18 @@
     ]));
     paint(false);
     if (query && query.q) q.value = String(query.q).slice(0, 500);
+    if (query && query.near) {
+      var wantKind = NEAR_KINDS.filter(function (k) { return k.key === query.near; })[0];
+      setTimeout(function () {
+        if (token !== renderToken) return;
+        Geo.get().then(function (h) {
+          if (token !== renderToken) return;
+          setNear(true);
+          nearStatus.textContent = 'Using your location' + (h.acc ? ' (within about ' + kmText(h.acc / 1000) + ')' : '');
+          if (wantKind) ask(wantKind.ask, wantKind.key);
+        }, function (err) { toast(err.message); });
+      }, 300);
+    }
     focusHeading();
     Promise.all([loadPlaces(), loadMedia()]).then(function () { if (token === renderToken) paint(false); });
   }
@@ -1649,15 +1820,7 @@
 
   function mailSection(getInfo) {
     var out = outputBox();
-    var mailBtn = button('Drop in Mailbox', 'send', { variant: 'blue', disabled: !State.stampsBought });
-    var buyBtn = button(State.stampsBought ? 'Stamp pasted' : 'Buy ₱20 Stamp', 'stamp', { variant: 'yellow', disabled: State.stampsBought });
-    buyBtn.addEventListener('click', function () {
-      State.stampsBought = true;
-      mailBtn.disabled = false;
-      buyBtn.disabled = true;
-      buyBtn.querySelector('.btn__text').textContent = 'Stamp pasted';
-      toast('PhilPost stamp pasted! Your postcard is ready for its journey.');
-    });
+    var mailBtn = button('I mailed it', 'send', { variant: 'blue' });
     mailBtn.addEventListener('click', function () {
       var info = getInfo();
       if (!info.postcard) { toast('Type your postcard code in the check-in form first.'); return; }
@@ -1665,16 +1828,27 @@
       out.loading('Sending your postcard on its journey…');
       Api.mailPostcard(info).then(function (r) {
         var d = r.destination || {};
-        out.show('Mailed to ' + (d.place || 'a surprise destination') + (d.province ? ', ' + d.province : '') + '!' + (r.chain_no !== undefined ? '\nChain #' + r.chain_no : ''), 'ok');
+        out.show('Mailed to ' + (d.place || 'a surprise destination') + (d.province ? ', ' + d.province : '') + '!' + (r.chain_no !== undefined ? '\nChain #' + r.chain_no : '') + '\nWhile you are at the post office, pick a random postcard from the SMILE box and adopt it.', 'ok');
       }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(mailBtn, false); });
     });
+    var poBtn = button('Nearest post office', 'map', { variant: 'light', small: true, onclick: function () {
+      setBusy(poBtn, true, 'Finding you…');
+      var win = null;
+      try { win = window.open('', '_blank'); } catch (e) { win = null; }
+      Geo.fresh().then(function (h) { return 'post office near ' + h.lat.toFixed(4) + ',' + h.lng.toFixed(4); }, function () { var pv = provinceInfo(currentProvince()); return 'PhilPost post office ' + (pv ? pv.name : 'Western Visayas'); })
+        .then(function (q) {
+          var url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+          if (win && !win.closed) win.location.href = url; else window.location.href = url;
+        }).then(function () { setBusy(poBtn, false); });
+    } });
     return el('section', { class: 'section section--narrow', id: 'mail' }, [
       el('div', { class: 'card mail-card reveal' }, [
         el('h2', { class: 'section__title' }, [icon('mailbox'), ' Mail your postcard']),
-        el('p', { text: 'The mailbox is your finish line! Paste a ₱20 PhilPost stamp and drop your postcard in any PhilPost mailbox or post office. SMILE sends it to a surprise destination in the Philippines, where someone adopts it and starts their own adventure.' }),
+        el('p', { text: 'The post office is your finish line! Your SMILE postcard already has its stamp. Take it to the nearest post office, drop it at the counter or in the mailbox, then tap "I mailed it". SMILE sends it to a surprise destination, where someone adopts it and starts their own adventure.' }),
         el('div', { class: 'stamps', 'aria-hidden': 'true' }, [el('span', { class: 'stamp stamp--a' }, icon('stamp'))]),
-        el('div', { class: 'btn-row' }, [buyBtn, mailBtn]),
-        button('Find a post office near me', 'map', { variant: 'light', small: true, href: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('PhilPost post office'), target: '_blank' }),
+        el('div', { class: 'btn-row' }, [mailBtn, button('Ask Isidro the way', 'compass', { variant: 'yellow', href: '#/isidro?near=postoffice' })]),
+        poBtn,
+        el('p', { class: 'muted small' }, ['At the post office, pick a random postcard from the SMILE box, ', el('a', { href: '#/postcards', text: 'adopt it' }), ' and follow that traveler\'s journey.']),
         out
       ])
     ]);
@@ -1702,7 +1876,10 @@
       aOut.loading('Adopting your postcard…');
       Api.adoptPostcard(aUser.value.trim(), aCode.value.trim().toUpperCase()).then(function (r) {
         if (r.adopter_total !== undefined) Passport.setPoints(r.adopter_total);
-        aOut.show('Welcome to SMILE! You adopted a postcard from ' + (r.sender || 'a fellow explorer') + '.\nRank: ' + (r.rank || rankOf(Passport.points())), 'ok');
+        aOut.show('Welcome to SMILE! You adopted a postcard from ' + (r.sender || 'a fellow explorer') + '.\nRank: ' + (r.rank || rankOf(Passport.points())) + '\nHere is the journey it has taken so far:', 'ok');
+        tCode.value = aCode.value.trim().toUpperCase();
+        track({ preventDefault: function () {} });
+        var tf = tCode.closest('form'); if (tf) tf.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
       }, function (err) { aOut.show(friendlyError(err), 'error'); }).then(function () { setBusy(aBtn, false); });
     };
 
@@ -1727,7 +1904,7 @@
     };
 
     setView(el('section', { class: 'section section--narrow' }, [
-      pageHead('heart', '#ED0460', 'SMILE Postcards', 'Found a SMILE postcard in your mailbox? Adopt it to join, or track where a postcard has been.'),
+      pageHead('heart', '#ED0460', 'SMILE Postcards', 'At the post office, pick a random postcard from the SMILE box (or adopt one that reached your mailbox). Scan its QR to adopt it and see the journey of the traveler who sent it.'),
       el('form', { class: 'card stack', onsubmit: adopt }, [
         el('h2', { class: 'card__title', text: 'Adopt a postcard' }),
         formField('ad-user', 'Your name', aUser),
@@ -1861,7 +2038,7 @@
         ]);
       })) : null,
       el('div', { class: 'btn-row shop-card__actions' }, [
-        button('Directions', 'map', { variant: 'blue', small: true, href: s.maps_url || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.name + ' ' + provinceName(provinceOf(s)))), target: '_blank', onclick: function () { Track.add(s.shop_id, 'directions'); } }),
+        routeButton(button('Directions', 'map', { variant: 'blue', small: true, href: '#', target: '_blank', onclick: function () { Track.add(s.shop_id, 'directions'); } }), routeDest(s)),
         tracked(contactNode(s.contact), s.shop_id, 'contact'),
         mediaButton('shop', s.shop_id, s.name),
         button('Share', 'share', { variant: 'light', small: true, onclick: function () {
@@ -1949,6 +2126,15 @@
     var area = el('input', { id: 'sell-area', type: 'text', maxlength: '80', placeholder: 'Barangay / street, e.g. Molo Plaza' });
     var desc = el('textarea', { id: 'sell-desc', rows: '2', maxlength: '400', placeholder: 'What makes your shop special?' });
     var contact = el('input', { id: 'sell-contact', type: 'text', maxlength: '120', placeholder: 'Facebook page link, mobile number or email' });
+    var shopPin = null;
+    var pinNote = el('span', { class: 'muted small', role: 'status', 'aria-live': 'polite', text: 'Optional: stand at your shop and tap, so Isidro can send nearby tourists to you.' });
+    var pinBtn = button('Pin my shop here (GPS)', 'pin', { small: true, variant: 'light', onclick: function () {
+      setBusy(pinBtn, true, 'Finding you…');
+      Geo.get().then(function (h) {
+        shopPin = { lat: Math.round(h.lat * 1e5) / 1e5, lng: Math.round(h.lng * 1e5) / 1e5 };
+        pinNote.textContent = 'Pinned! (within about ' + kmText((h.acc || 20) / 1000) + ')';
+      }, function (err) { pinNote.textContent = err.message; }).then(function () { setBusy(pinBtn, false); });
+    } });
     var itemsBox = el('div', { class: 'stack' });
     var rows = [];
     var addItem = function () {
@@ -1985,7 +2171,7 @@
       var shopName = name.value.trim(), firstItem = items[0].name;
       setBusy(submit, true, 'Sending…');
       out.loading('Sending your shop…');
-      Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, province: prov.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim() }, items).then(function (r) {
+      Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, province: prov.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim(), lat: shopPin ? shopPin.lat : '', lng: shopPin ? shopPin.lng : '' }, items).then(function (r) {
         out.show((r.message || 'Salamat! Your shop was sent for review.') + (r.manage_code ? '\n\nYour shop code: ' + r.manage_code + '\nSave it! Use it on the Shop dashboard to see your views and postcard sales, and to add photos later.' : '') + (r.upload_token ? '\n\nNext: add your photos and promo video below.' : ''), 'ok');
         if (r.manage_code) storageSet('smile.shopCode', r.manage_code);
         if (r.upload_token && r.shop_id) {
@@ -1993,7 +2179,7 @@
           form.parentNode.appendChild(step);
           step.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
         }
-        form.reset(); itemsBox.textContent = ''; rows = []; addItem();
+        form.reset(); itemsBox.textContent = ''; rows = []; addItem(); shopPin = null; pinNote.textContent = 'Optional: stand at your shop and tap, so Isidro can send nearby tourists to you.';
       }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(submit, false); });
     } }, [
       el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#02A04F' }, icon('shop')), 'Sell on SMILE']),
@@ -2002,6 +2188,7 @@
       formField('sell-type', 'What do you sell?', type),
       formField('sell-province', 'Province', prov),
       formField('sell-area', 'Town, barangay or street', area),
+      el('div', { class: 'btn-row shop-pin' }, [pinBtn, pinNote]),
       formField('sell-desc', 'About your shop', desc),
       formField('sell-contact', 'Contact for buyers', contact, 'Shown publicly so tourists can order or visit.'),
       el('h3', { class: 'sell-items__title', text: 'Products' }),
@@ -2681,8 +2868,11 @@
       var a = $('#account-btn');
       if (!a) return;
       var u = Auth.user();
-      a.querySelector('.account-btn__avatar').textContent = u ? u.name.charAt(0).toUpperCase() : '';
-      a.querySelector('.account-btn__avatar').classList.toggle('is-guest', !u);
+      var av = a.querySelector('.account-btn__avatar');
+      av.textContent = u ? u.name.charAt(0).toUpperCase() : '';
+      if (u && u.photo_id) { av.textContent = ''; av.appendChild(driveImg(u.photo_id, 96, '')); }
+      av.classList.toggle('has-photo', !!(u && u.photo_id));
+      av.classList.toggle('is-guest', !u);
       a.querySelector('.account-btn__text').textContent = u ? u.name.split(' ')[0] : 'Sign in';
       a.setAttribute('aria-label', u ? 'My profile: ' + u.name : 'Sign in or sign up');
       a.setAttribute('href', '#/me');
@@ -2778,7 +2968,7 @@
       text: p.visibility === 'private' ? 'Private' : p.status === 'live' ? 'On the SMILE Hub' : 'Waiting for review' }) : null;
     return el('article', { class: 'card post reveal' }, [
       el('header', { class: 'post__head' }, [
-        el('span', { class: 'post__avatar', 'aria-hidden': 'true', text: String(p.name || '?').charAt(0).toUpperCase() }),
+        avatarEl(p.name, p.avatar_id),
         el('div', { class: 'post__who' }, [
           el('b', { text: p.name }),
           el('span', { class: 'small muted', text: [p.place_name, pv ? pv.name : '', timeAgo(p.created)].filter(String).join(' • ') })
@@ -2815,7 +3005,7 @@
     }
     var u = Auth.user();
     var list = el('div', { class: 'stack' }, el('p', { class: 'muted', text: 'Loading your journal…' }));
-    var head = el('div');
+    var head = el('div', { class: 'stack-lg' });
     var load = function () {
       Api.me(Auth.token()).then(function (r) {
         if (token !== renderToken) return;
@@ -2840,12 +3030,29 @@
         setBusy(save, true, 'Saving…');
         Api.me(Auth.token(), { bio: bio.value.trim() }).then(function () { toast('Profile saved.'); }, function (err) { toast(friendlyError(err)); }).then(function () { setBusy(save, false); });
       } });
+      var avatarSlot = el('div', { class: 'profile__photo' }, avatarEl(r.user.name, r.user.photo_id, true));
+      var photoMsg = el('p', { class: 'muted small', role: 'status', 'aria-live': 'polite' });
+      var uploadPhoto = function (res) {
+        photoMsg.textContent = 'Saving your photo…';
+        avatarSlot.classList.add('is-busy');
+        Api.profilePhoto(Auth.token(), res.dataUrl).then(function (x) {
+          r.user.photo_id = x.photo_id;
+          storageSet(Auth.KEY, JSON.stringify({ token: Auth.token(), user: r.user }));
+          avatarSlot.textContent = '';
+          avatarSlot.appendChild(el('span', { class: 'post__avatar post__avatar--big has-photo' }, el('img', { src: res.dataUrl, alt: 'Photo of ' + r.user.name })));
+          photoMsg.textContent = 'Photo saved. It shows on your profile and your SMILE Hub posts.';
+          Auth.paint();
+        }, function (err) { photoMsg.textContent = friendlyError(err); }).then(function () { avatarSlot.classList.remove('is-busy'); });
+      };
+      var picker = photoPicker({ id: 'me-photo', facing: 'user', cameraLabel: r.user.photo_id ? 'New selfie' : 'Take a selfie', title: 'Profile selfie', hint: 'Smile! This photo shows on your SMILE profile.', variant: 'light', max: 800, onPhoto: uploadPhoto });
+      picker.classList.add('profile__photo-btns');
       return el('section', { class: 'card stack profile' }, [
         el('div', { class: 'profile__top' }, [
-          el('span', { class: 'post__avatar post__avatar--big', 'aria-hidden': 'true', text: r.user.name.charAt(0).toUpperCase() }),
+          avatarSlot,
           el('div', null, [el('h2', { class: 'card__title', text: r.user.name }), el('p', { class: 'muted small', text: [r.user.nationality, r.user.hometown].filter(Boolean).join(' • ') + (r.user.nationality || r.user.hometown ? ' • ' : '') + r.posts.length + ' journal entr' + (r.posts.length === 1 ? 'y' : 'ies') })]),
           rankBadge(r.rank, r.points)
         ]),
+        picker, photoMsg,
         formField('me-bio', 'About me', bio), save
       ]);
     };
@@ -2864,6 +3071,169 @@
     ]));
     focusHeading();
     load();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Hotline (header button): national emergency numbers, local numbers from the Hotlines sheet,
+  // and "find the nearest" map searches using the phone's location.
+  // ---------------------------------------------------------------------------
+
+  var HOTLINE_KINDS = {
+    police: { label: 'Police station', icon: 'shield', color: '#0057D9', search: 'police station' },
+    tanod: { label: 'Barangay tanod outpost', icon: 'shield', color: '#0B2A66', search: 'barangay hall' },
+    drrmo: { label: 'DRRMO (disaster response)', icon: 'alert', color: '#E09A00', search: 'disaster risk reduction and management office' },
+    healthoffice: { label: 'Municipal health office', icon: 'clinic', color: '#02A04F', search: 'municipal health office' },
+    hospital: { label: 'Hospital', icon: 'hospital', color: '#E2141E', search: 'hospital' },
+    clinic: { label: 'Clinic', icon: 'clinic', color: '#ED0460', search: 'medical clinic' },
+    vet: { label: 'Veterinary clinic', icon: 'paw', color: '#7B2CBF', search: 'veterinary clinic' },
+    drugstore: { label: 'Drugstore', icon: 'pill', color: '#02A04F', search: 'pharmacy drugstore' },
+    fire: { label: 'Fire station', icon: 'alert', color: '#FF6A03', search: 'fire station' },
+    coastguard: { label: 'Coast Guard', icon: 'boat', color: '#0096C7', search: 'coast guard' },
+    tourism: { label: 'Tourist assistance', icon: 'guide', color: '#FDB603', search: 'tourism office' },
+    other: { label: 'Hotline', icon: 'phone', color: '#5B6478', search: 'emergency' }
+  };
+  var hotlineCache = {};
+  function telHref(num) { return 'tel:' + String(num).replace(/[^\d+]/g, ''); }
+
+  var Hotline = {
+    open: function () {
+      var provId = currentProvince(), pv = provinceInfo(provId);
+      var where = pv ? pv.name + ', Philippines' : 'Western Visayas, Philippines';
+      var nearLinks = {};
+      var mapUrl = function (kind, here) {
+        var q = HOTLINE_KINDS[kind].search + (here ? ' near ' + here.lat.toFixed(4) + ',' + here.lng.toFixed(4) : ' in ' + where);
+        return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+      };
+      var locNote = el('p', { class: 'muted small', role: 'status', 'aria-live': 'polite', text: 'Finding your location for the nearest results…' });
+      var nearGrid = el('div', { class: 'sos-near' }, ['police', 'hospital', 'clinic', 'vet', 'drugstore'].map(function (k) {
+        var t = HOTLINE_KINDS[k];
+        var a = el('a', { class: 'sos-near__btn', href: mapUrl(k), target: '_blank', rel: 'noopener', style: '--c:' + t.color }, [icon(t.icon), el('span', { text: t.label })]);
+        nearLinks[k] = a;
+        return a;
+      }));
+      var local = el('div', { class: 'stack' }, el('p', { class: 'muted small', text: 'Loading local hotlines…' }));
+      var localHead = el('h3', { class: 'sos-h', text: 'Local hotlines' + (pv ? ' in ' + pv.name : '') });
+      var allLines = null, here = null;
+      var paintLocal = function () {
+        if (!allLines) return;
+        var list;
+        if (here) {
+          list = allLines.map(function (h) { var c = Object.assign({}, h); if (hasLatLng(h)) c.km = distKm(here, { lat: Number(h.lat), lng: Number(h.lng) }); return c; })
+            .filter(function (h) { return h.km != null ? h.km <= 30 : (!provId || !h.province || h.province === provId); })
+            .sort(function (x, y) { return (x.km == null ? 999 : x.km) - (y.km == null ? 999 : y.km); });
+          localHead.textContent = 'Local hotlines near you';
+        } else {
+          list = allLines.filter(function (h) { return !provId || !h.province || h.province === provId; });
+        }
+        local.textContent = '';
+        if (!list.length) {
+          local.appendChild(el('p', { class: 'muted small', text: 'Verified local numbers for ' + (here ? 'your area' : (pv ? pv.name : 'your province')) + ' will appear here once the SMILE team adds them. In an emergency, call 911.' }));
+          return;
+        }
+        list.slice(0, 12).forEach(function (h) {
+          var t = HOTLINE_KINDS[h.type] || HOTLINE_KINDS.other;
+          local.appendChild(el('div', { class: 'sos-line', style: '--c:' + t.color }, [
+            el('a', { class: 'sos-line__main', href: telHref(h.phone) }, [
+              el('span', { class: 'sos-line__icon' }, icon(t.icon)),
+              el('span', { class: 'sos-line__text' }, [el('b', { text: h.name }), el('small', { text: [t.label, h.notes, h.address].filter(Boolean).join(' • ') })]),
+              el('span', { class: 'sos-line__num' }, [icon('phone'), h.phone])
+            ]),
+            hasLatLng(h) ? el('div', { class: 'sos-line__route' }, [
+              h.km != null ? el('span', { class: 'dist-badge', text: kmText(h.km) }) : null,
+              routeButton(button('Directions', 'route', { small: true, variant: 'light', href: '#', target: '_blank' }), Number(h.lat) + ',' + Number(h.lng))
+            ]) : null
+          ]));
+        });
+      };
+      Modal.open({ title: 'Emergency hotlines', name: 'hotline', body: el('div', { class: 'sos stack' }, [
+        el('div', { class: 'sos-main' }, [
+          el('a', { class: 'sos-call sos-call--red', href: 'tel:911' }, [icon('phone'), el('span', null, [el('b', { text: '911' }), el('small', { text: 'Police, fire, ambulance (national emergency)' })])]),
+          el('a', { class: 'sos-call', href: 'tel:143' }, [icon('hospital'), el('span', null, [el('b', { text: '143' }), el('small', { text: 'Philippine Red Cross' })])])
+        ]),
+        el('h3', { class: 'sos-h', text: 'Find the nearest' }),
+        nearGrid, locNote,
+        localHead,
+        local,
+        el('p', { class: 'muted small', text: 'In a life-threatening emergency, call 911 first. Google Maps lists the nearest places with their phone numbers: tap one, then Directions, for the blue route.' }),
+        el('div', { class: 'sos-join' }, [
+          el('span', { text: 'Police, tanod, fire, DRRMO, health office, clinic or drugstore?' }),
+          button('List your hotline', 'plus', { small: true, variant: 'blue', href: '#/partner', onclick: function () { Modal.close(); } })
+        ])
+      ]) });
+      Geo.fresh().then(function (h) {
+        here = h;
+        Object.keys(nearLinks).forEach(function (k) { nearLinks[k].href = mapUrl(k, h); });
+        locNote.textContent = 'Showing places near you.';
+        paintLocal();
+      }, function () { locNote.textContent = 'Location is off, so the map searches ' + where + '. Allow location for the nearest results.'; });
+      if (hotlineCache.all) { allLines = hotlineCache.all; paintLocal(); }
+      else Api.hotlines('').then(function (r) { hotlineCache.all = allLines = r.hotlines || []; paintLocal(); }, function () { allLines = []; paintLocal(); });
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Hotline partners (#/partner): hospitals, clinics, veterinary clinics and drugstores list their number and pin.
+  // ---------------------------------------------------------------------------
+
+  function renderPartner() {
+    var type = el('select', { id: 'pt-type' }, [
+      el('optgroup', { label: 'Government and barangay' }, [['police', 'Police station'], ['tanod', 'Barangay tanod outpost'], ['fire', 'Fire station'], ['drrmo', 'DRRMO (Disaster Risk Reduction and Management Office)'], ['healthoffice', 'Municipal / city health office']].map(function (t) { return el('option', { value: t[0], text: t[1] }); })),
+      el('optgroup', { label: 'Health and pets' }, [['hospital', 'Hospital'], ['clinic', 'Clinic'], ['vet', 'Veterinary clinic'], ['drugstore', 'Drugstore / pharmacy']].map(function (t) { return el('option', { value: t[0], text: t[1] }); }))
+    ]);
+    type.value = 'police';
+    var name = el('input', { id: 'pt-name', type: 'text', maxlength: '80', placeholder: 'e.g. La Paz Police Station, Brgy. Tabuc Suba Tanod Outpost' });
+    var prov = el('select', { id: 'pt-prov' }, PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); }));
+    prov.value = currentProvince() || DEFAULT_PROVINCE;
+    var address = el('input', { id: 'pt-address', type: 'text', maxlength: '120', placeholder: 'Street, barangay, town or city' });
+    var phone = el('input', { id: 'pt-phone', type: 'tel', maxlength: '40', placeholder: 'e.g. (033) 123 4567 or 0917 123 4567' });
+    var notes = el('input', { id: 'pt-notes', type: 'text', maxlength: '120', placeholder: 'e.g. Open 24 hours, emergency room, accepts pets' });
+    var person = el('input', { id: 'pt-person', type: 'text', maxlength: '60', placeholder: 'Your name and role (for our verification call)' });
+    var trap = el('input', { type: 'text', name: 'website', tabindex: '-1', autocomplete: 'off', class: 'hp-field', 'aria-hidden': 'true' });
+    var confirm = el('input', { id: 'pt-confirm', type: 'checkbox' });
+    var pin = null;
+    var pinNote = el('span', { class: 'muted small', role: 'status', 'aria-live': 'polite', text: 'Stand at your entrance and tap, so travelers get the blue route to your door.' });
+    var pinBtn = button('Pin our location (GPS)', 'pin', { small: true, variant: 'light', onclick: function () {
+      setBusy(pinBtn, true, 'Finding you…');
+      Geo.get().then(function (h) {
+        pin = { lat: Math.round(h.lat * 1e5) / 1e5, lng: Math.round(h.lng * 1e5) / 1e5 };
+        pinNote.textContent = 'Pinned! (within about ' + kmText((h.acc || 20) / 1000) + ')';
+      }, function (err) { pinNote.textContent = err.message; }).then(function () { setBusy(pinBtn, false); });
+    } });
+    var out = outputBox();
+    var submit = button('Send for verification', 'send', { type: 'submit', block: true, variant: 'green' });
+    var form = el('form', { class: 'card stack', onsubmit: function (e) {
+      e.preventDefault();
+      if (!name.value.trim()) { toast('Type the name of your office or business.'); name.focus(); return; }
+      if (!phone.value.trim()) { toast('Type the phone number travelers can call.'); phone.focus(); return; }
+      if (!address.value.trim()) { toast('Type your address.'); address.focus(); return; }
+      if (!confirm.checked) { toast('Please tick the box to confirm.'); confirm.focus(); return; }
+      if (!pin && !window.confirm('You have not pinned your location yet. Send without the map pin?')) return;
+      setBusy(submit, true, 'Sending…');
+      out.loading('Sending your hotline…');
+      Api.hotlineSubmit({ type: type.value, name: name.value.trim(), province: prov.value, address: address.value.trim(), phone: phone.value.trim(), notes: notes.value.trim(),
+        contact_person: person.value.trim(), lat: pin ? pin.lat : '', lng: pin ? pin.lng : '', confirm: true, website: trap.value }).then(function (r) {
+        out.show(r.message || 'Salamat! The SMILE team will call to verify your number.', 'ok');
+        form.reset(); pin = null; pinNote.textContent = 'Stand at your entrance and tap, so travelers get the blue route to your door.';
+        delete hotlineCache.all;
+      }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(submit, false); });
+    } }, [
+      formField('pt-type', 'We are a', type),
+      formField('pt-name', 'Name', name),
+      formField('pt-prov', 'Province', prov),
+      formField('pt-address', 'Address', address),
+      el('div', { class: 'btn-row shop-pin' }, [pinBtn, pinNote]),
+      formField('pt-phone', 'Phone number for travelers', phone),
+      formField('pt-notes', 'Hours and services (optional)', notes),
+      formField('pt-person', 'Contact person (not shown to travelers)', person),
+      trap,
+      el('label', { class: 'check-row', for: 'pt-confirm' }, [confirm, el('span', { text: 'I represent this office or business, and this number and location are correct. SMILE may call to verify.' })]),
+      submit, out
+    ]);
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [
+      pageHead('phone', '#E2141E', 'List your hotline', 'Police stations, barangay tanod outposts, fire stations, DRRMOs, health offices, hospitals, clinics, veterinary clinics and drugstores: be there for travelers in an emergency. Free to join. The SMILE team calls to verify each number before it appears in the Hotline.'),
+      form
+    ]));
+    focusHeading();
   }
 
   // ---------------------------------------------------------------------------
@@ -3130,6 +3500,13 @@
 
   /** Returns a promise of decode(source) → Promise<string|null>. source: video, image or canvas. */
   var qrDecoder = null;
+  /** Round avatar: the traveler's photo, or their first letter. */
+  function avatarEl(name, photoId, big) {
+    var cls = 'post__avatar' + (big ? ' post__avatar--big' : '') + (photoId ? ' has-photo' : '');
+    if (photoId) return el('span', { class: cls }, driveImg(photoId, big ? 240 : 96, name ? 'Photo of ' + name : ''));
+    return el('span', { class: cls, 'aria-hidden': 'true', text: String(name || '?').charAt(0).toUpperCase() });
+  }
+
   function getQrDecoder() {
     if (qrDecoder) return Promise.resolve(qrDecoder);
     var useJsQR = function () {
@@ -3311,9 +3688,10 @@
     },
 
     gotQR: function (val) {
-      var parsed = parsePostcardQR(val);
-      if (!parsed.code) {
-        if (Date.now() - Camera.lastMsg > 2500) { Camera.lastMsg = Date.now(); Camera.say('That QR is not a SMILE postcard. Try the QR on the back of your postcard.'); }
+      var custom = Camera.opts && Camera.opts.parse;
+      var parsed = custom ? Camera.opts.parse(val) : parsePostcardQR(val);
+      if (!parsed || !parsed.code) {
+        if (Date.now() - Camera.lastMsg > 2500) { Camera.lastMsg = Date.now(); Camera.say(custom ? (Camera.opts.badQr || 'That QR is not the right kind. Try again.') : 'That QR is not a SMILE postcard. Try the QR on the back of your postcard.'); }
         return;
       }
       try { if (navigator.vibrate) navigator.vibrate(80); } catch (e) { /* ignore */ }
@@ -3326,7 +3704,8 @@
       img.onload = function () {
         getQrDecoder().then(function (decode) { return decode(img); }).then(function (val) {
           URL.revokeObjectURL(url);
-          if (val && parsePostcardQR(val).code) Camera.gotQR(val);
+          var okQr = val && (Camera.opts && Camera.opts.parse ? Camera.opts.parse(val) : parsePostcardQR(val));
+          if (okQr && okQr.code) Camera.gotQR(val);
           else Camera.say('No SMILE QR found in that photo. Try a sharper, closer photo.');
         }, function () { URL.revokeObjectURL(url); Camera.say('Could not read that photo.'); });
       };
@@ -3584,6 +3963,7 @@
     events: renderEvents,
     dashboard: renderDashboard,
     me: renderMe,
+    partner: renderPartner,
     journal: renderJournal,
     hub: renderHub
   };
@@ -3645,6 +4025,8 @@
     loadPlaces();
     loadMedia();
     Auth.paint();
+    var hb = $('#hotline-btn');
+    if (hb) hb.addEventListener('click', function () { Hotline.open(); });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

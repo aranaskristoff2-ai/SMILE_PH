@@ -83,7 +83,7 @@
       return data;
     }
     var err = data.error;
-    var code = (err && err.code) || 'ERROR';
+    var code = (err && err.code) || data.code || 'ERROR';
     // SMILE backend error messages are written for visitors ("Postcard already used"), so show them.
     var msg = typeof err === 'string' ? err : (err && err.message) || FRIENDLY[code] || FRIENDLY.SERVER_ERROR;
     throw ApiError(String(code), String(msg));
@@ -117,7 +117,7 @@
     ACTIONS: ['places', 'recommend', 'accept_challenge', 'vision', 'checkin', 'mail_postcard', 'adopt_postcard',
       'track_postcard', 'caption', 'merchant', 'insights', 'leaderboard', 'photobooth', 'shops', 'shop_submit',
       'media', 'media_upload', 'sam_image', 'sam_video', 'chat', 'track', 'dashboard', 'merchant_tips',
-      'transcribe', 'translate', 'signup', 'signin', 'signout', 'me', 'journal_save', 'journal_delete', 'journal_caption', 'hub', 'hub_like'],
+      'transcribe', 'translate', 'signup', 'signin', 'signout', 'me', 'journal_save', 'journal_delete', 'journal_caption', 'hub', 'hub_like', 'profile_photo', 'hotlines', 'hotline_submit'],
     TIMEOUTS: TIMEOUTS,
     isConfigured: isConfigured,
     friendly: function (err) {
@@ -126,7 +126,12 @@
     },
 
     places: function () { return post('places', {}, TIMEOUTS.read); },
-    chat: function (q, lang, province, history) { return post('chat', { q: q, lang: lang, province: province || '', history: history || [] }, TIMEOUTS.ai); },
+    /** loc (optional) = { lat, lng } from the phone GPS, sent only with this question; near = food|landmark|event|shop|inn|all. */
+    chat: function (q, lang, province, history, loc, near) {
+      var b = { q: q, lang: lang, province: province || '', history: history || [] };
+      if (loc) { b.loc = { lat: loc.lat, lng: loc.lng }; b.near = near || ''; }
+      return post('chat', b, TIMEOUTS.ai);
+    },
     track: function (events) { return post('track', { events: events }, TIMEOUTS.read); },
     /** Fire-and-forget send when the page is closing (no reply needed). */
     beacon: function (events) {
@@ -141,6 +146,9 @@
     signin: function (email, password) { return post('signin', { email: email, password: password }, TIMEOUTS.write); },
     signout: function (token) { return post('signout', { token: token }, TIMEOUTS.write); },
     me: function (token, update) { return post('me', Object.assign({ token: token }, update || {}), TIMEOUTS.read); },
+    hotlines: function (province) { return post('hotlines', { province: province || '' }, TIMEOUTS.read); },
+    hotlineSubmit: function (o) { return post('hotline_submit', o, TIMEOUTS.write); },
+    profilePhoto: function (token, photo) { return post('profile_photo', { token: token, photo: photo }, TIMEOUTS.upload); },
     journalSave: function (o) { return post('journal_save', o, TIMEOUTS.upload); },
     journalDelete: function (token, postId) { return post('journal_delete', { token: token, post_id: postId }, TIMEOUTS.write); },
     journalCaption: function (o) { return post('journal_caption', o, TIMEOUTS.ai); },
