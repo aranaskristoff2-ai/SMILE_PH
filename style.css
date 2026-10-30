@@ -57,8 +57,42 @@ button, input, select, textarea { font: inherit; color: inherit; }
   position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
   background: radial-gradient(circle at 50% 40%, #fff, var(--cream) 60%, #FFE9B8); transition: opacity .45s ease, visibility .45s;
 }
-.splash__logo { width: min(62vw, 300px); filter: drop-shadow(0 14px 30px rgba(0, 0, 0, .25)); height: auto; animation: splashPop .7s cubic-bezier(.2, 1.4, .4, 1) both; }
-.splash__tag { font-weight: 800; color: var(--blue); text-align: center; padding: 0 20px; animation: rise .6s .25s both; }
+/* festive opening (v14.6): sun rays, bunting, logo drop with a shine, confetti burst and confetti rain */
+.splash { overflow: hidden; }
+.splash__rays { position: absolute; left: 50%; top: 44%; width: 220vmax; height: 220vmax; margin: -110vmax 0 0 -110vmax; opacity: .22; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, #FDB603 0 7.5deg, transparent 7.5deg 15deg, #ED0460 15deg 22.5deg, transparent 22.5deg 30deg, #0057D9 30deg 37.5deg, transparent 37.5deg 45deg, #02A04F 45deg 52.5deg, transparent 52.5deg 60deg);
+  -webkit-mask: radial-gradient(circle, #000 8%, transparent 45%); mask: radial-gradient(circle, #000 8%, transparent 45%); animation: raysSpin 14s linear infinite, raysIn .8s ease both; }
+.splash__bunting { position: absolute; top: 0; left: -2%; right: -2%; display: flex; justify-content: space-between; padding-top: 8px; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .12));
+  background: linear-gradient(transparent 7px, #8b5e34 7px 9px, transparent 9px); }
+.splash__bunting i { width: 7%; max-width: 48px; aspect-ratio: 1 / 1.15; background: var(--c); clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: 50% 0; animation: flagDrop .5s var(--d) cubic-bezier(.2, 1.5, .4, 1) both, flagSwing 1.6s calc(var(--d) + .5s) ease-in-out infinite alternate; }
+.splash__stage { position: relative; display: grid; place-items: center; }
+.splash__glow { position: absolute; width: min(80vw, 380px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(253, 182, 3, .55), rgba(237, 4, 96, .18) 45%, transparent 70%); animation: glowPulse 1.4s .5s ease-in-out infinite; }
+.splash__logo-wrap { position: relative; display: block; width: min(62vw, 300px); aspect-ratio: 1; border-radius: 50%; overflow: hidden; animation: logoDrop .9s cubic-bezier(.2, 1.35, .35, 1) both, logoBeat 1.2s 1s ease-in-out infinite; box-shadow: 0 16px 40px rgba(0, 0, 0, .28), 0 0 0 6px #fff, 0 0 0 10px rgba(253, 182, 3, .7); }
+.splash__logo { width: 100%; height: 100%; display: block; }
+.splash__shine { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .75) 50%, transparent 65%); transform: translateX(-120%); animation: logoShine 1s .85s ease-in-out both; }
+.splash__burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.splash__burst i, .splash__rain i { position: absolute; width: 10px; height: 14px; background: var(--c); border-radius: 2px; }
+.splash__burst i.is-round, .splash__rain i.is-round { width: 11px; height: 11px; border-radius: 50%; }
+.splash__burst i.is-strip, .splash__rain i.is-strip { width: 6px; height: 18px; }
+.splash__burst i { opacity: 0; animation: burst 1.4s calc(.55s + var(--d)) cubic-bezier(.15, .8, .3, 1) both; }
+.splash__rain { position: absolute; inset: 0; pointer-events: none; }
+.splash__rain i { top: -24px; left: var(--l); opacity: 0; animation: rain var(--t) var(--d) linear both; }
+.splash__tag { position: relative; margin-top: 18px; font-family: var(--display); font-size: clamp(20px, 5.5vw, 28px); font-weight: 800; text-align: center; padding: 0 20px;
+  background: linear-gradient(90deg, #ED0460, #FF6A03, #FDB603, #02A04F, #0057D9, #7B2CBF, #ED0460); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: tagIn .6s .7s cubic-bezier(.2, 1.4, .4, 1) both, tagFlow 2.4s 1.2s linear infinite; }
+@keyframes raysSpin { to { transform: rotate(360deg); } }
+@keyframes raysIn { from { opacity: 0; } }
+@keyframes flagDrop { from { transform: translateY(-110%) rotate(0); } }
+@keyframes flagSwing { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+@keyframes glowPulse { 0%, 100% { transform: scale(.92); opacity: .8; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes logoDrop { 0% { transform: translateY(-70vh) scale(.5) rotate(-200deg); opacity: 0; } 60% { opacity: 1; } 100% { transform: none; } }
+@keyframes logoBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+@keyframes logoShine { to { transform: translateX(120%); } }
+@keyframes burst { 0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(.3); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(1); } }
+@keyframes rain { 0% { opacity: 1; transform: translate(0, 0) rotate(0); } 90% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--s), 105vh) rotate(720deg); } }
+@keyframes tagIn { from { opacity: 0; transform: translateY(14px) scale(.9); } }
+@keyframes tagFlow { to { background-position: 200% 0; } }
+@media (prefers-reduced-motion: reduce) { .splash__rays, .splash__burst, .splash__rain, .splash__shine { display: none; } }
 .splash.is-gone { opacity: 0; visibility: hidden; }
 @keyframes splashPop { from { transform: scale(.6) rotate(-6deg); opacity: 0; } to { transform: none; opacity: 1; } }
 
@@ -577,8 +611,8 @@ body.has-cam { overflow: hidden; }
 .chat__typing span { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); animation: typing 1.2s infinite ease-in-out; }
 .chat__typing span:nth-child(2) { animation-delay: .15s; } .chat__typing span:nth-child(3) { animation-delay: .3s; }
 @keyframes typing { 0%, 80%, 100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
-.chat-form { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
-.chat-form textarea { flex: 1; resize: none; }
+.chat-form { display: grid; gap: 8px; margin-top: 10px; }
+.chat-form textarea { width: 100%; resize: none; min-height: 84px; }
 .chat-tools { margin-top: 8px; }
 .mini-place { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 8px; display: grid; gap: 6px; color: var(--ink); }
 .mini-place__main { display: flex; gap: 8px; align-items: center; text-align: left; background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
@@ -687,3 +721,45 @@ body.has-cam { overflow: hidden; }
 @media (max-width: 899px) { body[data-page="home"] .topbar { display: none; } }
 @media (max-width: 380px) { .home-tile__label { font-size: 12px; } .home-tile__icon .icon { width: 38px; height: 38px; } .home-sheet { padding-left: 10px; padding-right: 10px; } .home-tiles { gap: 7px; } }
 @media (min-width: 760px) { .home-hero__art, .home-sheet { max-width: 640px; } .home-tile__label { font-size: 14px; } .home-hero { padding-top: 24px; } .home-hero__art { border-radius: 28px 28px 0 0; overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, .3); } }
+
+/* ---------- Isidro composer (v14.1): Speak and Send on one row, ideas behind a bulb ---------- */
+.chat-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.chat-actions .mic { display: contents; }
+.chat-actions .mic__status { order: 9; flex-basis: 100%; }
+.chat-actions .mic__status:empty { display: none; }
+.chat-actions__gap { flex: 1; }
+.chat-actions .btn[type="submit"] { min-width: 110px; }
+.bulb-btn { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--yellow); background: #FFF8E1; color: #C98A00; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s, transform .2s; }
+.bulb-btn .icon { width: 22px; height: 22px; }
+.bulb-btn:hover { transform: translateY(-2px); }
+.bulb-btn.is-on { background: var(--yellow); color: #fff; box-shadow: 0 0 0 4px rgba(253, 182, 3, .25), 0 0 18px rgba(253, 182, 3, .7); }
+.bulb-btn:focus-visible { outline: 3px solid var(--blue-2); outline-offset: 2px; }
+.chat-ideas[hidden] { display: none; }
+.chat-ideas { margin-top: 10px; animation: rise .3s ease both; }
+.chat-hint { margin: 6px 2px 0; }
+
+/* ---------- tab bar (v14.1): seven tabs, Isidro sparkling in the centre ---------- */
+.tabbar a { font-size: 10.5px; min-width: 0; }
+.tabbar a .nav-icon { width: 36px; }
+.tabbar a.is-main .nav-icon { position: relative; width: 58px; height: 58px; margin-top: -28px; animation: isidroGlow 2.6s ease-in-out infinite; }
+.tabbar a.is-main .nav-icon::before, .tabbar a.is-main .nav-icon::after { content: ''; position: absolute; width: 12px; height: 12px; background: #fff;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 3px rgba(255, 214, 0, .9)); animation: twinkle 1.8s ease-in-out infinite; }
+.tabbar a.is-main .nav-icon::before { top: -4px; right: -2px; }
+.tabbar a.is-main .nav-icon::after { bottom: 2px; left: -5px; width: 9px; height: 9px; animation-delay: .9s; }
+.tabbar a.is-main .nav-text { color: var(--orange); }
+@keyframes isidroGlow { 0%, 100% { box-shadow: 0 8px 18px rgba(255, 106, 3, .45), 0 0 0 0 rgba(253, 182, 3, .55); } 50% { box-shadow: 0 8px 22px rgba(255, 106, 3, .6), 0 0 0 9px rgba(253, 182, 3, 0); } }
+@keyframes twinkle { 0%, 100% { transform: scale(.4) rotate(0deg); opacity: .3; } 50% { transform: scale(1.15) rotate(45deg); opacity: 1; } }
+
+/* ---------- v14.2: desktop keeps the poster hero, phones get the app-style home ---------- */
+@media (max-width: 899px) { .home-desktop { display: none !important; } }
+@media (min-width: 900px) { .home-mobile { display: none !important; } }
+
+/* ---------- footer credit (v14.3) ---------- */
+.site-footer .footer-logo { display: block; width: 120px; height: 120px; margin: 0 auto 6px; border-radius: 50%; object-fit: cover; background: #fff; }
+.site-footer .powered { margin-top: 6px; font-size: 15px; color: var(--ink); }
+.powered b { color: var(--blue-2); }
+
+/* desktop hero: the Isidro artwork in the frame */
+.poster-frame--isidro { aspect-ratio: 714 / 697; }
+.poster-frame--isidro .poster-frame__img { animation: none; }
+@media (min-width: 900px) { .hero__grid { grid-template-columns: minmax(320px, 470px) 1fr; } .poster-frame--isidro { width: 100%; height: auto; max-height: none; } }

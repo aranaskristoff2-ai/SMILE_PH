@@ -5,7 +5,7 @@
  * Google Maps, AI services): those always go straight to the network.
  * Bump VERSION whenever you upload changed frontend files, so installed copies pick up the new files.
  */
-var VERSION = 'smile-shell-v14.0.2';
+var VERSION = 'smile-shell-v14.6.1';
 var SHELL = [
   './',
   './index.html',
@@ -25,6 +25,7 @@ var SHELL = [
   './assets/icon-512.png',
   './assets/poster.webp',
   './assets/home-hero.webp',
+  './assets/codesphere-logo.jpg',
   './assets/home-hero.jpg',
   './assets/dest-miagao.webp',
   './assets/dest-carles.webp',

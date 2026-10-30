@@ -233,6 +233,7 @@
 
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var ICONS = {
+    bulb: 'M12 2a7 7 0 0 1 4 12.7V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.3A7 7 0 0 1 12 2Zm-3 17h6v1.5a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 20.5V19Z',
     calendar: 'M7 2h2v2h6V2h2v2h3a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h3V2ZM5 9v10h14V9H5Zm2 2h2v2H7v-2Zm4 0h2v2h-2v-2Zm4 0h2v2h-2v-2Zm-8 4h2v2H7v-2Zm4 0h2v2h-2v-2Zm4 0h2v2h-2v-2Z',
     cutlery: 'M12 1a11 11 0 1 1 0 22 11 11 0 0 1 0-22ZM7.5 5v5.2c0 .9.6 1.6 1.4 1.8V19h1.6v-7c.8-.2 1.4-.9 1.4-1.8V5h-1.2v4.5h-.8V5h-1.2v4.5h-.8V5H7.5Zm7.7 0c-1.3.4-2.2 2.2-2.2 4.6V14h1.6v5h1.6V5h-1Z',
     bag: 'M5 2h14a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Zm4.2 7V8a2.8 2.8 0 0 1 5.6 0v1h-1.4V8a1.4 1.4 0 0 0-2.8 0v1H9.2ZM6.5 10l-.8 8.5h12.6l-.8-8.5H6.5Z',
@@ -746,6 +747,8 @@
     { key: '', href: '#/', text: 'Home', icon: 'home' },
     { key: 'explore', href: '#/explore', text: 'Map', icon: 'map' },
     { key: 'checkin', href: '#/checkin', text: 'Camera', icon: 'camera' },
+    { key: 'isidro', href: '#/isidro', text: 'Isidro', icon: 'compass', main: true },
+    { key: 'hub', href: '#/hub', text: 'Hub', icon: 'heart' },
     { key: 'ranks', href: '#/ranks', text: 'Badges', icon: 'badge' },
     { key: 'me', href: '#/me', text: 'Profile', icon: 'user' }
   ];
@@ -882,7 +885,7 @@
   }
 
   function focusHeading() {
-    var h = view().querySelector('h1');
+    var h = Array.prototype.filter.call(view().querySelectorAll('h1'), function (x) { return x.getClientRects().length > 0; })[0];
     if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
   }
 
@@ -935,7 +938,22 @@
   }
 
   function renderHome(token) {
-
+    var rotator = el('span', { class: 'rotator', 'aria-hidden': 'true' });
+    var feature = function (ic, color, title, text, href, i) {
+      return el('li', { class: 'feature reveal', style: '--d:' + (i * 80) + 'ms' }, [
+        el('a', { href: href, class: 'feature__link' }, [
+          el('span', { class: 'feature__icon', style: 'background:' + color }, icon(ic)),
+          el('h3', { text: title }),
+          el('p', { text: text })
+        ])
+      ]);
+    };
+    var hotspots = HOTSPOTS.map(function (h, i) {
+      return el('button', {
+        type: 'button', class: 'hotspot', style: 'left:' + h.x + '%;top:' + h.y + '%;--d:' + (i * 0.25) + 's',
+        'aria-label': h.label + ': open place', onclick: function () { openPlace(h.id); }
+      }, [icon(h.icon), el('span', { class: 'hotspot__label', text: h.label })]);
+    });
     var pv = provinceInfo(currentProvince());
     var tile = function (ic, color, label, sub, href, i) {
       return el('li', { class: 'home-tile reveal', style: '--c:' + color + ';--d:' + (i * 50) + 'ms' }, [
@@ -955,8 +973,43 @@
     };
 
     setView([
-      el('section', { class: 'home-hero', 'aria-labelledby': 'hero-h' }, [
-        el('h1', { id: 'hero-h', class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events. Western Visayas and the Negros Island Region.' }),
+      // Desktop: the poster hero with pins and the rotating word (as before).
+      el('section', { class: 'hero home-desktop', 'aria-labelledby': 'hero-h' }, [
+        el('div', { class: 'hero__bg', 'aria-hidden': 'true' }),
+        el('div', { class: 'hero__grid' }, [
+          el('div', { class: 'hero__art anim-pop', style: '--d:120ms' }, [
+            el('div', { class: 'poster-frame poster-frame--isidro' }, [
+              el('picture', null, [
+                el('source', { srcset: 'assets/home-hero.webp', type: 'image/webp' }),
+                el('img', { class: 'poster-frame__img', src: 'assets/home-hero.jpg', alt: 'SMILE, See More of Islands’ Landmarks and Events, Western Visayas and Negros Island Region. Meet Isidro, your AI tour guide: talk to me and plan your day in English, Tagalog or Hiligaynon.', width: 714, height: 697, loading: 'lazy' })
+              ]),
+              el('span', { class: 'poster-frame__shine', 'aria-hidden': 'true' }),
+              el('a', { class: 'home-hero__isidro', href: '#/isidro', 'aria-label': 'Talk to Isidro, your AI tour guide' }, [
+                el('span', { class: 'home-hero__mic', 'aria-hidden': 'true' }, icon('mic'))
+              ])
+            ]),
+            el('p', { class: 'hero__hint' }, [icon('mic', 'icon--inline'), 'Tap Isidro to plan your day'])
+          ]),
+          el('div', { class: 'hero__copy' }, [
+            el('img', { class: 'hero__logo anim-rise', src: LOGO_SRC, alt: '', width: 512, height: 512 }),
+            el('h1', { id: 'hero-h', class: 'hero__title anim-rise', style: '--d:120ms' }, [
+              el('span', { class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events.' }),
+              el('span', { 'aria-hidden': 'true' }, ['See more of the Islands’ ', el('br'), rotator, el('span', { class: 'caret' })])
+            ]),
+            el('p', { class: 'hero__lead anim-rise', style: '--d:220ms', text: 'Boracay, Iloilo, Guimaras, Bacolod, Dumaguete, Siquijor and more. Pick a province, ask Isidro, accept a challenge, scan your postcard, collect stamps and rank up from E to SSS.' }),
+            el('div', { class: 'hero__cta anim-rise', style: '--d:320ms' }, [
+              button('Pick your province', 'pin', { variant: 'glow', onclick: function () { var t = $('#home-provinces'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }),
+              button('Ask Isidro', 'compass', { href: '#/isidro', variant: 'yellow' }),
+              button('Check-In', 'postcard', { href: '#/checkin', variant: 'green' })
+            ])
+          ])
+        ]),
+        el('a', { class: 'scroll-down', href: '#/', 'aria-label': 'Scroll to the provinces', onclick: function (e) { e.preventDefault(); var t = $('#home-provinces'); if (t) t.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth' }); } }, icon('chevronDown'))
+      ]),
+
+      // Phones: the app-style hero, tiles and featured destinations.
+      el('section', { class: 'home-hero home-mobile', 'aria-labelledby': 'hero-h-m' }, [
+        el('h1', { id: 'hero-h-m', class: 'sr-only', text: 'SMILE: See More of Islands’ Landmarks and Events. Western Visayas and the Negros Island Region.' }),
         el('div', { class: 'home-hero__art anim-pop' }, [
           el('picture', null, [
             el('source', { srcset: 'assets/home-hero.webp', type: 'image/webp' }),
@@ -968,7 +1021,7 @@
         ])
       ]),
 
-      el('div', { class: 'home-sheet' }, [
+      el('div', { class: 'home-sheet home-mobile' }, [
         el('nav', { 'aria-label': 'What do you want to do?' }, [
           el('ul', { class: 'home-tiles' }, [
             tile('pin', '#02A04F', 'Explore', 'Landmarks', '#/explore?cat=landmark', 0),
@@ -1020,6 +1073,20 @@
 
       el('div', { class: 'section stack-lg', id: 'home-passport' }, [passportCard(false), stampAlbum()]),
 
+      el('section', { class: 'section home-desktop', 'aria-labelledby': 'what-h' }, [
+        el('h2', { id: 'what-h', class: 'section__title reveal', text: 'Everything you can do with SMILE' }),
+        el('ul', { class: 'feature-grid' }, [
+          feature('guide', '#FF6B00', 'Ask Isidro', 'Your AI guide plans your day in any province, in Hiligaynon, English or Tagalog.', '#/isidro', 0),
+          feature('trophy', '#ED0460', 'Accept challenges', 'Pick a landmark, festival or food stop, and get directions in Google Maps.', '#/explore', 1),
+          feature('qr', '#00A651', 'One-use QR check-in', 'Scan your SMILE postcard at the place to collect a stamp and points.', '#/checkin', 2),
+          feature('camera', '#7B2CBF', 'AI Photobooth', 'Turn a selfie into a "CONQUERED" postcard, with your outfit or an AI one.', '#/explore', 3),
+          feature('mailbox', '#0057D9', 'Mail across PH', 'Paste a PhilPost stamp and mail it. It travels to a surprise destination.', '#/postcards', 4),
+          feature('star', '#FDB603', 'Rank E to SSS', 'Every stamp counts. Climb the leaderboard with fellow explorers.', '#/ranks', 5),
+          feature('mic', '#ED0460', 'Travel journal & SMILE Hub', 'Say your story out loud, add a selfie and a clip, and share it with your rank on the SMILE Hub.', '#/hub', 7),
+          feature('shop', '#02A04F', 'Pasalubong & souvenirs', 'Biscocho, butterscotch, shirts and crafts from local stores and nano entrepreneurs.', '#/shop', 6)
+        ])
+      ]),
+
       el('section', { class: 'section section--tint', 'aria-labelledby': 'how-h' }, [
         el('p', { class: 'eyebrow reveal', text: 'The post office is back, and it is an adventure' }),
         el('h2', { id: 'how-h', class: 'section__title reveal', text: 'Your postal adventure' }),
@@ -1059,6 +1126,7 @@
         ])
       ])
     ]);
+    startTypewriter(rotator, token);
     focusHeading();
   }
 
@@ -1303,9 +1371,24 @@
     };
 
     var mic = micButton({ label: 'Speak', small: true, maxSec: 60, lang: function () { return lang.value; }, onText: function (t) { ask(t); } });
-    var form = el('form', { class: 'chat-form', onsubmit: function (e) { e.preventDefault(); ask(q.value); } }, [q, send]);
+    var ideas = el('div', { id: 'isidro-ideas', class: 'chips chips--wrap chat-ideas', 'aria-label': 'Suggested plans', hidden: true });
+    var bulb = el('button', { type: 'button', class: 'bulb-btn', 'aria-expanded': 'false', 'aria-controls': 'isidro-ideas', 'aria-label': 'Show suggested plans', title: 'Suggested plans' }, icon('bulb'));
+    bulb.addEventListener('click', function () {
+      var open = ideas.hidden;
+      ideas.hidden = !open;
+      bulb.setAttribute('aria-expanded', String(open));
+      bulb.setAttribute('aria-label', open ? 'Hide suggested plans' : 'Show suggested plans');
+      bulb.classList.toggle('is-on', open);
+    });
+    var form = el('form', { class: 'chat-form', onsubmit: function (e) { e.preventDefault(); ask(q.value); } }, [
+      q,
+      el('div', { class: 'chat-actions' }, [bulb, mic, el('span', { class: 'chat-actions__gap' }), send])
+    ]);
     q.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); ask(q.value); } });
     var prompts = ['I have 4 hours and love food', 'What festivals are on this month?', 'Beach weekend in Boracay on a budget', 'Mango trip to Guimaras', 'Heritage walk in Silay and Bacolod'];
+    prompts.forEach(function (p) {
+      ideas.appendChild(el('button', { type: 'button', class: 'chip-btn chip-btn--soft', onclick: function () { ideas.hidden = true; bulb.setAttribute('aria-expanded', 'false'); bulb.setAttribute('aria-label', 'Show suggested plans'); bulb.classList.remove('is-on'); ask(p); } }, p));
+    });
 
     setView(el('section', { class: 'section section--narrow' }, [
       el('div', { class: 'isidro-hero' }, [
@@ -1315,11 +1398,9 @@
       ]),
       el('div', { class: 'chat-settings' }, [formField('isidro-province', 'Province', prov), formField('isidro-lang', 'Language', lang)]),
       log,
-      el('div', { class: 'chips chips--wrap', 'aria-label': 'Ideas' }, prompts.map(function (p) {
-        return el('button', { type: 'button', class: 'chip-btn chip-btn--soft', onclick: function () { ask(p); } }, p);
-      })),
+      ideas,
       form,
-      el('div', { class: 'chat-mic' }, [mic, el('span', { class: 'muted small', text: 'Tap Speak, ask your question, tap Stop. Muse Voice writes it down and Isidro answers. (English and Tagalog work best.)' })]),
+      el('p', { class: 'muted small chat-hint', text: 'Tap the bulb for suggested plans. Tap Speak, ask, then tap Stop: Muse Voice writes it down and Isidro answers (English and Tagalog work best).' }),
       el('div', { class: 'btn-row chat-tools' }, [
         button('New chat', 'refresh', { small: true, variant: 'light', onclick: function () { msgs = []; saveChat(msgs); paint(false); q.focus(); } }),
         button('Festival calendar', 'festival', { small: true, variant: 'light', href: '#/events' })
@@ -3560,7 +3641,7 @@
 
     window.addEventListener('hashchange', route);
     route();
-    setTimeout(hideSplash, prefersReducedMotion() ? 0 : 1300);
+    setTimeout(hideSplash, prefersReducedMotion() ? 0 : 2600);
     loadPlaces();
     loadMedia();
     Auth.paint();
