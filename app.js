@@ -543,9 +543,22 @@
   /** Turns a link-button into a route button (blue line in Google Maps). */
   function routeButton(btn, dest) { btn.setAttribute('href', routeUrl(dest)); btn.setAttribute('data-route', dest); btn.setAttribute('rel', 'noopener'); return btn; }
   // Links marked data-route get the freshest start point at the moment they are tapped.
+  // If the app does not know where the traveler is yet, it asks first (desktop browsers often do not tell
+  // Google Maps), then opens the route with that start point, so the blue line is always drawn.
+  function openRoute(dest) {
+    var fresh = typeof Geo !== 'undefined' && Geo.here && Date.now() - Geo.here.t < 15 * 60000;
+    if (fresh || typeof Geo === 'undefined' || !Geo.supported()) { window.open(routeUrl(dest), '_blank', 'noopener'); return; }
+    var win = null;
+    try { win = window.open('', '_blank'); } catch (err) { win = null; }
+    if (win) { try { win.document.title = 'Opening the route…'; win.document.body.textContent = 'Finding your location for the route…'; } catch (err) { /* ignore */ } }
+    var go = function () { var u = routeUrl(dest); if (win && !win.closed) win.location.href = u; else window.location.href = u; };
+    Geo.get().then(go, go);
+  }
   document.addEventListener('click', function (e) {
     var a = e.target && e.target.closest ? e.target.closest('a[data-route]') : null;
-    if (a) a.href = routeUrl(a.getAttribute('data-route'));
+    if (!a || e.defaultPrevented) return;
+    e.preventDefault();
+    openRoute(a.getAttribute('data-route'));
   }, true);
 
   function findPlace(id) { return State.places.filter(function (p) { return p.id === id; })[0] || FALLBACK.filter(function (p) { return p.id === id; })[0] || null; }
@@ -604,7 +617,7 @@
     if (!p) return;
     ensureName(function (user) {
       // Open directions straight away (inside the tap, so pop-up blockers allow it).
-      window.open(mapsUrl(p), '_blank', 'noopener');
+      openRoute(routeDest(p));
       Passport.accept(p);
       toast('Challenge accepted: ' + p.name);
       Api.acceptChallenge(user, p.id).catch(function () { /* saved on this device; the server copy is optional */ });
@@ -1388,6 +1401,30 @@
       .filter(function (s) { return s && s.distance_km <= 30; }).sort(function (a, b) { return a.distance_km - b.distance_km; }).slice(0, k.key === 'shop' ? 5 : 3) : [];
     return { places: places, dist: dist, shops: shops };
   }
+  /** Registered SMILE post offices (Hotlines sheet, type postoffice), loaded once. */
+  var postOfficesCache = null;
+  function loadPostOffices() {
+    if (postOfficesCache) return Promise.resolve(postOfficesCache);
+    return Api.hotlines('').then(function (r) {
+      postOfficesCache = (r.hotlines || []).filter(function (h) { return h.type === 'postoffice' && hasLatLng(h); });
+      return postOfficesCache;
+    }, function () { return []; });
+  }
+  function nearestPostOffices(here, list) {
+    return (list || []).map(function (o) { var c = Object.assign({}, o); c.distance_km = distKm(here, { lat: Number(o.lat), lng: Number(o.lng) }); return c; })
+      .filter(function (o) { return o.distance_km <= 30; }).sort(function (x, y) { return x.distance_km - y.distance_km; }).slice(0, 3);
+  }
+  /** A post office card in Isidro's answer: name, address, distance and the blue route. */
+  function miniPostOfficeCard(o) {
+    return el('article', { class: 'mini-place' }, [
+      el('div', { class: 'mini-place__main' }, [
+        el('span', { class: 'card-icon card-icon--sm', style: 'background:#0057D9' }, icon('mailbox')),
+        el('span', { class: 'mini-place__text' }, [el('b', { text: o.name }), el('small', { text: [o.address, o.notes].filter(Boolean).join(' • ') })]),
+        isFinite(o.distance_km) ? el('span', { class: 'dist-badge', text: kmText(o.distance_km) }) : null
+      ]),
+      el('div', { class: 'btn-row' }, [routeButton(button('Directions', 'route', { small: true, variant: 'blue', href: '#', target: '_blank' }), Number(o.lat) + ',' + Number(o.lng))])
+    ]);
+  }
   function postOfficeUrl(here) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('post office near ' + here.lat.toFixed(4) + ',' + here.lng.toFixed(4)); }
   function innSearchUrl(here) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('inns hotels near ' + here.lat.toFixed(4) + ',' + here.lng.toFixed(4)); }
 
@@ -1448,7 +1485,8 @@
           places.length ? el('div', { class: 'chat__places' }, places.map(function (p) { return miniPlaceCard(p, dist[p.id]); })) : null,
           m.shops && m.shops.length ? el('div', { class: 'chat__places' }, m.shops.map(miniShopCard)) : null,
           m.inn ? button('Find inns and hotels near me', 'map', { small: true, variant: 'light', href: m.inn, target: '_blank' }) : null,
-          m.po ? button('Nearest post office on the map', 'mailbox', { small: true, variant: 'blue', href: m.po, target: '_blank' }) : null
+          m.pos && m.pos.length ? el('div', { class: 'chat__places' }, m.pos.map(miniPostOfficeCard)) : null,
+          m.po ? button(m.pos && m.pos.length ? 'More post offices on the map' : 'Nearest post office on the map', 'mailbox', { small: true, variant: m.pos && m.pos.length ? 'light' : 'blue', href: m.po, target: '_blank' }) : null
         ])
       ]);
     };
@@ -1482,12 +1520,14 @@
         (r.places || []).forEach(function (p) { if (p && isFinite(p.distance_km)) dist[p.id] = p.distance_km; });
         msgs.push({ role: 'assistant', content: (r.reply || 'Here are my picks for you.') + (r.demo ? '\n\n(Isidro is in demo mode: the AI key is not set on the server yet.)' : ''),
           places: (r.places || []).map(function (p) { return p.id; }), dist: dist, shops: r.shops || null, inn: kind === 'postoffice' ? null : (r.inn_search_url || (here && kind === 'inn' ? innSearchUrl(here) : null)),
-          po: r.post_office_search_url && (kind === 'postoffice' || !kind) ? r.post_office_search_url : (here && kind === 'postoffice' ? postOfficeUrl(here) : null) });
+          po: r.post_office_search_url && (kind === 'postoffice' || !kind) ? r.post_office_search_url : (here && kind === 'postoffice' ? postOfficeUrl(here) : null),
+          pos: r.post_offices || null });
       }, function (err) {
         if (here) {
           var n = localNearest(here, kind || 'all');
+          var poList = kind === 'postoffice' ? nearestPostOffices(here, postOfficesCache) : null;
           msgs.push({ role: 'assistant', error: true, content: (State.demo ? 'Demo answer: here is what is closest to you.' : friendlyError(err) + '\n\nWhile I reconnect, here is what is closest to you.'),
-            places: n.places.map(function (p) { return p.id; }), dist: n.dist, shops: n.shops, inn: (kind === 'inn' || kind === 'all' || !kind) ? innSearchUrl(here) : null, po: kind === 'postoffice' ? postOfficeUrl(here) : null });
+            places: n.places.map(function (p) { return p.id; }), dist: n.dist, shops: n.shops, inn: (kind === 'inn' || kind === 'all' || !kind) ? innSearchUrl(here) : null, po: kind === 'postoffice' ? postOfficeUrl(here) : null, pos: poList });
           return;
         }
         var pool = State.places.filter(function (p) { return !prov.value || provinceOf(p) === prov.value; });
@@ -1528,6 +1568,7 @@
       pin.setAttribute('aria-pressed', String(on));
       pin.setAttribute('aria-label', on ? 'Near me is on: tap to stop using my location' : 'Near me: use my location');
     };
+    loadPostOffices();
     pin.addEventListener('click', function () {
       if (nearOn) { setNear(false); toast('Near me is off.'); return; }
       pin.classList.add('is-busy');
@@ -1835,9 +1876,13 @@
       setBusy(poBtn, true, 'Finding you…');
       var win = null;
       try { win = window.open('', '_blank'); } catch (e) { win = null; }
-      Geo.fresh().then(function (h) { return 'post office near ' + h.lat.toFixed(4) + ',' + h.lng.toFixed(4); }, function () { var pv = provinceInfo(currentProvince()); return 'PhilPost post office ' + (pv ? pv.name : 'Western Visayas'); })
-        .then(function (q) {
-          var url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+      Geo.fresh().then(function (h) {
+        return loadPostOffices().then(function (list) {
+          var best = nearestPostOffices(h, list)[0];
+          return best ? routeUrl(Number(best.lat) + ',' + Number(best.lng)) : postOfficeUrl(h);
+        });
+      }, function () { var pv = provinceInfo(currentProvince()); return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('post office ' + (pv ? pv.name : 'Western Visayas') + ', Philippines'); })
+        .then(function (url) {
           if (win && !win.closed) win.location.href = url; else window.location.href = url;
         }).then(function () { setBusy(poBtn, false); });
     } });
@@ -3090,6 +3135,7 @@
     fire: { label: 'Fire station', icon: 'alert', color: '#FF6A03', search: 'fire station' },
     coastguard: { label: 'Coast Guard', icon: 'boat', color: '#0096C7', search: 'coast guard' },
     tourism: { label: 'Tourist assistance', icon: 'guide', color: '#FDB603', search: 'tourism office' },
+    postoffice: { label: 'Post office', icon: 'mailbox', color: '#0057D9', search: 'post office' },
     other: { label: 'Hotline', icon: 'phone', color: '#5B6478', search: 'emergency' }
   };
   var hotlineCache = {};
@@ -3166,8 +3212,9 @@
         locNote.textContent = 'Showing places near you.';
         paintLocal();
       }, function () { locNote.textContent = 'Location is off, so the map searches ' + where + '. Allow location for the nearest results.'; });
-      if (hotlineCache.all) { allLines = hotlineCache.all; paintLocal(); }
-      else Api.hotlines('').then(function (r) { hotlineCache.all = allLines = r.hotlines || []; paintLocal(); }, function () { allLines = []; paintLocal(); });
+      var notPO = function (list) { return (list || []).filter(function (h) { return h.type !== 'postoffice'; }); };
+      if (hotlineCache.all) { allLines = notPO(hotlineCache.all); paintLocal(); }
+      else Api.hotlines('').then(function (r) { hotlineCache.all = r.hotlines || []; allLines = notPO(hotlineCache.all); paintLocal(); }, function () { allLines = []; paintLocal(); });
     }
   };
 
@@ -3177,7 +3224,7 @@
 
   function renderPartner() {
     var type = el('select', { id: 'pt-type' }, [
-      el('optgroup', { label: 'Government and barangay' }, [['police', 'Police station'], ['tanod', 'Barangay tanod outpost'], ['fire', 'Fire station'], ['drrmo', 'DRRMO (Disaster Risk Reduction and Management Office)'], ['healthoffice', 'Municipal / city health office']].map(function (t) { return el('option', { value: t[0], text: t[1] }); })),
+      el('optgroup', { label: 'Government and barangay' }, [['police', 'Police station'], ['tanod', 'Barangay tanod outpost'], ['fire', 'Fire station'], ['drrmo', 'DRRMO (Disaster Risk Reduction and Management Office)'], ['healthoffice', 'Municipal / city health office'], ['postoffice', 'Post office (for mailing SMILE postcards)']].map(function (t) { return el('option', { value: t[0], text: t[1] }); })),
       el('optgroup', { label: 'Health and pets' }, [['hospital', 'Hospital'], ['clinic', 'Clinic'], ['vet', 'Veterinary clinic'], ['drugstore', 'Drugstore / pharmacy']].map(function (t) { return el('option', { value: t[0], text: t[1] }); }))
     ]);
     type.value = 'police';

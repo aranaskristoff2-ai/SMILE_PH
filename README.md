@@ -51,7 +51,7 @@ model training.
 | **Talk to Isidro.** Tap Speak, ask, tap Stop: your words are written down and Isidro answers. | Muse Voice Transcribe |
 | **Near me.** Tap the pin and allow location: Isidro points to the nearest eats, landmarks, festivals, SMILE shops and inns, with distances and the easiest way to get there. The location is sent only with that question and never saved. | Muse Spark |
 | **One-use QR postcards.** Scan the postcard at the landmark (camera QR scanner) with a proof photo to collect its stamp and points. The photo check flags mismatches for human review; it never rejects on its own. | Muse Spark (vision) |
-| **Mail it.** SMILE postcards come with the stamp already on them, from authorized SMILE merchants. Isidro and "Nearest post office" (using the phone's location) show the way; drop it at the post office and SMILE sends it to a surprise destination. | Muse Spark |
+| **Mail it.** SMILE postcards come with the stamp already on them, from authorized SMILE merchants. Isidro and "Nearest post office" (using the phone's location) route the traveler to the nearest registered post office with the blue line (or a Google Maps search where none is registered yet); drop it there and SMILE sends it to a surprise destination. | Muse Spark |
 | **Adopt a postcard.** Each post office keeps a SMILE box of random postcards from other travelers. Pick one, scan its QR to adopt it, and see the journey of the traveler who sent it. | |
 | **AI photobooth.** A selfie, an outfit of your choice (safety-checked), and a "CONQUERED" postcard to save and share. | Muse Spark + Muse Image |
 | **Stamp album and ranks.** One album page per province with progress bars, ranks from E to SSS, and a leaderboard. | |
@@ -78,6 +78,7 @@ model training.
 | **Insights.** Plain-language answers about visitor check-ins, postcard journeys and photobooth use. | Muse Spark |
 | **Media manager** (`#/media`, passcode). Add photos and videos to any place or shop. | SAM 3.1 |
 | **Approvals in Google Sheets.** Shops, products, merchant media and flagged Hub posts are approved by changing a status cell. | |
+| **Post offices in Google Sheets.** Add each branch to the Hotlines sheet with type "postoffice" and its GPS pin, or let it register at `#/partner`. | |
 | **Hotline partners.** Police stations, barangay tanod outposts, fire stations, DRRMOs, municipal health offices, hospitals, clinics, veterinary clinics and drugstores list their number, address and GPS pin at `#/partner` (Hotline → "List your hotline"). They arrive as "pending" in the Hotlines sheet; the team calls to verify, then sets status to "approved". Approved partners show in the Hotline with distance and a Directions route. Coast guard and tourism numbers are added by the team. | |
 
 ## Pages
