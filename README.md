@@ -30,7 +30,7 @@ Every AI feature runs on Meta's Model API with one key from dev.meta.ai. There a
 
 | Model | Endpoint | What it does in SMILE |
 |---|---|---|
-| **Muse Spark** `muse-spark-1.3` (falls back to 1.2, 1.1) | `POST /v1/chat/completions` | Isidro's chat and trip plans, "Near me" answers (nearest eats, landmarks, events, shops, inns and post office from the traveler's GPS), check-in photo check, photobooth safety check, profile photo check, journal polish and translation, captions, merchant listings and selling tips, LGU insights, safety check of public posts |
+| **Muse Spark** `muse-spark-1.3` (falls back to 1.2, 1.1) | `POST /v1/chat/completions` | Isidro's chat and trip plans, "Near me" answers (nearest eats, landmarks, events, shops, inns and post office from the traveler's GPS), check-in photo check, photobooth safety check, profile photo check, journal polish and translation, captions, merchant listings and selling tips, Partner portal insights for LGUs and DOT (from totals only), safety check of public posts |
 | **Muse Image** `muse-image-1.0` | `POST /v1/images/edits` | Photobooth: dresses the tourist's selfie in the outfit they describe, for a "CONQUERED" postcard |
 | **SAM 3.1** `sam-3.1` | `POST /v1/responses` | Finds the product in merchants' photos (close-up crop) and counts the seconds it is on screen in their promo video |
 | **Muse Voice Transcribe** `muse-voice-transcribe-1.0` | `POST /v1/asr/transcribe` | Speech to text: talk to Isidro, and speak your travel journal |
@@ -69,13 +69,13 @@ model training.
 | **Sell on SMILE.** Sign up a shop with products; the team approves it. Featured merchants are listed first in their province. Merchants can pin their shop with GPS so Isidro sends nearby tourists to them. | |
 | **Product photos and promo video.** Up to 5 photos and one 15-second video, saved in Google Drive. SAM 3.1 finds the product in each photo for a close-up and reports how long it shows in the video. | SAM 3.1 |
 | **Write with AI.** Product listings in English and Hiligaynon from a few words. | Muse Spark |
-| **Shop dashboard.** Opened with the shop code: 30-day views, photo and video opens, directions, contact taps and shares, SMILE postcard sales, uploads, and three selling tips. | Muse Spark |
+| **Shop dashboard.** Opened with the shop code: 30-day views, photo and video opens, directions, contact taps and shares, SMILE postcard sales, uploads, **Record a sale** (amount, item, local or foreign tourist; feeds the partner portal's area totals), and three selling tips. | Muse Spark |
 
 ### For PhilPost, LGUs and the SMILE team
 
 | Feature | Meta model |
 |---|---|
-| **Insights.** Plain-language answers about visitor check-ins, postcard journeys and photobooth use. | Muse Spark |
+| **Partner portal** (`#/partners`, same sign-in as travelers). For LGU tourism offices and the Department of Tourism: check-ins and unique travelers, **local vs foreign** (from the nationality travelers give at sign-up), top nationalities and hometowns, busiest days, most-visited and "needs a push" places, festival check-ins, challenges, **purchases at SMILE merchants in the area** (local vs foreign, by product type, top merchants), shop interest, postcards mailed and adopted, a CSV download, and Muse Spark insights (what is working, what is not, three actions). Partners see their own province, or all eight for DOT; only totals, never names. | Muse Spark |
 | **Media manager** (`#/media`, passcode). Add photos and videos to any place or shop. | SAM 3.1 |
 | **Approvals in Google Sheets.** Shops, products, merchant media and flagged Hub posts are approved by changing a status cell. | |
 | **Post offices in Google Sheets.** Add each branch to the Hotlines sheet with type "postoffice" and its GPS pin, or let it register at `#/partner`. | |
@@ -97,7 +97,8 @@ model training.
 | `#/ranks` | Ranks and leaderboard |
 | `#/shop` | Pasalubong and souvenirs, Sell on SMILE |
 | `#/dashboard` | Shop dashboard (shop code) |
-| `#/tools` | Merchant and LGU AI tools |
+| `#/tools` | Caption and merchant AI tools, link to the Partner portal |
+| `#/partners` | LGU and DOT Partner portal (partner accounts) |
 | `#/media` | Media manager for the SMILE team (passcode) |
 | `#/partner` | Police, tanod, fire, DRRMO, health offices, hospitals, clinics, vets and drugstores list their hotline |
 
@@ -112,7 +113,7 @@ Google Apps Script web app (backend/Code.gs)
    ├──► Meta Model API: Muse Spark, Muse Image, SAM 3.1, Muse Voice Transcribe
    ├──► Google Sheets: Places, Users, Accounts, Sessions, Checkins, Postcards, Batches, Merchants,
    │                   Journey, Challenges, Photobooth, Shops (with GPS pins), ShopItems, ShopStats, Media, Journal,
-   │                   Products, Hotlines
+   │                   Products, Hotlines, Sales
    └──► Google Drive: "SMILE Media" (shop and place photos and videos), "SMILE Journal" (journal photos, clips
                        and profile photos)
 ```
@@ -125,6 +126,7 @@ Google Apps Script web app (backend/Code.gs)
 
 - Passwords are stored only as salted SHA-256 hashes; session tokens are stored only as hashes.
 - Shop statistics are anonymous counts per shop per day; nothing about the visitor is stored.
+- The Partner portal shows LGUs and DOT totals only (counts, local vs foreign, purchases by area). No traveler names or emails leave the server, and Muse Spark's partner insights receive the same totals. Merchants' single sales are never shown to partners or tourists.
 - "Near me" asks for the phone's location only when the traveler taps the pin. It is sent with that one question to work out distances and is never stored.
 - Public Hub posts pass a Muse Spark safety check; anything flagged waits for a person to review it.
 - Merchant shops, products and media appear only after approval.
@@ -180,6 +182,14 @@ actions (`chat`, `checkin`, `mail_postcard`…), so moving the backend means poi
 - Built-in shop locations are approximate (town or district level) until a merchant pins the exact spot. SMILE has no hotel list yet, so "Inns" shows nearby stay spots plus a Google Maps search for inns near the traveler.
 - "Near me" works while the app is open; SMILE does not track anyone in the background.
 - Place descriptions and map pins are written by the team and should be checked locally before launch.
+
+## License
+
+The source code is released under the [MIT License](LICENSE), Copyright (c) 2026 CodeSpherePH.
+
+The MIT License covers the source code only. The SMILE name and logo, the posters, the Isidro character and
+artwork, the CodeSphere PH logo and the other images in `assets/` are © 2026 Kristoffer P. Aranas / CodeSphere PH,
+all rights reserved, and may not be reused without permission.
 
 ## Credits and licenses
 

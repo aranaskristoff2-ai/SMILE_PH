@@ -117,7 +117,7 @@
     ACTIONS: ['places', 'recommend', 'accept_challenge', 'vision', 'checkin', 'mail_postcard', 'adopt_postcard',
       'track_postcard', 'caption', 'merchant', 'insights', 'leaderboard', 'photobooth', 'shops', 'shop_submit',
       'media', 'media_upload', 'sam_image', 'sam_video', 'chat', 'track', 'dashboard', 'merchant_tips',
-      'transcribe', 'translate', 'signup', 'signin', 'signout', 'me', 'journal_save', 'journal_delete', 'journal_caption', 'hub', 'hub_like', 'profile_photo', 'hotlines', 'hotline_submit'],
+      'transcribe', 'translate', 'signup', 'signin', 'signout', 'me', 'journal_save', 'journal_delete', 'journal_caption', 'hub', 'hub_like', 'profile_photo', 'hotlines', 'hotline_submit', 'partner_dashboard', 'partner_insights', 'partner_request', 'sale_record'],
     TIMEOUTS: TIMEOUTS,
     isConfigured: isConfigured,
     friendly: function (err) {
@@ -167,6 +167,12 @@
     caption: function (place, mood) { return post('caption', { place: place, mood: mood }, TIMEOUTS.ai); },
     merchant: function (name, raw) { return post('merchant', { merchant: name, raw: raw }, TIMEOUTS.ai); },
     insights: function (q) { return post('insights', { q: q }, TIMEOUTS.ai); },
+    /** LGU / DOT partner portal (signed-in partner accounts only; totals, never names). */
+    partnerDashboard: function (token, days, province) { return post('partner_dashboard', { token: token, days: days, province: province || '' }, TIMEOUTS.read); },
+    partnerInsights: function (token, days, province, q) { return post('partner_insights', { token: token, days: days, province: province || '', q: q || '' }, TIMEOUTS.ai); },
+    partnerRequest: function (token, o) { return post('partner_request', Object.assign({ token: token }, o), TIMEOUTS.write); },
+    /** A merchant records a sale on its dashboard (shop code). */
+    saleRecord: function (code, o) { return post('sale_record', Object.assign({ code: code }, o), TIMEOUTS.write); },
     leaderboard: function () { return post('leaderboard', {}, TIMEOUTS.read); },
     shops: function () { return post('shops', {}, TIMEOUTS.read); },
     shopSubmit: function (user, shop, items) { return post('shop_submit', { user: user, shop: shop, items: items }, TIMEOUTS.write); },

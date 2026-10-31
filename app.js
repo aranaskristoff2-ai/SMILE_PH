@@ -2701,6 +2701,52 @@
     var openBtn = button('Open my dashboard', 'chart', { type: 'submit', variant: 'blue' });
     var lang = storageGet('smile.lang') || 'hil';
 
+    // Record a sale: feeds the shop's own totals and the LGU / DOT partner portal (totals only).
+    var saleCard = function (d) {
+      var sumBox = el('div');
+      var paintSales = function (sl) {
+        sl = sl || { total: 0, count: 0, local: 0, foreign: 0, unknown: 0, recent: [] };
+        sumBox.textContent = '';
+        appendChildren(sumBox, [
+          el('div', { class: 'kpis kpis--3' }, [
+            el('div', { class: 'kpi' }, [el('b', { text: peso(sl.total) }), el('span', { text: 'Sales, last 30 days' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: String(sl.count) }), el('span', { text: 'Sales recorded' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: sl.total ? Math.round(sl.foreign / sl.total * 100) + '%' : '0%' }), el('span', { text: 'From foreign tourists' })])
+          ]),
+          sl.recent.length ? el('ul', { class: 'sale-list' }, sl.recent.map(function (x) {
+            return el('li', null, [el('b', { text: peso(x.amount) }), el('span', { text: [x.item, x.customer === 'local' ? 'local tourist' : x.customer === 'foreign' ? 'foreign tourist' : '', x.time].filter(Boolean).join(' • ') })]);
+          })) : el('p', { class: 'muted small', text: 'No sales recorded yet.' })
+        ]);
+      };
+      paintSales(d.sales);
+      var amount = el('input', { id: 'sale-amt', type: 'text', inputmode: 'decimal', maxlength: '12', placeholder: 'e.g. 350' });
+      var item = el('select', { id: 'sale-item' }, (d.items || []).map(function (x) { return el('option', { value: x.name, text: x.name }); }).concat([el('option', { value: 'Other', text: 'Other / several items' })]));
+      var cust = 'unknown';
+      var custBtns = [['local', 'Local tourist'], ['foreign', 'Foreign tourist'], ['unknown', 'Not sure']].map(function (c) {
+        var b = el('button', { type: 'button', class: 'seg__btn', 'aria-pressed': String(c[0] === cust), text: c[1] });
+        b.addEventListener('click', function () { cust = c[0]; custBtns.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); });
+        return b;
+      });
+      var save = button('Save sale', 'check', { type: 'submit', variant: 'green' });
+      var form2 = el('form', { class: 'stack', onsubmit: function (e) {
+        e.preventDefault();
+        if (!amount.value.trim()) { toast('Type the amount.'); amount.focus(); return; }
+        setBusy(save, true, 'Saving…');
+        Api.saleRecord(code.value.trim(), { amount: amount.value.trim(), item: item.value, customer: cust }).then(function (r) {
+          toast('Sale saved. Salamat!'); amount.value = ''; paintSales(r.sales);
+        }, function (err) { toast(friendlyError(err)); }).then(function () { setBusy(save, false); });
+      } }, [
+        el('div', { class: 'sale-row' }, [formField('sale-amt', 'Amount (₱)', amount), formField('sale-item', 'What was sold', item)]),
+        el('div', { class: 'field' }, [el('span', { class: 'field__label', text: 'Customer' }), el('div', { class: 'seg', role: 'group', 'aria-label': 'Customer' }, custBtns)]),
+        save
+      ]);
+      return el('section', { class: 'card stack' }, [
+        el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#02A04F' }, icon('plus')), 'Record a sale']),
+        el('p', { class: 'muted small', text: 'Tap after each sale to a tourist. Your LGU and the Department of Tourism see only area totals, never your single sales, and tourists never see them.' }),
+        form2, sumBox
+      ]);
+    };
+
     var show = function (d) {
       body.textContent = '';
       var s = d.shop, st = d.stats || { totals: {}, days: [] };
@@ -2734,6 +2780,7 @@
             }))
           ])
         ]),
+        saleCard(d),
         el('section', { class: 'card stack' }, [
           el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#ED0460' }, icon('postcard')), 'SMILE postcards']),
           el('div', { class: 'kpis kpis--3' }, [
@@ -3219,6 +3266,200 @@
   };
 
   // ---------------------------------------------------------------------------
+  // LGU / DOT Partner portal (#/partners): same sign-in as travelers; totals only, never names.
+  // ---------------------------------------------------------------------------
+
+  function peso(n) { n = Number(n) || 0; try { return '₱' + n.toLocaleString('en-PH', { maximumFractionDigits: 0 }); } catch (e) { return '₱' + Math.round(n); } }
+  function pct(a, b) { return b ? Math.round(a / b * 100) + '%' : '0%'; }
+  /** Horizontal bars: [{label, value, note}] */
+  function barList(rows, color, fmt) {
+    var max = Math.max.apply(null, [1].concat(rows.map(function (r) { return r.value; })));
+    if (!rows.length) return el('p', { class: 'muted small', text: 'No data for this period yet.' });
+    return el('ul', { class: 'hbars', style: '--c:' + (color || '#0057D9') }, rows.map(function (r) {
+      return el('li', { class: 'hbars__row' }, [
+        el('span', { class: 'hbars__label' }, [r.label, r.note ? el('small', { text: ' ' + r.note }) : null]),
+        el('span', { class: 'hbars__track' }, el('span', { class: 'hbars__fill', style: 'width:' + Math.max(3, Math.round(r.value / max * 100)) + '%' })),
+        el('b', { class: 'hbars__val', text: fmt ? fmt(r.value) : String(r.value) })
+      ]);
+    }));
+  }
+  /** One stacked bar: [{label, value, color}] */
+  function splitBar(parts, fmt) {
+    var total = parts.reduce(function (s, p) { return s + p.value; }, 0);
+    return el('div', { class: 'split' }, [
+      el('div', { class: 'split__bar', role: 'img', 'aria-label': parts.map(function (p) { return p.label + ' ' + pct(p.value, total); }).join(', ') },
+        total ? parts.filter(function (p) { return p.value; }).map(function (p) { return el('span', { style: 'width:' + (p.value / total * 100) + '%;background:' + p.color }); }) : el('span', { class: 'split__empty' })),
+      el('ul', { class: 'split__legend' }, parts.map(function (p) {
+        return el('li', null, [el('i', { style: 'background:' + p.color }), p.label + ': ', el('b', { text: (fmt ? fmt(p.value) : String(p.value)) + ' (' + pct(p.value, total) + ')' })]);
+      }))
+    ]);
+  }
+
+  function renderPartners(token) {
+    var head = pageHead('chart', '#0057D9', 'Partner portal', 'For LGU tourism offices and the Department of Tourism: who visits your area, what they love, what they buy from SMILE merchants, and what to improve.');
+    if (!Auth.user()) {
+      setView(el('section', { class: 'section section--narrow' }, [head, signInCard('Sign in with your SMILE account. New partner? Create an account first, then request partner access on this page.')]));
+      focusHeading();
+      return;
+    }
+    var box = el('div', { class: 'stack-lg' }, el('p', { class: 'muted', text: 'Opening your portal…' }));
+    var days = Number(storageGet('smile.partnerDays')) || 30, area = '';
+
+    var requestForm = function (msg) {
+      var org = el('input', { id: 'pr-org', type: 'text', maxlength: '100', placeholder: 'e.g. Iloilo Provincial Tourism Office' });
+      var pos = el('input', { id: 'pr-pos', type: 'text', maxlength: '80', placeholder: 'e.g. Tourism Officer' });
+      var phone = el('input', { id: 'pr-phone', type: 'tel', maxlength: '40', placeholder: 'Office phone for our verification call' });
+      var areaSel = el('select', { id: 'pr-area' }, [el('option', { value: 'all', text: 'All provinces (DOT regional office)' })].concat(PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); })));
+      areaSel.value = currentProvince() || 'iloilo';
+      var note = el('textarea', { id: 'pr-note', rows: '2', maxlength: '300', placeholder: 'Optional: city or town, and what you hope to learn' });
+      var out = outputBox();
+      var send = button('Request partner access', 'send', { type: 'submit', block: true, variant: 'blue' });
+      box.textContent = '';
+      appendChildren(box, [
+        msg ? el('div', { class: 'output', text: msg }) : null,
+        el('form', { class: 'card stack', onsubmit: function (e) {
+          e.preventDefault();
+          if (!org.value.trim() || !pos.value.trim()) { toast('Type your office and position.'); return; }
+          setBusy(send, true, 'Sending…');
+          Api.partnerRequest(Auth.token(), { org: org.value.trim(), position: pos.value.trim(), phone: phone.value.trim(), area: areaSel.value, note: note.value.trim() })
+            .then(function (r) { pendingCard(r.message); }, function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(send, false); });
+        } }, [
+          el('h2', { class: 'card__title', text: 'Request partner access' }),
+          el('p', { class: 'muted small', text: 'For LGU tourism offices and the Department of Tourism. The SMILE team confirms with your office before opening your portal.' }),
+          formField('pr-org', 'Office', org), formField('pr-pos', 'Your position', pos), formField('pr-phone', 'Office phone', phone),
+          formField('pr-area', 'Area', areaSel), formField('pr-note', 'Note (optional)', note), send, out
+        ])
+      ]);
+    };
+    var pendingCard = function (msg) {
+      box.textContent = '';
+      box.appendChild(el('div', { class: 'card stack center' }, [
+        el('span', { class: 'state__icon' }, icon('check')),
+        el('h2', { class: 'card__title', text: 'Request received' }),
+        el('p', { class: 'muted', text: msg || 'The SMILE team will confirm with your office and open your portal. Sign in again here once you get the go-ahead.' })
+      ]));
+    };
+
+    var show = function (d) {
+      var st = d.stats, v = st.visitors, m = st.merchants, pu = m.purchases;
+      var periodSel = el('select', { id: 'pt-days', 'aria-label': 'Period' }, [[7, 'Last 7 days'], [30, 'Last 30 days'], [90, 'Last 90 days'], [365, 'Last 12 months']].map(function (x) { return el('option', { value: String(x[0]), text: x[1] }); }));
+      periodSel.value = String(st.days);
+      periodSel.addEventListener('change', function () { days = Number(periodSel.value); storageSet('smile.partnerDays', String(days)); load(); });
+      var areaSel = d.scope.length > 1 ? el('select', { id: 'pt-area', 'aria-label': 'Area' }, [el('option', { value: '', text: 'My whole area' })].concat(d.scope.map(function (id) { return el('option', { value: id, text: provinceName(id) }); }))) : null;
+      if (areaSel) { areaSel.value = area; areaSel.addEventListener('change', function () { area = areaSel.value; load(); }); }
+      var areaName = st.provinces.map(provinceName).join(', ');
+      var insOut = outputBox();
+      var insQ = el('input', { id: 'pt-q', type: 'text', maxlength: '300', placeholder: 'Optional: ask something, e.g. Which festival should we promote abroad?' });
+      var insBtn = button('What is working, what is not (Muse Spark)', 'sparkle', { block: true, variant: 'glow', onclick: function () {
+        setBusy(insBtn, true, 'Thinking…'); insOut.loading('Muse Spark is reading your area’s totals…');
+        Api.partnerInsights(Auth.token(), days, area, insQ.value.trim()).then(function (r) { insOut.show(r.insights || 'No insights right now.', r.demo ? 'warn' : null); },
+          function (err) { insOut.show(friendlyError(err), 'error'); }).then(function () { setBusy(insBtn, false); });
+      } });
+      var csv = button('Download CSV', 'save', { small: true, variant: 'light', onclick: function () {
+        var rows = [['SMILE partner report', d.org, areaName, 'last ' + st.days + ' days'], [],
+          ['Check-ins', v.checkins], ['Unique travelers', v.travelers], ['Local travelers', v.local], ['Foreign travelers', v.foreign], ['Not stated', v.unknown], ['Festival check-ins', v.festival_checkins],
+          ['Merchants enrolled', m.enrolled], ['Purchases (PHP)', pu.total], ['Sales recorded', pu.count], ['Average sale (PHP)', pu.average], ['Local purchases (PHP)', pu.local], ['Foreign purchases (PHP)', pu.foreign],
+          ['Postcards mailed', st.postcards.mailed], ['Postcards adopted', st.postcards.adopted], ['Photobooth postcards', st.photobooth], [],
+          ['Top places', 'Province', 'Check-ins']].concat(st.top_places.map(function (x) { return [x.name, provinceName(x.province), x.count]; }))
+          .concat([[], ['Nationality', 'Travelers']]).concat(st.nationalities.map(function (x) { return [x.name, x.count]; }))
+          .concat([[], ['Purchases by category', 'PHP']]).concat(pu.by_category.map(function (x) { return [x.name, x.amount]; }))
+          .concat([[], ['Date', 'Check-ins', 'Purchases (PHP)']]).concat(st.per_day.map(function (x) { return [x.date, x.checkins, x.purchases]; }));
+        var text = rows.map(function (r) { return r.map(function (c) { var t = String(c == null ? '' : c); return /[",\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; }).join(','); }).join('\n');
+        var url = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+        var aEl = el('a', { href: url, download: 'smile-partner-report-' + st.days + 'd.csv' }); document.body.appendChild(aEl); aEl.click(); aEl.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      } });
+      var maxDay = Math.max(1, Math.max.apply(null, st.per_day.map(function (x) { return x.checkins; })));
+      var wk = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      box.textContent = '';
+      appendChildren(box, [
+        el('section', { class: 'card stack' }, [
+          el('div', { class: 'row-between' }, [
+            el('div', null, [el('p', { class: 'eyebrow', text: d.org || 'Partner' }), el('h2', { class: 'card__title', text: areaName })]),
+            csv
+          ]),
+          el('div', { class: 'portal-filters' }, [periodSel, areaSel]),
+          el('div', { class: 'kpis portal-kpis' }, [
+            ['Check-ins', String(v.checkins)], ['Travelers', String(v.travelers)], ['Local · ' + pct(v.local, v.travelers), String(v.local)],
+            ['Foreign · ' + pct(v.foreign, v.travelers), String(v.foreign)], ['Purchases', peso(pu.total)], ['Sales recorded', String(pu.count)]
+          ].map(function (k) { return el('div', { class: 'kpi' }, [el('b', { text: k[1] }), el('span', { text: k[0] })]); })),
+          el('figure', { class: 'bars', 'aria-label': 'Check-ins per day' }, [
+            el('figcaption', { class: 'small', text: 'Check-ins per day' }),
+            el('div', { class: 'bars__row' }, st.per_day.map(function (x) { return el('span', { class: 'bars__bar', style: 'height:' + Math.max(3, Math.round(x.checkins / maxDay * 100)) + '%', title: x.date + ': ' + x.checkins }); }))
+          ]),
+          el('p', { class: 'muted small', text: 'Totals only: SMILE never shows partners any traveler names. Local or foreign comes from the nationality travelers give when they sign up; guests show as not stated.' })
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#ED0460' }, icon('globe')), 'Who visits']),
+          splitBar([{ label: 'Local', value: v.local, color: '#0057D9' }, { label: 'Foreign', value: v.foreign, color: '#ED0460' }, { label: 'Not stated', value: v.unknown, color: '#C9C2B5' }]),
+          el('div', { class: 'portal-2col' }, [
+            el('div', null, [el('h3', { class: 'portal-h', text: 'Nationalities' }), barList(st.nationalities.map(function (x) { return { label: x.name, value: x.count }; }), '#ED0460')]),
+            el('div', null, [el('h3', { class: 'portal-h', text: 'Where they come from' }), barList(st.hometowns.map(function (x) { return { label: x.name, value: x.count }; }), '#7B2CBF')])
+          ]),
+          el('h3', { class: 'portal-h', text: 'Busiest days of the week' }),
+          barList(st.weekday.map(function (n, i) { return { label: wk[i], value: n }; }), '#0096C7')
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#02A04F' }, icon('star')), 'What is engaging']),
+          barList(st.top_places.map(function (x) { return { label: x.name, note: d.scope.length > 1 ? provinceName(x.province) : '', value: x.count }; }), '#02A04F'),
+          el('div', { class: 'kpis kpis--3' }, [
+            el('div', { class: 'kpi' }, [el('b', { text: String(v.festival_checkins) }), el('span', { text: 'Festival check-ins' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: st.challenges.completed + ' / ' + st.challenges.accepted }), el('span', { text: 'Challenges completed / accepted' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: String(st.photobooth) }), el('span', { text: 'Photobooth postcards' })])
+          ])
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#E09A00' }, icon('alert')), 'Needs a push']),
+          el('p', { class: 'muted small', text: 'SMILE places in your area with no check-ins in this period.' }),
+          st.quiet_places.length ? el('div', { class: 'chips chips--wrap' }, st.quiet_places.map(function (x) { return el('span', { class: 'chip', text: x.name }); })) : el('p', { class: 'small', text: 'Every place had visitors. Maayo gid!' })
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#FF6A03' }, icon('shop')), 'Merchants and purchases']),
+          el('div', { class: 'kpis kpis--3' }, [
+            el('div', { class: 'kpi' }, [el('b', { text: String(m.enrolled) }), el('span', { text: 'SMILE merchants' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: peso(pu.total) }), el('span', { text: 'Bought by travelers' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: peso(pu.average) }), el('span', { text: 'Average sale' })])
+          ]),
+          splitBar([{ label: 'Local tourists', value: pu.local, color: '#0057D9' }, { label: 'Foreign tourists', value: pu.foreign, color: '#ED0460' }, { label: 'Not stated', value: pu.unknown, color: '#C9C2B5' }], peso),
+          el('div', { class: 'portal-2col' }, [
+            el('div', null, [el('h3', { class: 'portal-h', text: 'By product type' }), barList(pu.by_category.map(function (x) { return { label: (SHOP_TYPES[x.name] || { label: x.name }).label, value: x.amount }; }), '#FF6A03', peso)]),
+            el('div', null, [el('h3', { class: 'portal-h', text: 'Top merchants' }), barList(pu.top_shops.map(function (x) { return { label: x.name, value: x.amount }; }), '#FDB603', peso)])
+          ]),
+          el('h3', { class: 'portal-h', text: 'Shop interest in the app' }),
+          el('div', { class: 'kpis' }, STAT_LABELS.map(function (k) { return el('div', { class: 'kpi' }, [el('b', { text: String(m.engagement[k[0]] || 0) }), el('span', { text: k[1] })]); })),
+          el('p', { class: 'muted small', text: 'Purchases are recorded by the merchants themselves on their SMILE shop dashboard.' })
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#0057D9' }, icon('mailbox')), 'Postcards']),
+          el('div', { class: 'kpis kpis--3' }, [
+            el('div', { class: 'kpi' }, [el('b', { text: String(st.postcards.mailed) }), el('span', { text: 'Mailed from your area' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: String(st.postcards.adopted) }), el('span', { text: 'Adopted by new travelers' })]),
+            el('div', { class: 'kpi' }, [el('b', { text: pct(st.postcards.adopted, st.postcards.mailed) }), el('span', { text: 'Adoption rate' })])
+          ])
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#7B2CBF' }, icon('sparkle')), 'Insights from Muse Spark']),
+          el('p', { class: 'muted small', text: 'Muse Spark reads only these totals for your area, never traveler names.' }),
+          insQ, insBtn, insOut
+        ])
+      ]);
+      Motion.reveal(box);
+    };
+    var load = function () {
+      Api.partnerDashboard(Auth.token(), days, area).then(function (d) { if (token === renderToken) show(d); }, function (err) {
+        if (token !== renderToken) return;
+        if (err && err.code === 'SIGNED_OUT') { Auth.clear(); route(); return; }
+        if (err && err.code === 'NOT_PARTNER') { requestForm(); return; }
+        if (err && err.code === 'PARTNER_PENDING') { pendingCard(err.message); return; }
+        box.textContent = ''; box.appendChild(el('p', { class: 'empty', text: friendlyError(err) }));
+      });
+    };
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [head, box]));
+    focusHeading();
+    load();
+  }
+
+  // ---------------------------------------------------------------------------
   // Hotline partners (#/partner): hospitals, clinics, veterinary clinics and drugstores list their number and pin.
   // ---------------------------------------------------------------------------
 
@@ -3470,11 +3711,11 @@
           fields: [formField('m-name', 'Shop name', mName), formField('m-raw', 'Product, notes and price', mRaw)],
           args: function () { if (!mRaw.value.trim()) { toast('Describe your product first.'); mRaw.focus(); return null; } return [mName.value.trim(), mRaw.value.trim()]; },
           call: Api.merchant, pick: function (r) { return r.listing; } }),
-        aiTool({ id: 'tool-lgu', title: 'LGU insights', icon: 'chart', color: '#0057D9', variant: 'blue', button: 'Analyze', loading: 'Analyzing check-ins…',
-          lead: 'Ask about visitor trends from SMILE check-ins.',
-          fields: [formField('lgu-q', 'Your question', lguQ)],
-          args: function () { if (!lguQ.value.trim()) { toast('Type a question first.'); lguQ.focus(); return null; } return [lguQ.value.trim()]; },
-          call: Api.insights, pick: function (r) { return r.insights; } })
+el('article', { class: 'card stack reveal' }, [
+          el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#0057D9' }, icon('chart')), 'LGU and DOT Partner portal']),
+          el('p', { class: 'muted', text: 'For tourism offices: local and foreign visitors, top and quiet places, purchases at SMILE merchants in your area, and Muse Spark insights. Sign in with your partner account.' }),
+          button('Open the Partner portal', 'chart', { block: true, variant: 'blue', href: '#/partners' })
+        ])
       ])
     ]));
     focusHeading();
@@ -4011,6 +4252,7 @@
     dashboard: renderDashboard,
     me: renderMe,
     partner: renderPartner,
+    partners: renderPartners,
     journal: renderJournal,
     hub: renderHub
   };
