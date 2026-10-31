@@ -7,6 +7,9 @@
 // v10 changes: every place and shop has a "province" (aklan, antique, capiz, guimaras, iloilo,
 //  negros-occidental, negros-oriental, siquijor). Places column J and Shops column K hold it; setup() adds
 //  the columns and the built-in places across the eight provinces. Isidro picks from the tourist's province first.
+//  v15.5: LGU / DOT Partner portal (#/partners, same sign-in; Accounts columns L-O role, org, scope, partner_note):
+//         visitors local vs foreign, top and quiet places, merchant purchases (Sales sheet, recorded by merchants on
+//         their dashboard), engagement, postcards and Muse Spark insights from totals only.
 //  v15.4: Isidro has more room to think (and retries once if a reply is cut off); post offices can be registered in
 //         the Hotlines sheet (type "postoffice", with GPS pin) and Isidro routes travelers to the nearest one.
 //  v15.3: police stations, barangay tanod outposts, fire stations, DRRMOs and municipal health offices can enroll too.
@@ -38,7 +41,7 @@
 // =====================================================
 
 var SS_ID = "PASTE_YOUR_GOOGLE_SHEET_ID_HERE"; // your own Google Sheet ID (kept private)
-var VERSION = "SMILE v15.4";
+var VERSION = "SMILE v15.5";
 
 var PROVINCES = {"aklan":"Aklan","antique":"Antique","capiz":"Capiz","guimaras":"Guimaras","iloilo":"Iloilo","negros-occidental":"Negros Occidental","negros-oriental":"Negros Oriental","siquijor":"Siquijor"};
 function provinceId(v){ var k=String(v||"").toLowerCase().trim(); return PROVINCES[k] ? k : "iloilo"; }
@@ -219,7 +222,8 @@ var SHEET_HEADERS = {
   Photobooth:["time","user","place_id","place_name","mode","outfit_raw","prompt_used"],
   Shops:["shop_id","name","type","barangay","desc","contact","maps_url","status","created","owner","province","featured","manage_code","lat","lng"],
   ShopStats:["date","shop_id","views","gallery","directions","contact","share"],
-  Accounts:["user_id","name","email","pass_hash","salt","created","province","bio","nationality","hometown","photo_id"],
+  Accounts:["user_id","name","email","pass_hash","salt","created","province","bio","nationality","hometown","photo_id","role","org","scope","partner_note"],
+  Sales:["time","shop_id","shop_name","province","amount","item","customer","shop_type"],
   Hotlines:["province","type","name","phone","notes","status","lat","lng","address","contact_person","created"],
   Sessions:["token_hash","user_id","created","expires"],
   Journal:["post_id","user_id","name","place_id","place_name","province","text","caption","lang","photo_id","video_id","visibility","status","created","likes"],
@@ -706,7 +710,8 @@ function findAccount_(field, value){
   for(var i=1;i<v.length;i++) if(v[i][0] && String(v[i][col]).trim().toLowerCase()==value) return {row:i+1, r:v[i]};
   return null;
 }
-function publicUser_(r){ return {user_id:String(r[0]), name:String(r[1]), province:provinceId(r[6]), bio:String(r[7]||""), nationality:String(r[8]||""), hometown:String(r[9]||""), photo_id:String(r[10]||"")}; }
+function publicUser_(r){ return {user_id:String(r[0]), name:String(r[1]), province:provinceId(r[6]), bio:String(r[7]||""), nationality:String(r[8]||""), hometown:String(r[9]||""), photo_id:String(r[10]||""),
+  role:String(r[11]||"").toLowerCase().trim(), org:String(r[12]||""), scope:String(r[13]||"").toLowerCase().trim()}; }
 function newSession_(userId){
   var token = Utilities.getUuid().replace(/-/g,"")+Utilities.getUuid().replace(/-/g,"");
   getSS().getSheetByName("Sessions").appendRow([sha256_(token), userId, new Date(), new Date(Date.now()+SESSION_DAYS*86400000)]);
@@ -793,6 +798,23 @@ function hotlines_(p){
   return {ok:true, hotlines:list};
 }
 
+/**
+ * Run once from the editor (Run ▶ seedSamplePostOffice) to add a sample post office for a demo:
+ * Dingle Post Office, Iloilo, pinned at the Dingle town center (11.0000, 122.6717, from PhilAtlas).
+ * Adds the Hotlines header row if the sheet is empty, and does nothing if the row is already there.
+ * Then move the pin to the real building: in Google Maps, right-click the post office, copy the
+ * coordinates, and paste them into columns G (lat) and H (lng).
+ */
+function seedSamplePostOffice(){
+  var ss = getSS(), sh = ss.getSheetByName("Hotlines") || ss.insertSheet("Hotlines"), hdr = SHEET_HEADERS.Hotlines;
+  if(sh.getLastRow()===0) sh.appendRow(hdr);
+  else { var cur = sh.getRange(1,1,1,Math.max(sh.getLastColumn(),1)).getValues()[0]; for(var h=0;h<hdr.length;h++) if(!cur[h]) sh.getRange(1,h+1).setValue(hdr[h]); }
+  var v = sh.getDataRange().getValues();
+  for(var i=1;i<v.length;i++) if(String(v[i][2]).toLowerCase()=="dingle post office"){ Logger.log("Dingle Post Office is already in the Hotlines sheet (row "+(i+1)+")."); return; }
+  sh.appendRow(["iloilo", "postoffice", "Dingle Post Office", "", "", "approved", 11.0000, 122.6717, "Poblacion, Dingle, Iloilo 5035", "", new Date()]);
+  Logger.log("✅ Added Dingle Post Office (row "+sh.getLastRow()+"). Move the pin to the real building in columns G and H.");
+}
+
 /** Approved post offices with a GPS pin, from the Hotlines sheet (type "postoffice"). */
 function postOffices_(){
   return hotlines_({}).hotlines.filter(function(h){ return h.type=="postoffice" && h.lat!=null; });
@@ -819,6 +841,165 @@ function hotlineSubmit_(p){
     cache.put(key, "1", 3600);
   } finally { lock.releaseLock(); }
   return {ok:true, status:"pending", message:"Salamat! The SMILE team will call "+phone+" to verify it. Your hotline appears in the app once approved."};
+}
+
+// ============ PARTNER PORTAL: LGU tourism offices and DOT ============
+// Partners sign in with the same SMILE account as travelers. They tap "Request partner access" in #/partners;
+// the request lands in the Accounts sheet (role "pending", org, scope, partner_note). To approve, set:
+//   column L role  = partner
+//   column M org   = the office, e.g. "Iloilo Provincial Tourism Office" or "DOT Region VI"
+//   column N scope = a province id (iloilo, aklan, antique, capiz, guimaras, negros-occidental, negros-oriental,
+//                    siquijor), several separated by commas, or "all" (DOT regional office)
+// The portal shows totals only: no traveler names or emails ever leave the server.
+// Merchant purchases come from "Record a sale" on each shop's dashboard (Sales sheet).
+var PARTNER_DAYS = [7, 30, 90, 365];
+function partnerScope_(u){
+  var sc = String(u.scope||"").toLowerCase().replace(/\s+/g,"");
+  if(sc=="all" || sc=="*") return Object.keys(PROVINCES);
+  return sc.split(",").filter(function(x){ return PROVINCES[x]; });
+}
+function partnerUser_(p){
+  var u = userFromToken_(p.token);
+  if(!u) return {err:{ok:false, error:"Please sign in again.", code:"SIGNED_OUT"}};
+  if(u.role!="partner") return {err:{ok:false, code:u.role=="pending" ? "PARTNER_PENDING" : "NOT_PARTNER",
+    error:u.role=="pending" ? "Your partner request is waiting for the SMILE team." : "This account is not a partner yet."}, user:u};
+  var provs = partnerScope_(u);
+  if(!provs.length) return {err:{ok:false, code:"PARTNER_PENDING", error:"Your partner access has no area yet. The SMILE team will set it."}, user:u};
+  return {user:u, provs:provs};
+}
+function partnerRequest_(p){
+  var u = userFromToken_(p.token);
+  if(!u) return {ok:false, error:"Please sign in first.", code:"SIGNED_OUT"};
+  if(u.role=="partner") return {ok:true, status:"partner"};
+  var org = clean_(p.org, 100), pos = clean_(p.position, 80), phone = clean_(p.phone, 40), area = String(p.area||"").toLowerCase();
+  if(org.length < 3) return {ok:false, error:"Please type your office, e.g. Iloilo Provincial Tourism Office."};
+  if(!pos) return {ok:false, error:"Please type your position."};
+  if(area!="all" && !PROVINCES[area]) return {ok:false, error:"Please choose your province."};
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{
+    var a = findAccount_("user_id", u.user_id); if(!a) return {ok:false, error:"Account not found."};
+    var sh = getSS().getSheetByName("Accounts");
+    sh.getRange(a.row, 12, 1, 4).setValues([["pending", org, area, [pos, phone, clean_(p.note, 300), Utilities.formatDate(new Date(), "Asia/Manila", "yyyy-MM-dd")].filter(String).join(" | ")]]);
+  } finally { lock.releaseLock(); }
+  return {ok:true, status:"pending", message:"Salamat! The SMILE team will confirm with your office and open your portal."};
+}
+function isLocal_(nat){ return /filip|pinoy|pinay|philippin|^ph$|^pilipino/i.test(String(nat||"").trim()); }
+function toDate_(v){ if(v instanceof Date) return v; var d = new Date(String(v||"").replace(/^'/,"")); return isNaN(d) ? null : d; }
+function topN_(obj, n){ return Object.keys(obj).map(function(k){ return {name:k, count:obj[k]}; }).sort(function(a,b){ return b.count-a.count; }).slice(0, n||8); }
+/** Totals for the partner's area and period. No names or emails. */
+function partnerStats_(provs, days){
+  var since = new Date(Date.now() - days*86400000), inArea = {}; provs.forEach(function(x){ inArea[x]=1; });
+  var places = getPlacesData(), byId = {}; places.forEach(function(x){ byId[x.id] = x; });
+  var acct = {};
+  try{ getSS().getSheetByName("Accounts").getDataRange().getValues().slice(1).forEach(function(r){ if(r[1]) acct[String(r[1]).toLowerCase()] = {nat:String(r[8]||""), home:String(r[9]||"")}; }); }catch(e){}
+  var dayKey = function(d){ return Utilities.formatDate(d, "Asia/Manila", "yyyy-MM-dd"); };
+  var daysList = []; for(var i=Math.min(days,90)-1;i>=0;i--) daysList.push(dayKey(new Date(Date.now()-i*86400000)));
+  var perDay = {}, weekday = [0,0,0,0,0,0,0], placeCount = {}, travelers = {}, nats = {}, homes = {};
+  var v = {checkins:0, travelers:0, local:0, foreign:0, unknown:0, festival_checkins:0};
+  try{
+    getSS().getSheetByName("Checkins").getDataRange().getValues().slice(1).forEach(function(r){
+      var d = toDate_(r[0]), pl = byId[String(r[2])];
+      if(!d || d < since || !pl || !inArea[pl.province]) return;
+      v.checkins++; placeCount[pl.id] = (placeCount[pl.id]||0)+1;
+      if(pl.cat=="festival") v.festival_checkins++;
+      var k = dayKey(d); perDay[k] = (perDay[k]||0)+1;
+      weekday[Number(Utilities.formatDate(d, "Asia/Manila", "u"))%7]++;
+      var who = String(r[1]||"").toLowerCase().trim(); if(!who) who = "guest-"+v.checkins;
+      if(!travelers[who]){
+        travelers[who] = 1; v.travelers++;
+        var a = acct[who];
+        if(!a || !a.nat){ v.unknown++; }
+        else { if(isLocal_(a.nat)) v.local++; else v.foreign++; var nk = a.nat.trim().replace(/\b\w/g, function(c){ return c.toUpperCase(); }); nats[nk] = (nats[nk]||0)+1; }
+        if(a && a.home) { var hk = a.home.trim(); homes[hk] = (homes[hk]||0)+1; }
+      }
+    });
+  }catch(e){}
+  var areaPlaces = places.filter(function(x){ return inArea[x.province]; });
+  var top = areaPlaces.filter(function(x){ return placeCount[x.id]; }).map(function(x){ return {name:x.name, province:x.province, cat:x.cat, count:placeCount[x.id]}; })
+    .sort(function(a,b){ return b.count-a.count; }).slice(0, 10);
+  var quiet = areaPlaces.filter(function(x){ return !placeCount[x.id]; }).map(function(x){ return {name:x.name, province:x.province, cat:x.cat}; }).slice(0, 12);
+  var ch = {accepted:0, completed:0};
+  try{ getSS().getSheetByName("Challenges").getDataRange().getValues().slice(1).forEach(function(r){
+    var d = toDate_(r[0]), pl = byId[String(r[2])]; if(!d || d < since || !pl || !inArea[pl.province]) return;
+    ch.accepted++; if(/done|complete/i.test(String(r[4]))) ch.completed++; }); }catch(e){}
+  // merchants in the area
+  var shops = {}, shopCount = 0;
+  try{ getSS().getSheetByName("Shops").getDataRange().getValues().slice(1).forEach(function(r){
+    if(!r[0]) return; var pv = provinceId(r[10]); if(!inArea[pv]) return;
+    shops[String(r[0])] = {name:String(r[1]), type:String(r[2]||"other")};
+    if(String(r[7]).toLowerCase()=="approved") shopCount++; }); }catch(e){}
+  var buy = {total:0, count:0, local:0, foreign:0, unknown:0, by_category:{}, by_shop:{}, per_day:{}};
+  try{ getSS().getSheetByName("Sales").getDataRange().getValues().slice(1).forEach(function(r){
+    var d = toDate_(r[0]); if(!d || d < since || !shops[String(r[1])]) return;
+    var amt = Number(r[4])||0; if(amt<=0) return;
+    buy.total += amt; buy.count++;
+    var c = String(r[6]||"unknown"); buy[c=="local"||c=="foreign" ? c : "unknown"] += amt;
+    var cat = String(r[7]||shops[String(r[1])].type||"other"); buy.by_category[cat] = (buy.by_category[cat]||0)+amt;
+    var sn = shops[String(r[1])].name; buy.by_shop[sn] = (buy.by_shop[sn]||0)+amt;
+    var k = dayKey(d); buy.per_day[k] = (buy.per_day[k]||0)+amt; }); }catch(e){}
+  var eng = {}; STAT_TYPES.forEach(function(t){ eng[t]=0; });
+  try{ getSS().getSheetByName("ShopStats").getDataRange().getValues().slice(1).forEach(function(r){
+    if(!shops[String(r[1])]) return; var d = toDate_(r[0]); if(!d || d < since) return;
+    STAT_TYPES.forEach(function(t, j){ eng[t] += Number(r[2+j])||0; }); }); }catch(e){}
+  var post = {mailed:0, adopted:0};
+  try{ getSS().getSheetByName("Journey").getDataRange().getValues().slice(1).forEach(function(r){
+    var pl = byId[String(r[2])], d = toDate_(r[6]); if(!pl || !inArea[pl.province] || !d || d < since) return;
+    post.mailed++; if(r[7]) post.adopted++; }); }catch(e){}
+  var booth = 0;
+  try{ getSS().getSheetByName("Photobooth").getDataRange().getValues().slice(1).forEach(function(r){
+    var pl = byId[String(r[2])], d = toDate_(r[0]); if(pl && inArea[pl.province] && d && d >= since) booth++; }); }catch(e){}
+  var round = function(n){ return Math.round(n*100)/100; };
+  return {days:days, provinces:provs, visitors:v, nationalities:topN_(nats, 8), hometowns:topN_(homes, 8),
+    weekday:weekday, per_day:daysList.map(function(k){ return {date:k, checkins:perDay[k]||0, purchases:round(buy.per_day[k]||0)}; }),
+    top_places:top, quiet_places:quiet, challenges:ch,
+    merchants:{enrolled:shopCount, purchases:{total:round(buy.total), count:buy.count, average:buy.count ? round(buy.total/buy.count) : 0,
+      local:round(buy.local), foreign:round(buy.foreign), unknown:round(buy.unknown),
+      by_category:topN_(buy.by_category, 8).map(function(x){ return {name:x.name, amount:round(x.count)}; }),
+      top_shops:topN_(buy.by_shop, 5).map(function(x){ return {name:x.name, amount:round(x.count)}; })}, engagement:eng},
+    postcards:post, photobooth:booth};
+}
+function partnerAreaParam_(pu, p){
+  var want = String(p.province||"").toLowerCase();
+  return want && pu.provs.indexOf(want)>-1 ? [want] : pu.provs;
+}
+function partnerDashboard_(p){
+  var pu = partnerUser_(p); if(pu.err) return pu.err;
+  var days = PARTNER_DAYS.indexOf(Number(p.days))>-1 ? Number(p.days) : 30;
+  return {ok:true, org:pu.user.org, scope:pu.provs, stats:partnerStats_(partnerAreaParam_(pu, p), days)};
+}
+function partnerInsights_(p){
+  var pu = partnerUser_(p); if(pu.err) return pu.err;
+  var days = PARTNER_DAYS.indexOf(Number(p.days))>-1 ? Number(p.days) : 30;
+  var area = partnerAreaParam_(pu, p), st = partnerStats_(area, days);
+  delete st.per_day;
+  var rc = callMuse([{role:"system", content:"You are a tourism analyst for "+(pu.user.org||"a Philippine LGU tourism office")+". Area: "+area.map(provinceName).join(", ")+
+      ". Using ONLY the SMILE totals given (check-ins at landmarks and festivals, local vs foreign travelers, purchases recorded by enrolled merchants in PHP, shop engagement, postcards), "+
+      "answer in plain English under 170 words with three short parts: What is working, What is not, and 3 concrete actions for the LGU. Mention numbers. If data is thin, say so and suggest how to get more."},
+    {role:"user", content:(p.q ? "Question: "+clean_(p.q, 300)+"\n" : "")+"Last "+days+" days: "+JSON.stringify(st)}], null, 700, 0.4);
+  return {ok:true, insights:rc.text, demo:!!rc.demo};
+}
+/** A merchant records a sale on its dashboard (shop code). Feeds the partner portal's purchase totals. */
+function saleRecord_(p){
+  var hit = shopByCode_(p.code);
+  if(!hit) return {ok:false, error:"Shop code not found."};
+  var amt = Math.round(Number(String(p.amount||"").replace(/[^\d.]/g,""))*100)/100;
+  if(!(amt>=1 && amt<=1000000)) return {ok:false, error:"Type the amount in pesos, e.g. 350."};
+  var cust = ["local","foreign","unknown"].indexOf(String(p.customer))>-1 ? String(p.customer) : "unknown";
+  var r = hit.r, lock = takeLock(); if(!lock) return BUSY;
+  try{
+    getSS().getSheetByName("Sales").appendRow([new Date(), String(r[0]), String(r[1]), provinceId(r[10]), amt, clean_(p.item, 80), cust, String(r[2]||"other")]);
+  } finally { lock.releaseLock(); }
+  return {ok:true, sales:shopSales_(String(r[0]), 30)};
+}
+function shopSales_(shopId, days){
+  var since = new Date(Date.now() - days*86400000), s = {total:0, count:0, local:0, foreign:0, unknown:0, recent:[]};
+  try{ getSS().getSheetByName("Sales").getDataRange().getValues().slice(1).forEach(function(r){
+    if(String(r[1])!=shopId) return; var d = toDate_(r[0]); if(!d || d < since) return;
+    var a = Number(r[4])||0, c = ["local","foreign"].indexOf(String(r[6]))>-1 ? String(r[6]) : "unknown";
+    s.total += a; s.count++; s[c] += a;
+    s.recent.push({time:Utilities.formatDate(d, "Asia/Manila", "MMM d, h:mm a"), amount:a, item:String(r[5]||""), customer:c}); }); }catch(e){}
+  s.recent = s.recent.slice(-8).reverse();
+  return s;
 }
 
 // ============ PROFILE PHOTO ============
@@ -1047,7 +1228,7 @@ function dashboard_(p){
   CacheService.getScriptCache().put("upl_"+shopId, token, 21600);   // lets the shop add photos and its video from the dashboard
   return {ok:true, shop:{shop_id:shopId, name:name, type:String(r[2]||""), province:provinceId(r[10]), status:String(r[7]||"pending"),
     featured:/^(true|yes|y|1|featured)$/i.test(String(r[11]||"").trim())}, items:items, media:media, postcards:pc,
-    stats:shopStats_(shopId, 30), upload_token:token};
+    stats:shopStats_(shopId, 30), sales:shopSales_(shopId, 30), upload_token:token};
 }
 
 function merchantTips_(p){
@@ -1274,6 +1455,10 @@ function handle(p){
     if(a=="signin") return out(signin_(p));
     if(a=="signout") return out(signout_(p));
     if(a=="me") return out(me_(p));
+    if(a=="partner_request") return out(partnerRequest_(p));
+    if(a=="partner_dashboard") return out(partnerDashboard_(p));
+    if(a=="partner_insights") return out(partnerInsights_(p));
+    if(a=="sale_record") return out(saleRecord_(p));
     if(a=="hotlines") return out(hotlines_(p));
     if(a=="hotline_submit") return out(hotlineSubmit_(p));
     if(a=="profile_photo") return out(profilePhoto_(p));
@@ -1604,13 +1789,7 @@ function handle(p){
     }
 
     // ---------- AI LGU INSIGHTS (Muse) ----------
-    if(a=="insights"){
-      var data="No data"; try{ data=JSON.stringify(getSS().getSheetByName("Checkins").getDataRange().getValues().slice(-80)); }catch(x){}
-      var journeyData=""; try{ journeyData=JSON.stringify(getSS().getSheetByName("Journey").getDataRange().getValues().slice(-30)); }catch(y){}
-      var photoData=""; try{ photoData=JSON.stringify(getSS().getSheetByName("Photobooth").getDataRange().getValues().slice(-20)); }catch(z){}
-      var ri=callMuse([{role:"system",content:"Tourism analyst for LGUs and PhilPost in Western Visayas. Plain language. Top places, peak times, postcard journey spread across PH, photobooth usage, and 2 concrete actions. Only use data given."},{role:"user",content:"Question: "+(p.q||"Which places got most visitors?")+"\nCheckins:"+data+"\nJourney:"+journeyData+"\nPhotobooth:"+photoData}],null,600);
-      return out({ok:true, insights:ri.text});
-    }
+    if(a=="insights") return out(partnerInsights_(p));   // partners only (signed in), totals only
 
   }catch(err){ return out({ok:false, error:String(err && err.message ? err.message : err)}); }
   return out({ok:false, error:"unknown action: "+a});
