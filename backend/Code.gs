@@ -7,6 +7,8 @@
 // v10 changes: every place and shop has a "province" (aklan, antique, capiz, guimaras, iloilo,
 //  negros-occidental, negros-oriental, siquijor). Places column J and Shops column K hold it; setup() adds
 //  the columns and the built-in places across the eight provinces. Isidro picks from the tourist's province first.
+//  v15.4: Isidro has more room to think (and retries once if a reply is cut off); post offices can be registered in
+//         the Hotlines sheet (type "postoffice", with GPS pin) and Isidro routes travelers to the nearest one.
 //  v15.3: police stations, barangay tanod outposts, fire stations, DRRMOs and municipal health offices can enroll too.
 //  v15.2: Hotline partners: hospitals, clinics, vets and drugstores enroll with phone and GPS pin (pending until verified);
 //         Hotlines sheet gains lat, lng, address, contact_person, created.
@@ -36,7 +38,7 @@
 // =====================================================
 
 var SS_ID = "PASTE_YOUR_GOOGLE_SHEET_ID_HERE"; // your own Google Sheet ID (kept private)
-var VERSION = "SMILE v15.3";
+var VERSION = "SMILE v15.4";
 
 var PROVINCES = {"aklan":"Aklan","antique":"Antique","capiz":"Capiz","guimaras":"Guimaras","iloilo":"Iloilo","negros-occidental":"Negros Occidental","negros-oriental":"Negros Oriental","siquijor":"Siquijor"};
 function provinceId(v){ var k=String(v||"").toLowerCase().trim(); return PROVINCES[k] ? k : "iloilo"; }
@@ -453,6 +455,7 @@ function callMuse(messages, modelOverride, max_tokens, temp, kind){
     var body = {model:model, messages:messages, max_tokens:Math.max(1200, (max_tokens||800)*3), temperature:(temp==null?0.7:temp)};   // Muse Spark thinks first, so allow room
     var res = postAI_(prov, body);
     if(res.code==429){ Utilities.sleep(1500); res = postAI_(prov, body); }
+    if(!res.ok && res.cutOff && body.max_tokens < 8000){ body.max_tokens = Math.min(8000, body.max_tokens*2); res = postAI_(prov, body); }   // it thought too long: once more with room
     if(res.ok) return {text: cleanAIText_(res.text), demo:false, model:model, provider:prov.name};
     errors.push(model+": "+res.msg);
     if(res.code==404 || /decommission|deprecat|not found|does not exist|not supported|model_not_found|unknown model|invalid model|image/i.test(res.msg)){ markModelBad_(prov, model); continue; }
@@ -473,7 +476,7 @@ function postAI_(prov, body){
   var content = null, fin = "";
   if(j.choices && j.choices[0] && j.choices[0].message){ content = j.choices[0].message.content; fin = j.choices[0].finish_reason; }
   if(Array.isArray(content)) content = content.map(function(c){ return c.text || ""; }).join("");
-  if(!content && fin=="length") return {ok:false, code:code, msg:"reply cut off (max_tokens too low)"};
+  if(!content && fin=="length") return {ok:false, code:code, cutOff:true, msg:"reply cut off (max_tokens too low)"};
   if(content==null) return {ok:false, code:code, msg:"empty reply: "+txt.slice(0,160)};
   return {ok:true, code:code, text:String(content)};
 }
@@ -587,13 +590,19 @@ function isidroChat_(p){
         .filter(function(sh){ return sh.km <= NEAR_MAX_KM; })
         .sort(function(a,b){ return (a.km-b.km) || (b.featured-a.featured); }).slice(0, near=="shop" ? 5 : 3);
     }
+    var nearPOs = [];
+    if(near=="postoffice" || near=="all"){
+      nearPOs = postOffices_().map(function(o){ o.km = distKm_(here, {lat:o.lat, lng:o.lng}); return o; })
+        .filter(function(o){ return o.km <= NEAR_MAX_KM; }).sort(function(a,b){ return a.km-b.km; }).slice(0, 3);
+    }
     nearTxt = "\nThe tourist shared their phone GPS location. Nearest "+(NEAR_LABEL[near]||"places")+", closest first (id | name | category | distance):\n"+
       nearIds.map(function(id){ var x = byId[id]; return [id, x.name, x.cat, kmText_(dist[id])].join(" | "); }).join("\n")+
       (nearShops.length ? "\nNearest SMILE shops (name | type | area | distance): "+nearShops.map(function(sh){ return [sh.name, sh.type, sh.barangay, kmText_(sh.km)].join(" | "); }).join("; ") : "")+
       "\nWhen they ask what is near or around them, recommend the closest options first, say how far each one is and the easiest way to get there (walk if under 1 km, tricycle, jeepney, taxi or boat). "+
       (near=="event" ? "For festivals, also say when the next one is from the festival calendar. " : "")+
       (near=="inn" ? "SMILE has no hotel list yet: suggest the nearest stay spots above and say the app also shows a Google Maps search for inns near them. " : "")+
-      (near=="postoffice" ? "They want to mail their SMILE postcard. The app shows a Google Maps search for the post offices nearest to them: tell them to tap it, that their postcard already has its stamp, to drop it at the post office counter or mailbox and tap Mail in the app, and that the post office has a SMILE box of random postcards from other travelers they can pick, adopt and follow. Do not invent post office addresses or hours. " : "")+
+      (nearPOs.length ? "\nNearest SMILE post offices (name | address | distance): "+nearPOs.map(function(o){ return [o.name, o.address, kmText_(o.km)].join(" | "); }).join("; ")+". Recommend the closest one by name; the app shows a Directions button for each. " : "")+
+      (near=="postoffice" ? "Keep this answer under 80 words. They want to mail their SMILE postcard. "+(nearPOs.length ? "" : "The app shows a Google Maps search for the post offices nearest to them: tell them to tap it. ")+"Tell them their postcard already has its stamp, to drop it at the post office counter or mailbox and tap I mailed it in the app, and that the post office has a SMILE box of random postcards from other travelers they can pick, adopt and follow. Do not invent post office addresses or hours. " : "")+
       (nearestKm > NEAR_MAX_KM && near!="shop" && near!="postoffice" ? "The closest one is "+kmText_(nearestKm)+" away, so they are probably outside or far from the SMILE area (Western Visayas and the Negros Island Region): say so kindly and suggest how to get there. " : "")+
       (near=="shop" && !nearShops.length ? "No SMILE shop is within "+NEAR_MAX_KM+" km: say so and suggest the nearest town with SMILE shops. " : "")+
       "Never tell them their coordinates.";
@@ -610,7 +619,7 @@ function isidroChat_(p){
   var msgs = [{role:"system", content:sys}];
   hist.forEach(function(h){ if(h && (h.role=="user"||h.role=="assistant") && h.content) msgs.push({role:h.role, content:clean_(h.content, 1200)}); });
   msgs.push({role:"user", content:clean_(p.q||(here ? "What is near me?" : "I have 4 hours and love food"), 600)});
-  var rc = callMuse(msgs, null, 700);
+  var rc = callMuse(msgs, null, 1400);
   var text = String(rc.text||""), ids = [];
   var m = text.match(/\n?\s*PLACES:\s*([^\n]*)\s*$/i);
   if(m){ ids = m[1].split(/[,\s]+/).map(function(t){ return t.trim().replace(/[^\w-]/g,""); }).filter(function(t){ return byId[t]; }); text = text.slice(0, m.index).trim(); }
@@ -621,6 +630,7 @@ function isidroChat_(p){
   if(here){
     res.shops = nearShops.map(function(sh){ sh.distance_km = Math.round(sh.km*100)/100; delete sh.km; return sh; });
     if(near=="inn" || near=="all") res.inn_search_url = "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent("inns hotels near "+la.toFixed(4)+","+ln.toFixed(4));
+    if(nearPOs.length) res.post_offices = nearPOs.map(function(o){ return {name:o.name, address:o.address, phone:o.phone, notes:o.notes, lat:o.lat, lng:o.lng, distance_km:Math.round(o.km*100)/100}; });
     if(near=="postoffice" || near=="all") res.post_office_search_url = "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent("post office near "+la.toFixed(4)+","+ln.toFixed(4));
   }
   return res;
@@ -760,14 +770,17 @@ function signout_(p){
 // veterinary clinics and drugstores can enroll themselves from the app (Hotline → "List your hotline"): they arrive
 // as "pending" with their GPS pin. Call the number to verify it, then change status to "approved".
 // Coast guard and tourism numbers are added by the SMILE team.
+// Post offices go in the same sheet with type "postoffice" (and their GPS pin): Isidro and the "Mail your postcard"
+// section then route travelers to the nearest one with the blue line. They are not listed as emergency hotlines.
 // province: aklan, antique, capiz, guimaras, iloilo, negros-occidental, negros-oriental, siquijor (blank = all).
-var HOTLINE_TYPES = ["police","tanod","fire","drrmo","healthoffice","hospital","clinic","vet","drugstore","coastguard","tourism","other"];
+var HOTLINE_TYPES = ["police","tanod","fire","drrmo","healthoffice","hospital","clinic","vet","drugstore","coastguard","tourism","postoffice","other"];
 function hotlines_(p){
   var prov = PROVINCES[String(p.province||"").toLowerCase()] ? String(p.province).toLowerCase() : "";
   var list = [];
   try{
     getSS().getSheetByName("Hotlines").getDataRange().getValues().slice(1).forEach(function(r){
-      if(!r[2] || !r[3] || String(r[5]).toLowerCase()!="approved") return;
+      var isPO = String(r[1]).toLowerCase().trim()=="postoffice";
+      if(!r[2] || (!r[3] && !isPO) || String(r[5]).toLowerCase()!="approved") return;   // post offices may leave the phone blank
       var pv = String(r[0]||"").trim() ? provinceId(r[0]) : "";
       if(prov && pv && pv!=prov) return;
       var t = HOTLINE_TYPES.indexOf(String(r[1]).toLowerCase().trim())>-1 ? String(r[1]).toLowerCase().trim() : "other";
@@ -780,7 +793,11 @@ function hotlines_(p){
   return {ok:true, hotlines:list};
 }
 
-var PARTNER_TYPES = ["police","tanod","fire","drrmo","healthoffice","hospital","clinic","vet","drugstore"];
+/** Approved post offices with a GPS pin, from the Hotlines sheet (type "postoffice"). */
+function postOffices_(){
+  return hotlines_({}).hotlines.filter(function(h){ return h.type=="postoffice" && h.lat!=null; });
+}
+var PARTNER_TYPES = ["police","tanod","fire","drrmo","healthoffice","hospital","clinic","vet","drugstore","postoffice"];
 /** A police station, tanod outpost, fire station, DRRMO, health office, hospital, clinic, vet or drugstore lists its hotline (pending until verified). */
 function hotlineSubmit_(p){
   if(String(p.website||"")) return {ok:true, status:"pending"};   // honeypot: bots fill hidden fields
