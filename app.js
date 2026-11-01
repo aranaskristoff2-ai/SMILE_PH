@@ -535,9 +535,16 @@
     if (p && hasLatLng(p)) return Number(p.lat) + ',' + Number(p.lng);
     return p && p.name ? p.name + ', ' + provinceName(provinceOf(p)) + ', Philippines' : '';
   }
+  // Phones and tablets: Google Maps (app or site) starts the route from the phone's live GPS by itself, so the
+  // route opens straight away inside the tap. Waiting for the location first sends the request from a tab in
+  // the background, which phones pause, so the route never opened.
+  var IS_MOBILE = (function () {
+    var ua = (window.navigator && navigator.userAgent) || '';
+    return /Android|iPhone|iPad|iPod|Mobile|IEMobile|Opera Mini/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  })();
   function routeUrl(dest) {
-    var url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest);
-    var h = typeof Geo !== 'undefined' && Geo.here && Date.now() - Geo.here.t < 15 * 60000 ? Geo.here : null;
+    var url = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(dest) + (IS_MOBILE ? '&travelmode=driving' : '');
+    var h = !IS_MOBILE && typeof Geo !== 'undefined' && Geo.here && Date.now() - Geo.here.t < 15 * 60000 ? Geo.here : null;
     if (h) url += '&origin=' + encodeURIComponent(h.lat.toFixed(5) + ',' + h.lng.toFixed(5));
     return url;
   }
@@ -549,6 +556,12 @@
   // Google Maps), then opens the route with that start point, so the blue line is always drawn.
   function openRoute(dest) {
     var fresh = typeof Geo !== 'undefined' && Geo.here && Date.now() - Geo.here.t < 15 * 60000;
+    if (IS_MOBILE) {
+      var u0 = routeUrl(dest), w0 = null;
+      try { w0 = window.open(u0, '_blank'); if (w0) w0.opener = null; } catch (err) { w0 = null; }
+      if (!w0) window.location.href = u0;
+      return;
+    }
     if (fresh || typeof Geo === 'undefined' || !Geo.supported()) { window.open(routeUrl(dest), '_blank', 'noopener'); return; }
     var win = null;
     try { win = window.open('', '_blank'); } catch (err) { win = null; }
@@ -1878,7 +1891,7 @@
     var poBtn = button('Nearest post office', 'map', { variant: 'light', small: true, onclick: function () {
       setBusy(poBtn, true, 'Finding you…');
       var win = null;
-      try { win = window.open('', '_blank'); } catch (e) { win = null; }
+      if (!IS_MOBILE) { try { win = window.open('', '_blank'); } catch (e) { win = null; } }
       Geo.fresh().then(function (h) {
         return loadPostOffices().then(function (list) {
           var best = nearestPostOffices(h, list)[0];
