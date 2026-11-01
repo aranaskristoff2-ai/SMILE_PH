@@ -7,6 +7,9 @@
 // v10 changes: every place and shop has a "province" (aklan, antique, capiz, guimaras, iloilo,
 //  negros-occidental, negros-oriental, siquijor). Places column J and Shops column K hold it; setup() adds
 //  the columns and the built-in places across the eight provinces. Isidro picks from the tourist's province first.
+//  v16.0: Nano-Shops online store: cart, PayMongo Checkout, delivery to the traveler's pin with an order tracker,
+//         merchant orders and payouts, Apply as Rider and the rider console, Post Office admin portal (role "admin").
+//         New sheets Orders, Riders, Payouts; Shops columns P-T (kind, payout_method, payout_name, payout_account, payout_provider).
 //  v15.5: LGU / DOT Partner portal (#/partners, same sign-in; Accounts columns L-O role, org, scope, partner_note):
 //         visitors local vs foreign, top and quiet places, merchant purchases (Sales sheet, recorded by merchants on
 //         their dashboard), engagement, postcards and Muse Spark insights from totals only.
@@ -40,8 +43,8 @@
 //  - Locks now wait properly and points updates for adopt are locked too.
 // =====================================================
 
-var SS_ID = "PASTE_YOUR_GOOGLE_SHEET_ID_HERE"; // your own Google Sheet ID (kept private)
-var VERSION = "SMILE v15.5";
+var SS_ID = "PASTE_YOUR_GOOGLE_SHEET_ID_HERE";
+var VERSION = "SMILE v16.0";
 
 var PROVINCES = {"aklan":"Aklan","antique":"Antique","capiz":"Capiz","guimaras":"Guimaras","iloilo":"Iloilo","negros-occidental":"Negros Occidental","negros-oriental":"Negros Oriental","siquijor":"Siquijor"};
 function provinceId(v){ var k=String(v||"").toLowerCase().trim(); return PROVINCES[k] ? k : "iloilo"; }
@@ -220,7 +223,10 @@ var SHEET_HEADERS = {
   Challenges:["time","user","place_id","place_name","status","postcard_code","completed_time"],
   Journey:["code","sender","from_place_id","to_place","to_province","status","mailed_date","adopted_by","adopted_date","chain_no"],
   Photobooth:["time","user","place_id","place_name","mode","outfit_raw","prompt_used"],
-  Shops:["shop_id","name","type","barangay","desc","contact","maps_url","status","created","owner","province","featured","manage_code","lat","lng"],
+  Shops:["shop_id","name","type","barangay","desc","contact","maps_url","status","created","owner","province","featured","manage_code","lat","lng","kind","payout_method","payout_name","payout_account","payout_provider"],
+  Orders:["order_id","created","status","shop_id","shop_name","province","name","phone","address","lat","lng","notes","items_json","subtotal","delivery_fee","total","km","pay_session","pay_method","paid_at","rider_id","rider_name","history_json","user_id","track_key","merchant_payout","rider_payout"],
+  Riders:["rider_id","created","status","name","phone","province","area","vehicle","plate","rider_code","notes"],
+  Payouts:["payout_id","created","type","party_id","party_name","orders","amount","method","reference","by"],
   ShopStats:["date","shop_id","views","gallery","directions","contact","share"],
   Accounts:["user_id","name","email","pass_hash","salt","created","province","bio","nationality","hometown","photo_id","role","org","scope","partner_note"],
   Sales:["time","shop_id","shop_name","province","amount","item","customer","shop_type"],
@@ -303,6 +309,7 @@ function setup(){
   }
   var n = upsertPlaces_();
   upsertShopsSeed_();
+  upsertNanoSeed_();
   Logger.log(VERSION+" setup complete. Places added/updated: "+n+", shops: "+SHOPS_SEED.length+". SS_ID="+SS_ID);
   setupDrive();
 }
@@ -354,12 +361,14 @@ function getShopsData(){
         maps_url:/^https:\/\//.test(String(r[6]||"")) ? r[6] : "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(r[1]+" "+(r[3]||"")+" "+provinceName(r[10])), items:[], province:provinceId(r[10]), featured:/^(true|yes|y|1|featured)$/i.test(String(r[11]||"").trim())};
       var la=Number(r[13]), ln=Number(r[14]), ll=SHOP_COORDS[s.shop_id];
       if(validLatLng_(la,ln)){ s.lat=la; s.lng=ln; } else if(ll){ s.lat=ll[0]; s.lng=ll[1]; }
+      s.kind = String(r[15]||"").toLowerCase()=="nano" ? "nano" : "store";
+      if(String(r[9])=="SMILE-SAMPLE") s.sample = true;
       byId[s.shop_id]=s; shops.push(s);
     });
     var iv=getSS().getSheetByName("ShopItems").getDataRange().getValues(); iv.shift();
     iv.forEach(function(r){
       if(!r[0] || String(r[6]).toLowerCase()!="approved" || !byId[r[1]]) return;
-      byId[r[1]].items.push({item_id:String(r[0]), name:r[2], price:r[3], desc:r[4], category:r[5]});
+      byId[r[1]].items.push({item_id:String(r[0]), name:r[2], price:r[3], price_num:pesoNum_(r[3]), desc:r[4], category:r[5]});
     });
   }catch(e){
     shops = SHOPS_SEED.map(function(s){ var ll=SHOP_COORDS[s.shop_id]||[]; return {shop_id:s.shop_id,name:s.name,type:s.type,barangay:s.barangay,desc:s.desc,contact:s.contact,maps_url:s.maps_url,items:s.items,province:provinceId(s.province),lat:ll[0],lng:ll[1]}; });
@@ -843,6 +852,426 @@ function hotlineSubmit_(p){
   return {ok:true, status:"pending", message:"Salamat! The SMILE team will call "+phone+" to verify it. Your hotline appears in the app once approved."};
 }
 
+// ============ NANO-SHOPS STORE: cart, PayMongo checkout, delivery, riders, payouts ============
+// Nano-Shops are online-only sellers (Shops column P kind = "nano"). Travelers add their products to a cart
+// (one shop per order), pay with PayMongo Checkout, and a SMILE rider delivers to the traveler's pinned location.
+// Sheets: Orders, Riders, Payouts. Script Properties:
+//   PAYMONGO_SECRET_KEY  sk_test_… (test mode) or sk_live_… once PayMongo has approved your business
+//   PAYMONGO_METHODS     optional, default "gcash,card,paymaya"
+//   APP_URL              optional, the app's address (default the GitHub Pages link)
+//   DELIVERY_BASE        optional, pesos per delivery (default 50)
+//   DELIVERY_PER_KM      optional, pesos per km from the shop (default 10)
+//   DELIVERY_MAX_KM      optional, farthest delivery (default 40)
+//   RIDER_SHARE          optional, share of the delivery fee paid to the rider (default 1 = all of it)
+//   PLATFORM_FEE_PCT     optional, SMILE's share of each merchant sale in percent (default 0)
+// Payment is confirmed by asking PayMongo for the checkout session (Apps Script cannot read webhook headers).
+// Merchant earnings are paid weekly and rider earnings daily by the Post Office admin (#/postoffice), who marks
+// each payout; Accounts column L role "admin" opens that portal.
+var ORDER_STATUSES = ["pending_payment","paid","preparing","ready","picked_up","delivered","cancelled"];
+var NANO_SEED = [
+  {shop_id:"nano-lola-nena-piaya", province:"iloilo", name:"Lola Nena's Piaya", type:"food", barangay:"Molo, Iloilo City", lat:10.6970, lng:122.5440,
+   desc:"Sample nano shop: home-baked piaya and barquillos from a lola's kitchen, delivered warm.", code:"SM-NANO01",
+   items:[{item_id:"nano-nena-1", name:"Piaya, pack of 10", price:"₱150", desc:"Flaky flatbread filled with muscovado.", category:"food"},
+          {item_id:"nano-nena-2", name:"Ube piaya, pack of 10", price:"₱180", desc:"Purple yam filling.", category:"food"},
+          {item_id:"nano-nena-3", name:"Barquillos, 20 rolls", price:"₱120", desc:"Crisp rolled wafers.", category:"food"}]},
+  {shop_id:"nano-hablon-habi", province:"iloilo", name:"Hablon Habi by Inday", type:"crafts", barangay:"Miagao", lat:10.6420, lng:122.2350,
+   desc:"Sample nano shop: hand-woven Miagao hablon from a home loom.", code:"SM-NANO02",
+   items:[{item_id:"nano-hablon-1", name:"Hablon table runner", price:"₱450", desc:"Hand-woven, 1.5 m.", category:"crafts"},
+          {item_id:"nano-hablon-2", name:"Hablon scarf", price:"₱350", desc:"Light and colorful.", category:"crafts"},
+          {item_id:"nano-hablon-3", name:"Hablon coin pouch", price:"₱180", desc:"With zipper.", category:"crafts"}]},
+  {shop_id:"nano-patadyong-threads", province:"antique", name:"Patadyong Threads", type:"crafts", barangay:"Bugasong", lat:11.0450, lng:122.0650,
+   desc:"Sample nano shop: checkered patadyong wraps and pouches made at home.", code:"SM-NANO03",
+   items:[{item_id:"nano-patad-1", name:"Patadyong wrap", price:"₱550", desc:"Classic checkered wrap.", category:"clothing"},
+          {item_id:"nano-patad-2", name:"Patadyong pouch", price:"₱150", desc:"Small zip pouch.", category:"crafts"}]},
+  {shop_id:"nano-capiz-shell-glow", province:"capiz", name:"Capiz Shell Glow", type:"crafts", barangay:"Roxas City", lat:11.5850, lng:122.7510,
+   desc:"Sample nano shop: capiz shell lamps and chimes handmade to order.", code:"SM-NANO04",
+   items:[{item_id:"nano-capiz-1", name:"Capiz shell lamp", price:"₱850", desc:"Table lamp, warm glow.", category:"crafts"},
+          {item_id:"nano-capiz-2", name:"Capiz wind chime", price:"₱320", desc:"Soft, bright chimes.", category:"crafts"},
+          {item_id:"nano-capiz-3", name:"Capiz coaster set (4)", price:"₱250", desc:"Heat-safe coasters.", category:"crafts"}]},
+  {shop_id:"nano-guimaras-mango-home", province:"guimaras", name:"Guimaras Mango Home", type:"food", barangay:"Jordan", lat:10.6570, lng:122.5960,
+   desc:"Sample nano shop: small-batch mango treats from a family kitchen.", code:"SM-NANO05",
+   items:[{item_id:"nano-mango-1", name:"Dried mango, 200 g", price:"₱180", desc:"Sweet and chewy.", category:"food"},
+          {item_id:"nano-mango-2", name:"Mango jam, 250 ml", price:"₱150", desc:"No preservatives.", category:"food"},
+          {item_id:"nano-mango-3", name:"Mango otap, 12 pcs", price:"₱120", desc:"Crisp puff pastry.", category:"food"}]},
+  {shop_id:"nano-boracay-bead-studio", province:"aklan", name:"Boracay Bead Studio", type:"souvenir", barangay:"Balabag, Boracay", lat:11.9650, lng:121.9250,
+   desc:"Sample nano shop: beach bead jewelry strung by hand.", code:"SM-NANO06",
+   items:[{item_id:"nano-bead-1", name:"Bead bracelet", price:"₱150", desc:"Adjustable.", category:"souvenir"},
+          {item_id:"nano-bead-2", name:"Shell necklace", price:"₱280", desc:"Puka shell style.", category:"souvenir"}]},
+  {shop_id:"nano-negros-muscovado", province:"negros-occidental", name:"Negros Muscovado Kitchen", type:"food", barangay:"Silay City", lat:10.7970, lng:122.9740,
+   desc:"Sample nano shop: muscovado treats baked at home in Silay.", code:"SM-NANO07",
+   items:[{item_id:"nano-musco-1", name:"Muscovado sugar, 500 g", price:"₱120", desc:"Pure Negros muscovado.", category:"food"},
+          {item_id:"nano-musco-2", name:"Napoleones box (6)", price:"₱220", desc:"Flaky custard pastry.", category:"food"}]},
+  {shop_id:"nano-dumaguete-budbud", province:"negros-oriental", name:"Budbud Corner Dumaguete", type:"food", barangay:"Dumaguete City", lat:9.3070, lng:123.3060,
+   desc:"Sample nano shop: budbud kabog and silvanas made fresh at home.", code:"SM-NANO08",
+   items:[{item_id:"nano-budbud-1", name:"Budbud kabog (6)", price:"₱150", desc:"Millet rice cakes in banana leaves.", category:"food"},
+          {item_id:"nano-budbud-2", name:"Silvanas box (10)", price:"₱200", desc:"Frozen buttercream cookies.", category:"food"}]},
+  {shop_id:"nano-siquijor-buri-weaves", province:"siquijor", name:"Siquijor Buri Weaves", type:"crafts", barangay:"Siquijor town", lat:9.2140, lng:123.5150,
+   desc:"Sample nano shop: buri bags and handmade coconut soap.", code:"SM-NANO09",
+   items:[{item_id:"nano-buri-1", name:"Woven buri bag", price:"₱380", desc:"Light and sturdy.", category:"crafts"},
+          {item_id:"nano-buri-2", name:"Coconut soap (3)", price:"₱90", desc:"Handmade, unscented.", category:"other"}]}
+];
+function upsertNanoSeed_(){
+  var ss = getSS(), sh = ss.getSheetByName("Shops"), it = ss.getSheetByName("ShopItems");
+  var sv = sh.getDataRange().getValues(), iv = it.getDataRange().getValues(), srow = {}, irow = {};
+  for(var i=1;i<sv.length;i++) if(sv[i][0]) srow[sv[i][0]] = i+1;
+  for(var j=1;j<iv.length;j++) if(iv[j][0]) irow[iv[j][0]] = j+1;
+  NANO_SEED.forEach(function(s){
+    var r = [s.shop_id, s.name, s.type, s.barangay, s.desc, "", "", "approved", new Date(), "SMILE-SAMPLE", s.province, "", s.code, s.lat, s.lng, "nano"];
+    if(srow[s.shop_id]){ var old = sv[srow[s.shop_id]-1]; r[7] = old[7]||"approved"; r[8] = old[8]||r[8]; r[12] = old[12]||s.code; sh.getRange(srow[s.shop_id], 1, 1, r.length).setValues([r]); }
+    else sh.appendRow(r);
+    s.items.forEach(function(x){
+      var ir = [x.item_id, s.shop_id, x.name, x.price, x.desc, x.category, "approved", new Date()];
+      if(irow[x.item_id]){ ir[6] = iv[irow[x.item_id]-1][6]||"approved"; it.getRange(irow[x.item_id], 1, 1, ir.length).setValues([ir]); }
+      else it.appendRow(ir);
+    });
+  });
+}
+function propNum_(k, d){ var n = Number(getProps().getProperty(k)); return isFinite(n) && String(getProps().getProperty(k)||"")!=="" ? n : d; }
+function pesoNum_(v){ var n = Number(String(v==null?"":v).replace(/[^\d.]/g,"")); return isFinite(n) && n>0 ? Math.round(n*100)/100 : 0; }
+function money_(n){ return Math.round((Number(n)||0)*100)/100; }
+function nanoShop_(shopId){
+  var v = getSS().getSheetByName("Shops").getDataRange().getValues();
+  for(var i=1;i<v.length;i++) if(String(v[i][0])==String(shopId)){
+    var r = v[i];
+    if(String(r[7]).toLowerCase()!="approved" || String(r[15]||"").toLowerCase()!="nano") return null;
+    var s = {row:i+1, shop_id:String(r[0]), name:String(r[1]), type:String(r[2]||"other"), barangay:String(r[3]||""), province:provinceId(r[10])};
+    var la = Number(r[13]), ln = Number(r[14]); if(String(r[13]).trim()!=="" && validLatLng_(la, ln)){ s.lat = la; s.lng = ln; }
+    return s;
+  }
+  return null;
+}
+/** Prices the cart for one Nano-Shop: items, subtotal, delivery fee by distance, total. */
+function quote_(p){
+  var shop = nanoShop_(p.shop_id);
+  if(!shop) return {ok:false, error:"This shop is not taking online orders right now."};
+  var want = Array.isArray(p.items) ? p.items.slice(0, 30) : [], byId = {};
+  getSS().getSheetByName("ShopItems").getDataRange().getValues().slice(1).forEach(function(r){
+    if(String(r[1])==shop.shop_id && String(r[6]).toLowerCase()=="approved") byId[String(r[0])] = {item_id:String(r[0]), name:String(r[2]), price:pesoNum_(r[3])};
+  });
+  var items = [], subtotal = 0;
+  want.forEach(function(w){
+    var it = byId[String(w && w.item_id)], q = Math.max(0, Math.min(20, parseInt(w && w.qty, 10)||0));
+    if(it && it.price>0 && q>0){ items.push({item_id:it.item_id, name:it.name, price:it.price, qty:q}); subtotal += it.price*q; }
+  });
+  if(!items.length) return {ok:false, error:"Your cart is empty or those items are no longer for sale."};
+  var la = Number(p.lat), ln = Number(p.lng), km = null, fee = propNum_("DELIVERY_BASE", 50);
+  if(String(p.lat||"")!=="" && validLatLng_(la, ln) && shop.lat!=null){
+    km = Math.round(distKm_({lat:shop.lat, lng:shop.lng}, {lat:la, lng:ln})*10)/10;
+    if(km > propNum_("DELIVERY_MAX_KM", 40)) return {ok:false, code:"TOO_FAR", error:"Sorry, "+shop.name+" delivers up to "+propNum_("DELIVERY_MAX_KM", 40)+" km. You are about "+Math.round(km)+" km away."};
+    fee += Math.ceil(km)*propNum_("DELIVERY_PER_KM", 10);
+  }
+  return {ok:true, shop:{shop_id:shop.shop_id, name:shop.name, province:shop.province}, items:items, subtotal:money_(subtotal), delivery_fee:money_(fee), km:km, total:money_(subtotal+fee), shopRow:shop};
+}
+function payMongoKey_(){ return String(getProps().getProperty("PAYMONGO_SECRET_KEY")||"").trim(); }
+function payMongo_(method, path, payload){
+  var key = payMongoKey_();
+  var o = {method:method, headers:{Authorization:"Basic "+Utilities.base64Encode(key+":"), Accept:"application/json"}, muteHttpExceptions:true};
+  if(payload){ o.contentType = "application/json"; o.payload = JSON.stringify(payload); }
+  var res = UrlFetchApp.fetch("https://api.paymongo.com/v1"+path, o), j = null;
+  try{ j = JSON.parse(res.getContentText()); }catch(e){}
+  if(res.getResponseCode()>=400 || !j || !j.data){
+    var msg = j && j.errors && j.errors[0] ? (j.errors[0].detail || j.errors[0].code) : res.getContentText().slice(0,160);
+    throw new Error("PayMongo "+res.getResponseCode()+": "+msg);
+  }
+  return j.data;
+}
+/** True when PayMongo says the checkout session has been paid. */
+function payMongoPaid_(sessionId){
+  var d = payMongo_("get", "/checkout_sessions/"+encodeURIComponent(sessionId)), a = d.attributes || {};
+  var pays = a.payments || [];
+  if(pays.some(function(x){ return x && x.attributes && x.attributes.status=="paid"; })) return true;
+  var pi = a.payment_intent && a.payment_intent.attributes;
+  return !!(pi && pi.status=="succeeded");
+}
+function appUrl_(u){
+  u = String(u||"");
+  if(/^https:\/\/[^\s#?"'<>]+$/.test(u)) return u;
+  return getProps().getProperty("APP_URL") || "https://aranaskristoff2-ai.github.io/SMILE_PH/";
+}
+var ORDER_COLS = {id:0, created:1, status:2, shop_id:3, shop_name:4, province:5, name:6, phone:7, address:8, lat:9, lng:10, notes:11, items:12,
+  subtotal:13, fee:14, total:15, km:16, session:17, pay:18, paid_at:19, rider_id:20, rider_name:21, history:22, user_id:23, key:24, m_paid:25, r_paid:26};
+function orderRows_(){ var sh = getSS().getSheetByName("Orders"); return {sh:sh, v:sh.getDataRange().getValues()}; }
+function findOrder_(id){
+  var o = orderRows_();
+  for(var i=1;i<o.v.length;i++) if(String(o.v[i][0])==String(id)) return {sh:o.sh, row:i+1, r:o.v[i]};
+  return null;
+}
+function orderHistory_(r){ try{ return JSON.parse(r[ORDER_COLS.history]||"[]"); }catch(e){ return []; } }
+function setOrderStatus_(o, status, extra){
+  var h = orderHistory_(o.r); h.push({s:status, t:new Date().toISOString()});
+  o.sh.getRange(o.row, ORDER_COLS.status+1).setValue(status);
+  o.sh.getRange(o.row, ORDER_COLS.history+1).setValue(JSON.stringify(h));
+  o.r[ORDER_COLS.status] = status; o.r[ORDER_COLS.history] = JSON.stringify(h);
+  Object.keys(extra||{}).forEach(function(k){ o.sh.getRange(o.row, ORDER_COLS[k]+1).setValue(extra[k]); o.r[ORDER_COLS[k]] = extra[k]; });
+}
+/** What each side may see of an order. who: traveler | merchant | rider | admin. */
+function orderView_(r, who){
+  var C = ORDER_COLS, items = []; try{ items = JSON.parse(r[C.items]||"[]"); }catch(e){}
+  var v = {order_id:String(r[C.id]), created:r[C.created] instanceof Date ? r[C.created].toISOString() : String(r[C.created]), status:String(r[C.status]),
+    shop_id:String(r[C.shop_id]), shop_name:String(r[C.shop_name]), province:String(r[C.province]), items:items,
+    subtotal:Number(r[C.subtotal])||0, delivery_fee:Number(r[C.fee])||0, total:Number(r[C.total])||0, km:r[C.km]===""?null:Number(r[C.km]),
+    history:orderHistory_(r), rider_name:String(r[C.rider_name]||""), demo:String(r[C.pay])=="demo"};
+  if(who=="traveler" || who=="admin" || who=="rider-mine"){ v.name = String(r[C.name]); v.address = String(r[C.address]); v.notes = String(r[C.notes]||""); }
+  if(who=="rider-mine" || who=="admin"){ v.phone = String(r[C.phone]).replace(/^'/,""); v.lat = Number(r[C.lat]); v.lng = Number(r[C.lng]); }
+  if(who=="merchant"){ v.name = String(r[C.name]).split(" ")[0]; v.area = String(r[C.address]).split(",").slice(-2).join(",").trim(); v.notes = String(r[C.notes]||""); }
+  if(who=="traveler"){
+    var rid = String(r[C.rider_id]||"");
+    if(rid){ var rd = findRider_("rider_id", rid); if(rd) v.rider_phone = String(rd.r[4]).replace(/^'/,""); }
+  }
+  if(who=="admin"){ v.rider_id = String(r[C.rider_id]||""); v.merchant_paid = String(r[C.m_paid]||""); v.rider_paid = String(r[C.r_paid]||""); }
+  return v;
+}
+function orderCreate_(p){
+  var q = quote_(p); if(!q.ok) return q;
+  var name = clean_(p.name, 60), phone = clean_(p.phone, 20), address = clean_(p.address, 200), digits = phone.replace(/\D/g,"");
+  if(name.length < 2) return {ok:false, error:"Please type your name."};
+  if(digits.length < 10 || digits.length > 13) return {ok:false, error:"Please type a mobile number the rider can call, e.g. 0917 123 4567."};
+  if(address.length < 5) return {ok:false, error:"Please type the delivery address: hotel or street, barangay and town."};
+  if(q.km==null) return {ok:false, error:"Tap \"Use my location\" so the rider can find you."};
+  var u = p.token ? userFromToken_(p.token) : null;
+  var id = "OR-"+Utilities.formatDate(new Date(), "Asia/Manila", "yyMMdd")+"-"+Utilities.getUuid().slice(0,4).toUpperCase();
+  var key = Utilities.getUuid().replace(/-/g,"").slice(0,16);
+  var base = appUrl_(p.return_url), back = base+"?order="+encodeURIComponent(id)+"&k="+key;
+  var session = "", url = "", pay = "paymongo";
+  if(payMongoKey_()){
+    var lines = q.items.map(function(x){ return {name:x.name, quantity:x.qty, amount:Math.round(x.price*100), currency:"PHP"}; });
+    lines.push({name:"Delivery by a SMILE rider"+(q.km!=null ? " ("+q.km+" km)" : ""), quantity:1, amount:Math.round(q.delivery_fee*100), currency:"PHP"});
+    var methods = String(getProps().getProperty("PAYMONGO_METHODS")||"gcash,card,paymaya").split(",").map(function(m){ return m.trim(); }).filter(String);
+    try{
+      var d = payMongo_("post", "/checkout_sessions", {data:{attributes:{line_items:lines, payment_method_types:methods, success_url:back, cancel_url:back+"&cancelled=1",
+        description:"SMILE order "+id+" from "+q.shop.name, reference_number:id, send_email_receipt:false, show_description:true, show_line_items:true}}});
+      session = d.id; url = d.attributes.checkout_url;
+    }catch(e){ return {ok:false, error:"We could not open PayMongo checkout ("+e.message+"). Please try again."}; }
+  } else { pay = "demo"; url = back; }
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{
+    var hist = [{s:"pending_payment", t:new Date().toISOString()}];
+    var row = [id, new Date(), "pending_payment", q.shop.shop_id, q.shop.name, q.shop.province, name, "'"+phone, address, Number(p.lat), Number(p.lng), clean_(p.notes, 200),
+      JSON.stringify(q.items), q.subtotal, q.delivery_fee, q.total, q.km==null?"":q.km, session, pay, "", "", "", JSON.stringify(hist), u ? u.user_id : "", key, "", ""];
+    if(pay=="demo"){ row[2] = "paid"; row[19] = new Date(); hist.push({s:"paid", t:new Date().toISOString(), demo:true}); row[22] = JSON.stringify(hist); }
+    getSS().getSheetByName("Orders").appendRow(row);
+  } finally { lock.releaseLock(); }
+  return {ok:true, order_id:id, track_key:key, checkout_url:url, demo:pay=="demo", total:q.total};
+}
+/** The traveler's tracker. Confirms payment with PayMongo while the order is still waiting for it. */
+function orderStatus_(p){
+  var o = findOrder_(p.order_id);
+  if(!o || String(o.r[ORDER_COLS.key])!==String(p.k||"")) return {ok:false, error:"Order not found. Check the link from your order."};
+  if(String(o.r[ORDER_COLS.status])=="pending_payment" && o.r[ORDER_COLS.session]){
+    try{ if(payMongoPaid_(String(o.r[ORDER_COLS.session]))){ var lock = takeLock(); if(lock){ try{ setOrderStatus_(o, "paid", {paid_at:new Date()}); } finally { lock.releaseLock(); } } } }catch(e){}
+  }
+  return {ok:true, order:orderView_(o.r, "traveler")};
+}
+function myOrders_(p){
+  var u = userFromToken_(p.token); if(!u) return {ok:false, error:"Please sign in again.", code:"SIGNED_OUT"};
+  var list = orderRows_().v.slice(1).filter(function(r){ return String(r[ORDER_COLS.user_id])==u.user_id; }).reverse().slice(0, 30)
+    .map(function(r){ var v = orderView_(r, "merchant"); return {order_id:v.order_id, k:String(r[ORDER_COLS.key]), status:v.status, shop_name:v.shop_name, total:v.total, created:v.created}; });
+  return {ok:true, orders:list};
+}
+// ---- merchant side (shop code) ----
+function maskAcct_(s){ s = String(s||""); return s.length > 4 ? "•••• "+s.slice(-4) : s; }
+function merchantOnline_(shopId, r){
+  var C = ORDER_COLS, fee = propNum_("PLATFORM_FEE_PCT", 0)/100, orders = [], bal = 0, sales = 0, n = 0;
+  orderRows_().v.slice(1).forEach(function(x){
+    if(String(x[C.shop_id])!=shopId || String(x[C.status])=="pending_payment") return;
+    orders.push(orderView_(x, "merchant"));
+    if(String(x[C.status])!="cancelled"){ sales += Number(x[C.subtotal])||0; n++; }
+    if(String(x[C.status])=="delivered" && !x[C.m_paid]) bal += (Number(x[C.subtotal])||0)*(1-fee);
+  });
+  var payouts = payoutsFor_("merchant", shopId);
+  return {orders:orders.reverse().slice(0, 40), sales:money_(sales), count:n, balance:money_(bal), platform_fee_pct:fee*100, payouts:payouts.slice(0, 10),
+    payout:{method:String(r[16]||"post_office"), name:String(r[17]||""), provider:String(r[19]||""), account:maskAcct_(r[18])}};
+}
+function merchantOrderUpdate_(p){
+  var hit = shopByCode_(p.code); if(!hit) return {ok:false, error:"Shop code not found."};
+  var o = findOrder_(p.order_id);
+  if(!o || String(o.r[ORDER_COLS.shop_id])!=String(hit.r[0])) return {ok:false, error:"Order not found."};
+  var cur = String(o.r[ORDER_COLS.status]), to = String(p.status);
+  var allowed = {paid:["preparing","cancelled"], preparing:["ready","cancelled"], ready:["preparing"]};
+  if(!allowed[cur] || allowed[cur].indexOf(to)<0) return {ok:false, error:"This order is already "+cur.replace("_"," ")+"."};
+  if(to=="cancelled" && o.r[ORDER_COLS.rider_id]) return {ok:false, error:"A rider has this order. Ask the Post Office admin to cancel it."};
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{ setOrderStatus_(o, to); } finally { lock.releaseLock(); }
+  return {ok:true, status:to, note:to=="cancelled" ? "Order cancelled. The SMILE team will refund the traveler through PayMongo." : ""};
+}
+function merchantPayoutSet_(p){
+  var hit = shopByCode_(p.code); if(!hit) return {ok:false, error:"Shop code not found."};
+  var method = p.method=="paymongo" ? "paymongo" : "post_office";
+  var name = clean_(p.name, 80), prov = clean_(p.provider, 40), acct = clean_(p.account, 40).replace(/[^\d\w\s-]/g,"");
+  if(method=="paymongo" && (name.length<3 || !prov || acct.replace(/\D/g,"").length<6)) return {ok:false, error:"Type the account name, the bank or e-wallet, and the account number."};
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{ getSS().getSheetByName("Shops").getRange(hit.row, 17, 1, 4).setValues([[method, name, method=="paymongo" ? acct : "", method=="paymongo" ? prov : ""]]); }
+  finally { lock.releaseLock(); }
+  return {ok:true, payout:{method:method, name:name, provider:prov, account:maskAcct_(acct)}};
+}
+// ---- riders ----
+var RIDER_COLS = {id:0, created:1, status:2, name:3, phone:4, province:5, area:6, vehicle:7, plate:8, code:9, notes:10};
+function findRider_(field, value){
+  var v = getSS().getSheetByName("Riders").getDataRange().getValues(), col = RIDER_COLS[field=="rider_id" ? "id" : field];
+  for(var i=1;i<v.length;i++) if(v[i][0] && String(v[i][col]).toUpperCase()==String(value).toUpperCase()) return {row:i+1, r:v[i]};
+  return null;
+}
+function riderApply_(p){
+  if(String(p.website||"")) return {ok:true};
+  var name = clean_(p.name, 60), phone = clean_(p.phone, 20), area = clean_(p.area, 80), vehicle = clean_(p.vehicle, 30), plate = clean_(p.plate, 15);
+  if(name.length<3) return {ok:false, error:"Please type your full name."};
+  if(phone.replace(/\D/g,"").length<10) return {ok:false, error:"Please type your mobile number."};
+  if(!PROVINCES[String(p.province)]) return {ok:false, error:"Please choose your province."};
+  if(!vehicle) return {ok:false, error:"Please choose your vehicle."};
+  if(!p.confirm) return {ok:false, error:"Please confirm you have a valid license and can show your ID at the post office."};
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{
+    var id = "rd-"+Utilities.getUuid().slice(0,8), code = "RD-"+Utilities.getUuid().replace(/-/g,"").slice(0,6).toUpperCase();
+    getSS().getSheetByName("Riders").appendRow([id, new Date(), "pending", name, "'"+phone, String(p.province), area, vehicle, plate, code, clean_(p.notes, 200)]);
+    return {ok:true, rider_code:code, status:"pending", message:"Salamat! Bring a valid ID and your license to the post office for approval. Save your rider code: "+code};
+  } finally { lock.releaseLock(); }
+}
+function riderMe_(p){
+  var rd = findRider_("code", p.code); if(!rd) return {ok:false, error:"Rider code not found."};
+  var R = rd.r, C = ORDER_COLS, me = String(R[0]), share = propNum_("RIDER_SHARE", 1), today = Utilities.formatDate(new Date(), "Asia/Manila", "yyyy-MM-dd");
+  var info = {rider_id:me, name:String(R[3]), status:String(R[2]), province:String(R[5]), area:String(R[6]), vehicle:String(R[7])};
+  if(info.status!="approved") return {ok:true, rider:info};
+  var avail = [], mine = [], earn = {today:0, deliveries_today:0, balance:0};
+  orderRows_().v.slice(1).forEach(function(x){
+    var st = String(x[C.status]);
+    if(String(x[C.rider_id])==me){
+      if(st=="delivered"){
+        var amt = (Number(x[C.fee])||0)*share;
+        if(!x[C.r_paid]) earn.balance += amt;
+        var dl = orderHistory_(x).filter(function(h){ return h.s=="delivered"; })[0];
+        if(dl && Utilities.formatDate(new Date(dl.t), "Asia/Manila", "yyyy-MM-dd")==today){ earn.today += amt; earn.deliveries_today++; }
+      } else if(st!="cancelled") mine.push(orderView_(x, "rider-mine"));
+    } else if(!x[C.rider_id] && ["paid","preparing","ready"].indexOf(st)>-1 && String(x[C.province])==info.province){
+      var v = orderView_(x, "rider"); v.earn = money_((Number(x[C.fee])||0)*share); v.area = String(x[C.address]).split(",").slice(-2).join(",").trim(); avail.push(v);
+    }
+  });
+  var sh = nanoPins_();
+  mine.forEach(function(o){ var s = sh[o.shop_id]; if(s){ o.shop_lat = s.lat; o.shop_lng = s.lng; o.shop_area = s.barangay; } });
+  avail.forEach(function(o){ var s = sh[o.shop_id]; if(s){ o.shop_area = s.barangay; } });
+  earn.today = money_(earn.today); earn.balance = money_(earn.balance);
+  return {ok:true, rider:info, available:avail.slice(0, 20), mine:mine, earnings:earn, settlements:payoutsFor_("rider", me).slice(0, 10)};
+}
+function nanoPins_(){
+  var m = {};
+  try{ getSS().getSheetByName("Shops").getDataRange().getValues().slice(1).forEach(function(r){ if(r[0]) m[String(r[0])] = {lat:Number(r[13]), lng:Number(r[14]), barangay:String(r[3]||"")}; }); }catch(e){}
+  return m;
+}
+function riderAction_(p){
+  var rd = findRider_("code", p.code); if(!rd || String(rd.r[2])!="approved") return {ok:false, error:"Your rider account is not approved yet."};
+  var o = findOrder_(p.order_id); if(!o) return {ok:false, error:"Order not found."};
+  var me = String(rd.r[0]), C = ORDER_COLS, st = String(o.r[C.status]), act = String(p.act);
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{
+    o = findOrder_(p.order_id); st = String(o.r[C.status]);
+    if(act=="claim"){
+      if(o.r[C.rider_id]) return {ok:false, error:"Another rider already took this order."};
+      if(["paid","preparing","ready"].indexOf(st)<0) return {ok:false, error:"This order is no longer available."};
+      o.sh.getRange(o.row, C.rider_id+1, 1, 2).setValues([[me, String(rd.r[3])]]);
+      var h = orderHistory_(o.r); h.push({s:"rider_assigned", t:new Date().toISOString(), rider:String(rd.r[3]).split(" ")[0]});
+      o.sh.getRange(o.row, C.history+1).setValue(JSON.stringify(h));
+      return {ok:true};
+    }
+    if(String(o.r[C.rider_id])!=me) return {ok:false, error:"This order belongs to another rider."};
+    if(act=="picked_up"){ if(st!="ready" && st!="preparing" && st!="paid") return {ok:false, error:"This order cannot be picked up now ("+st+")."}; setOrderStatus_(o, "picked_up"); return {ok:true}; }
+    if(act=="delivered"){ if(st!="picked_up") return {ok:false, error:"Mark it picked up first."}; setOrderStatus_(o, "delivered"); return {ok:true}; }
+    if(act=="release"){ if(st=="picked_up") return {ok:false, error:"You already picked it up. Please deliver it or call the Post Office admin."}; o.sh.getRange(o.row, C.rider_id+1, 1, 2).setValues([["",""]]); return {ok:true}; }
+    return {ok:false, error:"Unknown action."};
+  } finally { lock.releaseLock(); }
+}
+// ---- payouts (weekly merchants, daily riders) ----
+function payoutsFor_(type, party){
+  var out = [];
+  try{ getSS().getSheetByName("Payouts").getDataRange().getValues().slice(1).forEach(function(r){
+    if(String(r[2])==type && String(r[3])==String(party)) out.push({payout_id:String(r[0]), date:r[1] instanceof Date ? Utilities.formatDate(r[1], "Asia/Manila", "MMM d, yyyy") : String(r[1]), amount:Number(r[6])||0, orders:Number(r[5])||0, method:String(r[7]||""), ref:String(r[8]||"")}); }); }catch(e){}
+  return out.reverse();
+}
+function adminUser_(p){
+  var u = userFromToken_(p.token);
+  if(!u) return {err:{ok:false, error:"Please sign in again.", code:"SIGNED_OUT"}};
+  if(u.role!="admin") return {err:{ok:false, error:"This page is for the Post Office admin.", code:"NOT_ADMIN"}};
+  return {user:u};
+}
+function adminOverview_(p){
+  var ad = adminUser_(p); if(ad.err) return ad.err;
+  var C = ORDER_COLS, o = orderRows_(), share = propNum_("RIDER_SHARE", 1), fee = propNum_("PLATFORM_FEE_PCT", 0)/100;
+  // confirm a few waiting payments with PayMongo
+  var checked = 0;
+  for(var i=o.v.length-1;i>=1 && checked<5;i--){
+    if(String(o.v[i][C.status])=="pending_payment" && o.v[i][C.session] && payMongoKey_()){
+      checked++;
+      try{ if(payMongoPaid_(String(o.v[i][C.session]))) setOrderStatus_({sh:o.sh, row:i+1, r:o.v[i]}, "paid", {paid_at:new Date()}); }catch(e){}
+    }
+  }
+  var today = Utilities.formatDate(new Date(), "Asia/Manila", "yyyy-MM-dd"), since7 = new Date(Date.now()-7*86400000);
+  var k = {orders_today:0, sales_7d:0, fees_7d:0, waiting_payment:0, to_prepare:0, on_the_road:0, delivered_7d:0};
+  var shops = {}, riders = {};
+  var shopRows = getSS().getSheetByName("Shops").getDataRange().getValues().slice(1);
+  shopRows.forEach(function(r){ if(String(r[15]||"").toLowerCase()=="nano") shops[String(r[0])] = {shop_id:String(r[0]), name:String(r[1]), province:provinceId(r[10]),
+    method:String(r[16]||"post_office"), payout_name:String(r[17]||""), account:String(r[18]||""), provider:String(r[19]||""), balance:0, orders:0}; });
+  var riderRows = getSS().getSheetByName("Riders").getDataRange().getValues().slice(1);
+  riderRows.forEach(function(r){ if(r[0]) riders[String(r[0])] = {rider_id:String(r[0]), name:String(r[3]), phone:String(r[4]).replace(/^'/,""), province:String(r[5]), area:String(r[6]),
+    vehicle:String(r[7]), plate:String(r[8]), status:String(r[2]), created:r[1] instanceof Date ? Utilities.formatDate(r[1], "Asia/Manila", "MMM d") : "", balance:0, deliveries:0}; });
+  var list = [];
+  o.v.slice(1).forEach(function(x){
+    if(!x[0]) return;
+    var st = String(x[C.status]), d = x[C.created] instanceof Date ? x[C.created] : new Date(x[C.created]);
+    if(Utilities.formatDate(d, "Asia/Manila", "yyyy-MM-dd")==today) k.orders_today++;
+    if(st=="pending_payment") k.waiting_payment++;
+    if(st=="paid" || st=="preparing" || st=="ready") k.to_prepare++;
+    if(st=="picked_up") k.on_the_road++;
+    if(st!="pending_payment" && st!="cancelled" && d >= since7){ k.sales_7d += Number(x[C.total])||0; k.fees_7d += Number(x[C.fee])||0; }
+    if(st=="delivered"){
+      if(d >= since7) k.delivered_7d++;
+      var s = shops[String(x[C.shop_id])]; if(s && !x[C.m_paid]){ s.balance += (Number(x[C.subtotal])||0)*(1-fee); s.orders++; }
+      var rr = riders[String(x[C.rider_id])]; if(rr && !x[C.r_paid]){ rr.balance += (Number(x[C.fee])||0)*share; rr.deliveries++; }
+    }
+    list.push(orderView_(x, "admin"));
+  });
+  k.sales_7d = money_(k.sales_7d); k.fees_7d = money_(k.fees_7d);
+  var ms = Object.keys(shops).map(function(id){ var s = shops[id]; s.balance = money_(s.balance); return s; }).sort(function(a,b){ return b.balance-a.balance; });
+  var rs = Object.keys(riders).map(function(id){ var r = riders[id]; r.balance = money_(r.balance); return r; });
+  var pay = [];
+  try{ getSS().getSheetByName("Payouts").getDataRange().getValues().slice(1).forEach(function(r){ if(r[0]) pay.push({payout_id:String(r[0]), date:r[1] instanceof Date ? Utilities.formatDate(r[1], "Asia/Manila", "MMM d, h:mm a") : String(r[1]), type:String(r[2]), name:String(r[4]), orders:Number(r[5])||0, amount:Number(r[6])||0, method:String(r[7]), ref:String(r[8]||"")}); }); }catch(e){}
+  return {ok:true, kpis:k, orders:list.reverse().slice(0, 80), merchants:ms, riders:rs, payouts:pay.reverse().slice(0, 30), payments_live:!!payMongoKey_() && /^sk_live_/.test(payMongoKey_())};
+}
+function adminRiderSet_(p){
+  var ad = adminUser_(p); if(ad.err) return ad.err;
+  var rd = findRider_("rider_id", p.rider_id); if(!rd) return {ok:false, error:"Rider not found."};
+  var st = ["approved","suspended","rejected","pending"].indexOf(String(p.status))>-1 ? String(p.status) : "";
+  if(!st) return {ok:false, error:"Unknown status."};
+  getSS().getSheetByName("Riders").getRange(rd.row, 3).setValue(st);
+  return {ok:true, status:st};
+}
+/** Pays out everything delivered and not yet paid for one merchant (weekly) or one rider (daily). */
+function adminSettle_(p){
+  var ad = adminUser_(p); if(ad.err) return ad.err;
+  var type = p.type=="rider" ? "rider" : "merchant", party = String(p.party_id||""), C = ORDER_COLS;
+  var share = propNum_("RIDER_SHARE", 1), fee = propNum_("PLATFORM_FEE_PCT", 0)/100;
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{
+    var o = orderRows_(), rows = [], amt = 0, name = "";
+    o.v.forEach(function(x, i){
+      if(i==0 || String(x[C.status])!="delivered") return;
+      if(type=="merchant" && String(x[C.shop_id])==party && !x[C.m_paid]){ rows.push(i+1); amt += (Number(x[C.subtotal])||0)*(1-fee); name = String(x[C.shop_name]); }
+      if(type=="rider" && String(x[C.rider_id])==party && !x[C.r_paid]){ rows.push(i+1); amt += (Number(x[C.fee])||0)*share; name = String(x[C.rider_name]); }
+    });
+    if(!rows.length) return {ok:false, error:"Nothing to pay: no delivered orders waiting."};
+    var pid = "PO-"+Utilities.getUuid().slice(0,8).toUpperCase(), col = (type=="merchant" ? C.m_paid : C.r_paid)+1;
+    rows.forEach(function(r){ o.sh.getRange(r, col).setValue(pid); });
+    var method = p.method=="paymongo" ? "paymongo" : "post_office";
+    getSS().getSheetByName("Payouts").appendRow([pid, new Date(), type, party, name, rows.length, money_(amt), method, clean_(p.ref, 60), ad.user.name]);
+    return {ok:true, payout_id:pid, amount:money_(amt), orders:rows.length};
+  } finally { lock.releaseLock(); }
+}
+function adminOrderCancel_(p){
+  var ad = adminUser_(p); if(ad.err) return ad.err;
+  var o = findOrder_(p.order_id); if(!o) return {ok:false, error:"Order not found."};
+  if(["delivered","cancelled"].indexOf(String(o.r[ORDER_COLS.status]))>-1) return {ok:false, error:"This order is already "+o.r[ORDER_COLS.status]+"."};
+  var lock = takeLock(); if(!lock) return BUSY;
+  try{ setOrderStatus_(o, "cancelled"); } finally { lock.releaseLock(); }
+  return {ok:true, note:"Cancelled. Refund the traveler from your PayMongo dashboard if they paid."};
+}
+
 // ============ PARTNER PORTAL: LGU tourism offices and DOT ============
 // Partners sign in with the same SMILE account as travelers. They tap "Request partner access" in #/partners;
 // the request lands in the Accounts sheet (role "pending", org, scope, partner_note). To approve, set:
@@ -1227,8 +1656,8 @@ function dashboard_(p){
   var token = Utilities.getUuid().replace(/-/g,"");
   CacheService.getScriptCache().put("upl_"+shopId, token, 21600);   // lets the shop add photos and its video from the dashboard
   return {ok:true, shop:{shop_id:shopId, name:name, type:String(r[2]||""), province:provinceId(r[10]), status:String(r[7]||"pending"),
-    featured:/^(true|yes|y|1|featured)$/i.test(String(r[11]||"").trim())}, items:items, media:media, postcards:pc,
-    stats:shopStats_(shopId, 30), sales:shopSales_(shopId, 30), upload_token:token};
+    featured:/^(true|yes|y|1|featured)$/i.test(String(r[11]||"").trim()), kind:String(r[15]||"").toLowerCase()=="nano" ? "nano" : "store"}, items:items, media:media, postcards:pc,
+    stats:shopStats_(shopId, 30), sales:shopSales_(shopId, 30), online:merchantOnline_(shopId, r), upload_token:token};
 }
 
 function merchantTips_(p){
@@ -1456,6 +1885,19 @@ function handle(p){
     if(a=="signout") return out(signout_(p));
     if(a=="me") return out(me_(p));
     if(a=="partner_request") return out(partnerRequest_(p));
+    if(a=="order_quote"){ var qt = quote_(p); delete qt.shopRow; return out(qt); }
+    if(a=="order_create") return out(orderCreate_(p));
+    if(a=="order_status") return out(orderStatus_(p));
+    if(a=="my_orders") return out(myOrders_(p));
+    if(a=="merchant_order_update") return out(merchantOrderUpdate_(p));
+    if(a=="merchant_payout_set") return out(merchantPayoutSet_(p));
+    if(a=="rider_apply") return out(riderApply_(p));
+    if(a=="rider_me") return out(riderMe_(p));
+    if(a=="rider_action") return out(riderAction_(p));
+    if(a=="admin_overview") return out(adminOverview_(p));
+    if(a=="admin_rider_set") return out(adminRiderSet_(p));
+    if(a=="admin_settle") return out(adminSettle_(p));
+    if(a=="admin_order_cancel") return out(adminOrderCancel_(p));
     if(a=="partner_dashboard") return out(partnerDashboard_(p));
     if(a=="partner_insights") return out(partnerInsights_(p));
     if(a=="sale_record") return out(saleRecord_(p));
@@ -1496,7 +1938,7 @@ function handle(p){
         var shopId = "shop-"+Utilities.getUuid().slice(0,8);
         var manageCode = newManageCode_();
         var pinLat = Number(sp.lat), pinLng = Number(sp.lng), pinOk = validLatLng_(pinLat, pinLng);
-        getSS().getSheetByName("Shops").appendRow([shopId, nm, tp, clean_(sp.barangay,80), clean_(sp.desc,400), clean_(sp.contact,120), "", "pending", new Date(), clean_(p.user||"",40), provinceId(sp.province), "", manageCode, pinOk?Math.round(pinLat*1e5)/1e5:"", pinOk?Math.round(pinLng*1e5)/1e5:""]);
+        getSS().getSheetByName("Shops").appendRow([shopId, nm, tp, clean_(sp.barangay,80), clean_(sp.desc,400), clean_(sp.contact,120), "", "pending", new Date(), clean_(p.user||"",40), provinceId(sp.province), "", manageCode, pinOk?Math.round(pinLat*1e5)/1e5:"", pinOk?Math.round(pinLng*1e5)/1e5:"", sp.online ? "nano" : "store"]);
         var ish=getSS().getSheetByName("ShopItems");
         var rowsI = items.map(function(x,i){ return [shopId+"-"+(i+1), shopId, x.name, x.price, x.desc, x.category, "pending", new Date()]; });
         ish.getRange(ish.getLastRow()+1,1,rowsI.length,rowsI[0].length).setValues(rowsI);
