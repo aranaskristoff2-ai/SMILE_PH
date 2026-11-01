@@ -233,6 +233,8 @@
 
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var ICONS = {
+    cart: 'M3 4h2.2l2.3 10.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 1.9-1.4L21 8H7.1l-.5-2.4A2 2 0 0 0 4.7 4H3V4Zm6.5 14a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5Zm8 0a1.75 1.75 0 1 1 0 3.5 1.75 1.75 0 0 1 0-3.5Z',
+    bike: 'M5.5 11a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Zm13-2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5ZM14 4h3v2h-1.4l1.6 4.4-1.9.7-.6-1.6-3.3 4.5H8.3l-.7-2H11l2.6-3.6L12.9 6H14V4Zm-6 3h3v2H8V7Z',
     phone: 'M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25c1.12.37 2.32.57 3.6.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1L6.6 10.8Z',
     shield: 'M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Zm-1 5h2v4h4v2h-4v4h-2v-4H7v-2h4V7Z',
     hospital: 'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm5 4v3H7v4h3v3h4v-3h3v-4h-3V7h-4Z',
@@ -780,7 +782,8 @@
     { key: 'checkin', href: '#/checkin', text: 'Check-In', icon: 'postcard' },
     { key: 'isidro', href: '#/isidro', text: 'Isidro', icon: 'compass', main: true },
     { key: 'hub', href: '#/hub', text: 'Hub', icon: 'heart' },
-    { key: 'shop', href: '#/shop', text: 'Shop', icon: 'shop' }
+    { key: 'shop', href: '#/shop', text: 'Shop', icon: 'shop' },
+    { key: 'rider', href: '#/rider', text: 'Apply as Rider', icon: 'bike' }
   ];
 
   // Phone tab bar, as in the SMILE app design.
@@ -2109,11 +2112,15 @@
     var paint = function () {
       var q = filter.q.toLowerCase();
       var list = State.shops.filter(function (s) {
+        if (isNano(s)) return false;
         var hay = (s.name + ' ' + (s.barangay || '') + ' ' + (s.desc || '') + ' ' + (s.items || []).map(function (x) { return x.name + ' ' + (x.desc || ''); }).join(' ')).toLowerCase();
         return (filter.type === 'all' || s.type === filter.type) && (!q || hay.indexOf(q) !== -1);
       });
       var sel = currentProvince(), pv = provinceInfo(sel), sp = splitByProvince(list, sel);
       grid.textContent = '';
+      var ns = nanoSection(filter);
+      if (ns) grid.appendChild(ns);
+      if (ns) grid.appendChild(el('h2', { class: 'section__title' }, [icon('shop'), ' Pasalubong stores to visit']));
       if (pv) {
         appendChildren(grid, el('section', { class: 'prov-section', style: '--c:' + pv.color }, [
           el('h2', { class: 'section__title' }, [icon(pv.icon), ' In ' + pv.name]),
@@ -2171,6 +2178,7 @@
     var area = el('input', { id: 'sell-area', type: 'text', maxlength: '80', placeholder: 'Barangay / street, e.g. Molo Plaza' });
     var desc = el('textarea', { id: 'sell-desc', rows: '2', maxlength: '400', placeholder: 'What makes your shop special?' });
     var contact = el('input', { id: 'sell-contact', type: 'text', maxlength: '120', placeholder: 'Facebook page link, mobile number or email' });
+    var online = el('input', { id: 'sell-online', type: 'checkbox' });
     var shopPin = null;
     var pinNote = el('span', { class: 'muted small', role: 'status', 'aria-live': 'polite', text: 'Optional: stand at your shop and tap, so Isidro can send nearby tourists to you.' });
     var pinBtn = button('Pin my shop here (GPS)', 'pin', { small: true, variant: 'light', onclick: function () {
@@ -2216,7 +2224,7 @@
       var shopName = name.value.trim(), firstItem = items[0].name;
       setBusy(submit, true, 'Sending…');
       out.loading('Sending your shop…');
-      Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, province: prov.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim(), lat: shopPin ? shopPin.lat : '', lng: shopPin ? shopPin.lng : '' }, items).then(function (r) {
+      Api.shopSubmit(Passport.name() || name.value.trim(), { name: name.value.trim(), type: type.value, province: prov.value, barangay: area.value.trim(), desc: desc.value.trim(), contact: contact.value.trim(), lat: shopPin ? shopPin.lat : '', lng: shopPin ? shopPin.lng : '', online: online.checked }, items).then(function (r) {
         out.show((r.message || 'Salamat! Your shop was sent for review.') + (r.manage_code ? '\n\nYour shop code: ' + r.manage_code + '\nSave it! Use it on the Shop dashboard to see your views and postcard sales, and to add photos later.' : '') + (r.upload_token ? '\n\nNext: add your photos and promo video below.' : ''), 'ok');
         if (r.manage_code) storageSet('smile.shopCode', r.manage_code);
         if (r.upload_token && r.shop_id) {
@@ -2233,6 +2241,7 @@
       formField('sell-type', 'What do you sell?', type),
       formField('sell-province', 'Province', prov),
       formField('sell-area', 'Town, barangay or street', area),
+      el('label', { class: 'check-row', for: 'sell-online' }, [online, el('span', { text: 'Online-only Nano-Shop: I sell from home with no physical store. Travelers order in the app and SMILE riders deliver (add prices to your products).' })]),
       el('div', { class: 'btn-row shop-pin' }, [pinBtn, pinNote]),
       formField('sell-desc', 'About your shop', desc),
       formField('sell-contact', 'Contact for buyers', contact, 'Shown publicly so tourists can order or visit.'),
@@ -2780,7 +2789,8 @@
             }))
           ])
         ]),
-        saleCard(d),
+        d.shop.kind === 'nano' || (d.online && d.online.orders && d.online.orders.length) ? merchantOnlineCard(d, code.value.trim().toUpperCase(), function () { Api.dashboard(code.value.trim().toUpperCase()).then(function (x) { if (token === renderToken) show(x); }); }) : null,
+        d.shop.kind === 'nano' ? null : saleCard(d),
         el('section', { class: 'card stack' }, [
           el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#ED0460' }, icon('postcard')), 'SMILE postcards']),
           el('div', { class: 'kpis kpis--3' }, [
@@ -3264,6 +3274,567 @@
       else Api.hotlines('').then(function (r) { hotlineCache.all = r.hotlines || []; allLines = notPO(hotlineCache.all); paintLocal(); }, function () { allLines = []; paintLocal(); });
     }
   };
+
+  // ---------------------------------------------------------------------------
+  // Nano-Shops store: cart (one shop per order), checkout with PayMongo, order tracker,
+  // Apply as Rider and the rider console, Post Office admin portal.
+  // ---------------------------------------------------------------------------
+
+  var NANO_FALLBACK = [{"shop_id": "nano-lola-nena-piaya", "province": "iloilo", "name": "Lola Nena's Piaya", "type": "food", "barangay": "Molo, Iloilo City", "desc": "Sample nano shop: home-baked piaya and barquillos from a lola's kitchen, delivered warm.", "lat": 10.697, "lng": 122.544, "kind": "nano", "sample": true, "items": [{"item_id": "nano-nena-1", "name": "Piaya, pack of 10", "price": "\u20b1150", "price_num": 150, "desc": "Flaky flatbread filled with muscovado.", "category": "food"}, {"item_id": "nano-nena-2", "name": "Ube piaya, pack of 10", "price": "\u20b1180", "price_num": 180, "desc": "Purple yam filling.", "category": "food"}, {"item_id": "nano-nena-3", "name": "Barquillos, 20 rolls", "price": "\u20b1120", "price_num": 120, "desc": "Crisp rolled wafers.", "category": "food"}]}, {"shop_id": "nano-hablon-habi", "province": "iloilo", "name": "Hablon Habi by Inday", "type": "crafts", "barangay": "Miagao", "desc": "Sample nano shop: hand-woven Miagao hablon from a home loom.", "lat": 10.642, "lng": 122.235, "kind": "nano", "sample": true, "items": [{"item_id": "nano-hablon-1", "name": "Hablon table runner", "price": "\u20b1450", "price_num": 450, "desc": "Hand-woven, 1.5 m.", "category": "crafts"}, {"item_id": "nano-hablon-2", "name": "Hablon scarf", "price": "\u20b1350", "price_num": 350, "desc": "Light and colorful.", "category": "crafts"}, {"item_id": "nano-hablon-3", "name": "Hablon coin pouch", "price": "\u20b1180", "price_num": 180, "desc": "With zipper.", "category": "crafts"}]}, {"shop_id": "nano-patadyong-threads", "province": "antique", "name": "Patadyong Threads", "type": "crafts", "barangay": "Bugasong", "desc": "Sample nano shop: checkered patadyong wraps and pouches made at home.", "lat": 11.045, "lng": 122.065, "kind": "nano", "sample": true, "items": [{"item_id": "nano-patad-1", "name": "Patadyong wrap", "price": "\u20b1550", "price_num": 550, "desc": "Classic checkered wrap.", "category": "clothing"}, {"item_id": "nano-patad-2", "name": "Patadyong pouch", "price": "\u20b1150", "price_num": 150, "desc": "Small zip pouch.", "category": "crafts"}]}, {"shop_id": "nano-capiz-shell-glow", "province": "capiz", "name": "Capiz Shell Glow", "type": "crafts", "barangay": "Roxas City", "desc": "Sample nano shop: capiz shell lamps and chimes handmade to order.", "lat": 11.585, "lng": 122.751, "kind": "nano", "sample": true, "items": [{"item_id": "nano-capiz-1", "name": "Capiz shell lamp", "price": "\u20b1850", "price_num": 850, "desc": "Table lamp, warm glow.", "category": "crafts"}, {"item_id": "nano-capiz-2", "name": "Capiz wind chime", "price": "\u20b1320", "price_num": 320, "desc": "Soft, bright chimes.", "category": "crafts"}, {"item_id": "nano-capiz-3", "name": "Capiz coaster set (4)", "price": "\u20b1250", "price_num": 250, "desc": "Heat-safe coasters.", "category": "crafts"}]}, {"shop_id": "nano-guimaras-mango-home", "province": "guimaras", "name": "Guimaras Mango Home", "type": "food", "barangay": "Jordan", "desc": "Sample nano shop: small-batch mango treats from a family kitchen.", "lat": 10.657, "lng": 122.596, "kind": "nano", "sample": true, "items": [{"item_id": "nano-mango-1", "name": "Dried mango, 200 g", "price": "\u20b1180", "price_num": 180, "desc": "Sweet and chewy.", "category": "food"}, {"item_id": "nano-mango-2", "name": "Mango jam, 250 ml", "price": "\u20b1150", "price_num": 150, "desc": "No preservatives.", "category": "food"}, {"item_id": "nano-mango-3", "name": "Mango otap, 12 pcs", "price": "\u20b1120", "price_num": 120, "desc": "Crisp puff pastry.", "category": "food"}]}, {"shop_id": "nano-boracay-bead-studio", "province": "aklan", "name": "Boracay Bead Studio", "type": "souvenir", "barangay": "Balabag, Boracay", "desc": "Sample nano shop: beach bead jewelry strung by hand.", "lat": 11.965, "lng": 121.925, "kind": "nano", "sample": true, "items": [{"item_id": "nano-bead-1", "name": "Bead bracelet", "price": "\u20b1150", "price_num": 150, "desc": "Adjustable.", "category": "souvenir"}, {"item_id": "nano-bead-2", "name": "Shell necklace", "price": "\u20b1280", "price_num": 280, "desc": "Puka shell style.", "category": "souvenir"}]}, {"shop_id": "nano-negros-muscovado", "province": "negros-occidental", "name": "Negros Muscovado Kitchen", "type": "food", "barangay": "Silay City", "desc": "Sample nano shop: muscovado treats baked at home in Silay.", "lat": 10.797, "lng": 122.974, "kind": "nano", "sample": true, "items": [{"item_id": "nano-musco-1", "name": "Muscovado sugar, 500 g", "price": "\u20b1120", "price_num": 120, "desc": "Pure Negros muscovado.", "category": "food"}, {"item_id": "nano-musco-2", "name": "Napoleones box (6)", "price": "\u20b1220", "price_num": 220, "desc": "Flaky custard pastry.", "category": "food"}]}, {"shop_id": "nano-dumaguete-budbud", "province": "negros-oriental", "name": "Budbud Corner Dumaguete", "type": "food", "barangay": "Dumaguete City", "desc": "Sample nano shop: budbud kabog and silvanas made fresh at home.", "lat": 9.307, "lng": 123.306, "kind": "nano", "sample": true, "items": [{"item_id": "nano-budbud-1", "name": "Budbud kabog (6)", "price": "\u20b1150", "price_num": 150, "desc": "Millet rice cakes in banana leaves.", "category": "food"}, {"item_id": "nano-budbud-2", "name": "Silvanas box (10)", "price": "\u20b1200", "price_num": 200, "desc": "Frozen buttercream cookies.", "category": "food"}]}, {"shop_id": "nano-siquijor-buri-weaves", "province": "siquijor", "name": "Siquijor Buri Weaves", "type": "crafts", "barangay": "Siquijor town", "desc": "Sample nano shop: buri bags and handmade coconut soap.", "lat": 9.214, "lng": 123.515, "kind": "nano", "sample": true, "items": [{"item_id": "nano-buri-1", "name": "Woven buri bag", "price": "\u20b1380", "price_num": 380, "desc": "Light and sturdy.", "category": "crafts"}, {"item_id": "nano-buri-2", "name": "Coconut soap (3)", "price": "\u20b190", "price_num": 90, "desc": "Handmade, unscented.", "category": "other"}]}];
+
+  function isNano(s) { return s && s.kind === 'nano'; }
+  function nanoShops() {
+    var have = {}, list = (State.shops || []).filter(function (s) { if (isNano(s)) { have[s.shop_id] = 1; return true; } return false; });
+    if (!State.shopsLoaded) NANO_FALLBACK.forEach(function (s) { if (!have[s.shop_id]) list.push(s); });
+    return list;
+  }
+
+  var Cart = {
+    KEY: 'smile.cart',
+    get: function () { var c = readJson(Cart.KEY, null); return c && c.shop_id && Array.isArray(c.items) ? c : { shop_id: '', shop_name: '', province: '', items: [] }; },
+    save: function (c) { storageSet(Cart.KEY, JSON.stringify(c)); Cart.paint(); },
+    count: function () { return Cart.get().items.reduce(function (n, x) { return n + x.qty; }, 0); },
+    subtotal: function () { return Cart.get().items.reduce(function (n, x) { return n + x.price * x.qty; }, 0); },
+    add: function (shop, item) {
+      var c = Cart.get();
+      var go = function () {
+        if (c.shop_id !== shop.shop_id) c = { shop_id: shop.shop_id, shop_name: shop.name, province: provinceOf(shop), items: [] };
+        var line = c.items.filter(function (x) { return x.item_id === item.item_id; })[0];
+        if (line) line.qty = Math.min(20, line.qty + 1);
+        else c.items.push({ item_id: item.item_id, name: item.name, price: Number(item.price_num) || 0, qty: 1 });
+        Cart.save(c);
+        toast('Added to cart: ' + item.name);
+      };
+      if (c.items.length && c.shop_id !== shop.shop_id) {
+        if (!window.confirm('Your cart has items from ' + c.shop_name + '. One order comes from one shop. Start a new cart with ' + shop.name + '?')) return;
+      }
+      go();
+    },
+    setQty: function (id, q) {
+      var c = Cart.get();
+      c.items = c.items.map(function (x) { if (x.item_id === id) x.qty = Math.max(0, Math.min(20, q)); return x; }).filter(function (x) { return x.qty > 0; });
+      if (!c.items.length) c = { shop_id: '', shop_name: '', province: '', items: [] };
+      Cart.save(c);
+    },
+    clear: function () { Cart.save({ shop_id: '', shop_name: '', province: '', items: [] }); },
+    paint: function () {
+      var b = $('#cart-btn'); if (!b) return;
+      var n = Cart.count();
+      b.hidden = !n;
+      var badge = b.querySelector('.cart-btn__n'); if (badge) badge.textContent = String(n);
+      b.setAttribute('aria-label', 'Cart, ' + n + ' item' + (n === 1 ? '' : 's'));
+    }
+  };
+
+  /** My orders kept on this device (id, tracking key, shop, total, PayMongo link while unpaid). */
+  var MyOrders = {
+    KEY: 'smile.orders',
+    all: function () { var l = readJson(MyOrders.KEY, []); return Array.isArray(l) ? l : []; },
+    add: function (o) { var l = MyOrders.all().filter(function (x) { return x.id !== o.id; }); l.unshift(o); storageSet(MyOrders.KEY, JSON.stringify(l.slice(0, 30))); },
+    update: function (id, f) { var l = MyOrders.all(); l.forEach(function (x) { if (x.id === id) Object.assign(x, f); }); storageSet(MyOrders.KEY, JSON.stringify(l)); }
+  };
+
+  var ORDER_STEPS = [['paid', 'Paid'], ['preparing', 'Preparing'], ['ready', 'Ready for pickup'], ['picked_up', 'On the way'], ['delivered', 'Delivered']];
+  var ORDER_LABEL = { pending_payment: 'Waiting for payment', paid: 'Paid: waiting for the shop', preparing: 'The shop is preparing it', ready: 'Ready for the rider',
+    picked_up: 'On the way to you', delivered: 'Delivered', cancelled: 'Cancelled' };
+  function statusChip(st) {
+    var c = { pending_payment: '#E09A00', paid: '#0057D9', preparing: '#7B2CBF', ready: '#0096C7', picked_up: '#FF6A03', delivered: '#02A04F', cancelled: '#5B6478' }[st] || '#5B6478';
+    return el('span', { class: 'chip chip--sm', style: '--c:' + c, text: ORDER_LABEL[st] || st });
+  }
+  function fmtWhen(iso) { var d = new Date(iso); if (isNaN(d)) return ''; try { return d.toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return d.toISOString().slice(0, 16); } }
+
+  /** A Nano-Shop card on the Shop page, with Add to cart. */
+  function nanoCard(s) {
+    var pv = provinceInfo(provinceOf(s));
+    return el('article', { class: 'card stack nano-card reveal' }, [
+      el('div', { class: 'nano-card__head' }, [
+        el('span', { class: 'card-icon card-icon--sm', style: 'background:' + ((SHOP_TYPES[s.type] || SHOP_TYPES.other).color) }, icon((SHOP_TYPES[s.type] || SHOP_TYPES.other).icon)),
+        el('div', null, [
+          el('h3', { class: 'card__title', text: s.name }),
+          el('p', { class: 'muted small', text: [s.barangay, pv ? pv.name : ''].filter(Boolean).join(', ') })
+        ])
+      ]),
+      el('p', { class: 'place-card__meta' }, [
+        el('span', { class: 'chip chip--sm', style: '--c:#7B2CBF' }, [icon('home', 'icon--inline'), 'Nano-Shop · online only']),
+        el('span', { class: 'chip chip--sm', style: '--c:#02A04F' }, [icon('bike', 'icon--inline'), 'Delivered to you']),
+        s.sample ? el('span', { class: 'chip chip--sm', style: '--c:#5B6478', text: 'Sample shop' }) : null
+      ]),
+      s.desc ? el('p', { class: 'small', text: String(s.desc).replace(/^Sample nano shop:\s*/i, '') }) : null,
+      el('ul', { class: 'nano-items' }, (s.items || []).filter(function (x) { return Number(x.price_num) > 0; }).map(function (x) {
+        return el('li', { class: 'nano-item' }, [
+          el('div', null, [el('b', { text: x.name }), x.desc ? el('small', { class: 'muted', text: ' ' + x.desc }) : null]),
+          el('span', { class: 'nano-item__price', text: peso(x.price_num) }),
+          button('Add to cart', 'cart', { small: true, variant: 'green', onclick: function () { Cart.add(s, x); } })
+        ]);
+      }))
+    ]);
+  }
+  function nanoSection(filter) {
+    var sel = currentProvince();
+    var list = nanoShops().filter(function (s) {
+      var q = (filter && filter.q || '').toLowerCase();
+      var hay = (s.name + ' ' + (s.desc || '') + ' ' + (s.items || []).map(function (x) { return x.name; }).join(' ')).toLowerCase();
+      return !q || hay.indexOf(q) !== -1;
+    }).sort(function (a, b) { return (provinceOf(b) === sel) - (provinceOf(a) === sel); });
+    if (!list.length) return null;
+    return el('section', { class: 'nano-section' }, [
+      el('div', { class: 'row-between' }, [
+        el('h2', { class: 'section__title' }, [icon('home'), ' Nano-Shops: order online, delivered to you']),
+        button('My orders', 'route', { small: true, variant: 'light', href: '#/orders' })
+      ]),
+      el('p', { class: 'muted', text: 'Home-based makers with no physical store. Add to cart, pay with GCash, Maya or card through PayMongo, and a SMILE rider brings it to where you are staying.' }),
+      el('div', { class: 'grid' }, list.map(nanoCard))
+    ]);
+  }
+
+  function renderCart() {
+    var c = Cart.get(), body = el('div', { class: 'stack-lg' });
+    var paint = function () {
+      c = Cart.get(); body.textContent = '';
+      if (!c.items.length) {
+        appendChildren(body, el('div', { class: 'card stack center' }, [
+          el('span', { class: 'state__icon' }, icon('cart')), el('h2', { class: 'card__title', text: 'Your cart is empty' }),
+          el('p', { class: 'muted', text: 'Nano-Shops sell handmade crafts and home-made treats online, delivered to you.' }),
+          button('Browse Nano-Shops', 'shop', { variant: 'glow', href: '#/shop' })
+        ]));
+        return;
+      }
+      appendChildren(body, [
+        el('section', { class: 'card stack' }, [
+          el('p', { class: 'eyebrow', text: 'From' }), el('h2', { class: 'card__title', text: c.shop_name }),
+          el('ul', { class: 'cart-lines' }, c.items.map(function (x) {
+            return el('li', { class: 'cart-line' }, [
+              el('div', null, [el('b', { text: x.name }), el('small', { class: 'muted', text: ' ' + peso(x.price) + ' each' })]),
+              el('div', { class: 'qty' }, [
+                button('', 'minus', { small: true, variant: 'light', label: 'One less ' + x.name, onclick: function () { Cart.setQty(x.item_id, x.qty - 1); paint(); } }),
+                el('output', { text: String(x.qty) }),
+                button('', 'plus', { small: true, variant: 'light', label: 'One more ' + x.name, onclick: function () { Cart.setQty(x.item_id, x.qty + 1); paint(); } })
+              ]),
+              el('b', { class: 'cart-line__sum', text: peso(x.price * x.qty) })
+            ]);
+          })),
+          el('div', { class: 'cart-total' }, [el('span', { text: 'Subtotal' }), el('b', { text: peso(Cart.subtotal()) })]),
+          el('p', { class: 'muted small', text: 'Delivery fee is added at checkout, based on the distance from the shop to your location.' }),
+          el('div', { class: 'btn-row' }, [
+            button('Checkout', 'send', { variant: 'glow', href: '#/checkout' }),
+            button('Keep shopping', 'shop', { variant: 'light', href: '#/shop' }),
+            button('Empty cart', 'close', { small: true, variant: 'light', onclick: function () { Cart.clear(); paint(); } })
+          ])
+        ])
+      ]);
+    };
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [pageHead('cart', '#02A04F', 'My cart', 'One order comes from one Nano-Shop.'), body]));
+    paint();
+    focusHeading();
+  }
+
+  function renderCheckout(token) {
+    var c = Cart.get();
+    if (!c.items.length) { location.replace('#/cart'); return; }
+    var u = Auth.user();
+    var name = el('input', { id: 'co-name', type: 'text', maxlength: '60', autocomplete: 'name', value: u ? u.name : (Passport.name() || '') });
+    var phone = el('input', { id: 'co-phone', type: 'tel', maxlength: '20', autocomplete: 'tel', placeholder: 'e.g. 0917 123 4567' });
+    var address = el('textarea', { id: 'co-address', rows: '2', maxlength: '200', placeholder: 'Hotel or house, street, barangay, town' });
+    var notes = el('input', { id: 'co-notes', type: 'text', maxlength: '200', placeholder: 'Optional: room number, landmark, best time' });
+    var here = null, quote = null;
+    var sum = el('div', { class: 'stack' });
+    var locNote = el('span', { class: 'muted small', role: 'status', 'aria-live': 'polite', text: 'Needed so the rider can find you.' });
+    var pay = button('Pay with PayMongo', 'send', { type: 'submit', block: true, variant: 'glow' });
+    pay.disabled = true;
+    var out = outputBox();
+    var paintSum = function () {
+      sum.textContent = '';
+      var lines = c.items.map(function (x) { return el('div', { class: 'cart-total' }, [el('span', { text: x.qty + ' × ' + x.name }), el('span', { text: peso(x.price * x.qty) })]); });
+      appendChildren(sum, lines.concat([
+        el('div', { class: 'cart-total' }, [el('span', { text: 'Delivery by a SMILE rider' + (quote && quote.km != null ? ' (' + quote.km + ' km)' : '') }), el('span', { text: quote ? peso(quote.delivery_fee) : 'after location' })]),
+        el('div', { class: 'cart-total cart-total--big' }, [el('b', { text: 'Total' }), el('b', { text: quote ? peso(quote.total) : peso(Cart.subtotal()) + ' + delivery' })])
+      ]));
+      pay.querySelector('.btn__text').textContent = quote ? 'Pay ' + peso(quote.total) + ' with PayMongo' : 'Pay with PayMongo';
+      pay.disabled = !quote;
+    };
+    var locBtn = button('Use my location', 'pin', { variant: 'blue', onclick: function () {
+      setBusy(locBtn, true, 'Finding you…');
+      Geo.get().then(function (h) {
+        here = h; locNote.textContent = 'Location set (within about ' + kmText((h.acc || 20) / 1000) + '). Pricing delivery…';
+        return Api.orderQuote(c.shop_id, c.items.map(function (x) { return { item_id: x.item_id, qty: x.qty }; }), h.lat, h.lng).then(function (q) {
+          quote = q; locNote.textContent = 'Delivery from ' + c.shop_name + ': about ' + (q.km != null ? q.km + ' km' : 'nearby') + '.'; paintSum();
+        }, function (err) { quote = null; locNote.textContent = friendlyError(err); paintSum(); });
+      }, function (err) { locNote.textContent = err.message; }).then(function () { setBusy(locBtn, false); });
+    } });
+    var form = el('form', { class: 'card stack', onsubmit: function (e) {
+      e.preventDefault();
+      if (!quote || !here) { toast('Tap "Use my location" first.'); return; }
+      if (!name.value.trim() || !phone.value.trim() || !address.value.trim()) { toast('Fill in your name, mobile number and address.'); return; }
+      setBusy(pay, true, 'Opening PayMongo…'); out.loading('Creating your order…');
+      Api.orderCreate({ shop_id: c.shop_id, items: c.items.map(function (x) { return { item_id: x.item_id, qty: x.qty }; }), name: name.value.trim(), phone: phone.value.trim(),
+        address: address.value.trim(), notes: notes.value.trim(), lat: here.lat, lng: here.lng, token: Auth.token() || '', return_url: location.origin + location.pathname })
+        .then(function (r) {
+          MyOrders.add({ id: r.order_id, k: r.track_key, shop: c.shop_name, total: r.total, at: new Date().toISOString(), pay_url: r.demo ? '' : r.checkout_url });
+          Cart.clear();
+          if (r.demo) { toast('Demo payment: no money was charged.'); location.hash = '#/orders?id=' + encodeURIComponent(r.order_id) + '&k=' + encodeURIComponent(r.track_key); return; }
+          out.show('Opening PayMongo checkout…', 'ok');
+          window.location.href = r.checkout_url;
+        }, function (err) { out.show(friendlyError(err), 'error'); setBusy(pay, false); });
+    } }, [
+      el('h2', { class: 'card__title', text: 'Deliver to' }),
+      formField('co-name', 'Your name', name), formField('co-phone', 'Mobile number (for the rider)', phone), formField('co-address', 'Address', address),
+      el('div', { class: 'btn-row shop-pin' }, [locBtn, locNote]),
+      formField('co-notes', 'Notes for the rider', notes),
+      el('h2', { class: 'card__title', text: 'Order from ' + c.shop_name }), sum,
+      el('p', { class: 'muted small', text: 'You pay securely on PayMongo (GCash, Maya or card). Your address and number are shared only with the rider who delivers your order.' }),
+      pay, out
+    ]);
+    paintSum();
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [pageHead('send', '#0057D9', 'Checkout', 'Delivered by a SMILE rider to where you are.'), form]));
+    focusHeading();
+  }
+
+  function orderTracker(token, id, k, cancelled) {
+    var box = el('div', { class: 'stack-lg' }, el('p', { class: 'muted', text: 'Finding your order…' }));
+    var timer = null;
+    var paint = function (o) {
+      MyOrders.update(o.order_id, { status: o.status });
+      var idx = ORDER_STEPS.map(function (s) { return s[0]; }).indexOf(o.status);
+      var mine = MyOrders.all().filter(function (x) { return x.id === o.order_id; })[0] || {};
+      box.textContent = '';
+      appendChildren(box, [
+        el('section', { class: 'card stack' }, [
+          el('div', { class: 'row-between' }, [el('div', null, [el('p', { class: 'eyebrow', text: 'Order ' + o.order_id }), el('h2', { class: 'card__title', text: o.shop_name })]), statusChip(o.status)]),
+          o.demo ? el('p', { class: 'output output--warn', text: 'Demo payment: PayMongo is not connected yet, so no money was charged.' }) : null,
+          o.status === 'pending_payment' ? el('div', { class: 'stack' }, [
+            el('p', { text: cancelled ? 'Payment was not completed.' : 'We are waiting for PayMongo to confirm your payment.' }),
+            el('div', { class: 'btn-row' }, [
+              mine.pay_url ? button('Pay now', 'send', { variant: 'glow', href: mine.pay_url }) : null,
+              button('Check again', 'refresh', { variant: 'light', onclick: function () { load(); } })
+            ])
+          ]) : null,
+          o.status === 'cancelled' ? el('p', { class: 'small', text: 'This order was cancelled. If you paid, the SMILE team refunds you through PayMongo.' }) : null,
+          o.status !== 'pending_payment' && o.status !== 'cancelled' ? el('ol', { class: 'tracker' }, ORDER_STEPS.map(function (s, i) {
+            var when = (o.history || []).filter(function (h) { return h.s === s[0]; })[0];
+            return el('li', { class: 'tracker__step' + (i <= idx ? ' is-done' : '') + (i === idx ? ' is-now' : '') }, [
+              el('span', { class: 'tracker__dot' }, i <= idx ? icon('check') : String(i + 1)),
+              el('span', null, [el('b', { text: s[1] }), when ? el('small', { class: 'muted', text: ' ' + fmtWhen(when.t) }) : null])
+            ]);
+          })) : null,
+          o.rider_name ? el('div', { class: 'rider-box' }, [
+            el('span', { class: 'card-icon card-icon--sm', style: 'background:#FF6A03' }, icon('bike')),
+            el('div', null, [el('b', { text: 'Your rider: ' + o.rider_name.split(' ')[0] }), el('small', { class: 'muted', text: ' ' + (o.status === 'picked_up' ? 'is on the way' : o.status === 'delivered' ? 'delivered your order' : 'will pick it up soon') })]),
+            o.rider_phone && o.status !== 'delivered' ? button('Call', 'phone', { small: true, variant: 'light', href: telHref(o.rider_phone) }) : null
+          ]) : null
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title', text: 'Items' }),
+          el('div', { class: 'stack' }, (o.items || []).map(function (x) { return el('div', { class: 'cart-total' }, [el('span', { text: x.qty + ' × ' + x.name }), el('span', { text: peso(x.price * x.qty) })]); }).concat([
+            el('div', { class: 'cart-total' }, [el('span', { text: 'Delivery' + (o.km != null ? ' (' + o.km + ' km)' : '') }), el('span', { text: peso(o.delivery_fee) })]),
+            el('div', { class: 'cart-total cart-total--big' }, [el('b', { text: 'Total' }), el('b', { text: peso(o.total) })])
+          ])),
+          o.address ? el('p', { class: 'small' }, [el('b', { text: 'Deliver to: ' }), o.name + ', ' + o.address + (o.notes ? ' (' + o.notes + ')' : '')]) : null
+        ])
+      ]);
+      clearTimeout(timer);
+      if (o.status !== 'delivered' && o.status !== 'cancelled') timer = setTimeout(function () { if (token === renderToken) load(true); }, 20000);
+    };
+    var load = function (quiet) {
+      Api.orderStatus(id, k).then(function (r) { if (token === renderToken) paint(r.order); }, function (err) {
+        if (token !== renderToken || quiet) return;
+        box.textContent = ''; box.appendChild(el('p', { class: 'empty', text: friendlyError(err) }));
+      });
+    };
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [pageHead('route', '#FF6A03', 'Order tracker', 'Updates every 20 seconds.'), box,
+      el('div', { class: 'btn-row' }, [button('All my orders', 'route', { variant: 'light', href: '#/orders' }), button('Shop more', 'shop', { variant: 'light', href: '#/shop' })])]));
+    focusHeading();
+    load();
+  }
+
+  function renderOrders(token, query) {
+    if (query.id && query.k) { orderTracker(token, query.id, query.k, query.cancelled === '1'); return; }
+    var list = el('div', { class: 'stack' });
+    var paint = function (server) {
+      var seen = {}, rows = [];
+      MyOrders.all().concat((server || []).map(function (o) { return { id: o.order_id, k: o.k, shop: o.shop_name, total: o.total, at: o.created, status: o.status }; }))
+        .forEach(function (o) { if (!seen[o.id]) { seen[o.id] = 1; rows.push(o); } });
+      list.textContent = '';
+      if (!rows.length) { list.appendChild(el('p', { class: 'empty' }, ['No orders yet. ', el('a', { href: '#/shop', text: 'Visit the Nano-Shops' }), '.'])); return; }
+      rows.forEach(function (o) {
+        list.appendChild(el('a', { class: 'card order-row', href: '#/orders?id=' + encodeURIComponent(o.id) + '&k=' + encodeURIComponent(o.k) }, [
+          el('div', null, [el('b', { text: o.shop || 'Order' }), el('small', { class: 'muted', text: ' ' + o.id + (o.at ? ' • ' + fmtWhen(o.at) : '') })]),
+          o.status ? statusChip(o.status) : null,
+          el('b', { text: peso(o.total) })
+        ]));
+      });
+    };
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [pageHead('route', '#FF6A03', 'My orders', 'Orders from Nano-Shops, delivered by SMILE riders.'), list]));
+    paint();
+    if (Auth.user()) Api.myOrders(Auth.token()).then(function (r) { if (token === renderToken) paint(r.orders); }, function () { /* device list is enough */ });
+    focusHeading();
+  }
+
+  // ---- merchant: online orders, balance and payout preference (inside the shop dashboard) ----
+  function merchantOnlineCard(d, code, reload) {
+    var on = d.online || { orders: [], sales: 0, count: 0, balance: 0, payouts: [], payout: { method: 'post_office' } };
+    var act = function (o, status, label, variant) {
+      return button(label, status === 'cancelled' ? 'close' : 'check', { small: true, variant: variant || 'blue', onclick: function (e) {
+        if (status === 'cancelled' && !window.confirm('Cancel order ' + o.order_id + '? The traveler will be refunded.')) return;
+        var b = e.currentTarget; setBusy(b, true, '…');
+        Api.merchantOrderUpdate(code, o.order_id, status).then(function (r) { toast(r.note || 'Order updated.'); reload(); }, function (err) { toast(friendlyError(err)); setBusy(b, false); });
+      } });
+    };
+    var method = on.payout.method || 'post_office';
+    var pName = el('input', { id: 'po-name', type: 'text', maxlength: '80', value: on.payout.name || '', placeholder: 'Account name' });
+    var pProv = el('input', { id: 'po-prov', type: 'text', maxlength: '40', value: on.payout.provider || '', placeholder: 'GCash, Maya or bank name' });
+    var pAcct = el('input', { id: 'po-acct', type: 'text', maxlength: '40', placeholder: on.payout.account ? 'Saved: ' + on.payout.account : 'Account or mobile number' });
+    var pmFields = el('div', { class: 'stack', hidden: method !== 'paymongo' }, [formField('po-name', 'Account name', pName), formField('po-prov', 'Bank or e-wallet', pProv), formField('po-acct', 'Account number', pAcct)]);
+    var segs = [['post_office', 'Cash at the post office, weekly'], ['paymongo', 'PayMongo payout to e-wallet or bank, weekly']].map(function (m) {
+      var b = el('button', { type: 'button', class: 'seg__btn', 'aria-pressed': String(m[0] === method), text: m[1] });
+      b.addEventListener('click', function () { method = m[0]; segs.forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); pmFields.hidden = method !== 'paymongo'; });
+      return b;
+    });
+    var saveP = button('Save payout preference', 'save', { small: true, variant: 'light', onclick: function () {
+      setBusy(saveP, true, 'Saving…');
+      Api.merchantPayoutSet(code, { method: method, name: pName.value.trim(), provider: pProv.value.trim(), account: pAcct.value.trim() })
+        .then(function () { toast('Payout preference saved.'); pAcct.value = ''; }, function (err) { toast(friendlyError(err)); }).then(function () { setBusy(saveP, false); });
+    } });
+    return el('section', { class: 'card stack' }, [
+      el('h2', { class: 'card__title' }, [el('span', { class: 'card-icon card-icon--sm', style: 'background:#7B2CBF' }, icon('cart')), 'Online orders (Nano-Shop)']),
+      el('div', { class: 'kpis kpis--3' }, [
+        el('div', { class: 'kpi' }, [el('b', { text: peso(on.sales) }), el('span', { text: 'Online sales' })]),
+        el('div', { class: 'kpi' }, [el('b', { text: String(on.count) }), el('span', { text: 'Orders' })]),
+        el('div', { class: 'kpi' }, [el('b', { text: peso(on.balance) }), el('span', { text: 'To be paid to you' })])
+      ]),
+      on.orders.length ? el('ul', { class: 'm-orders' }, on.orders.map(function (o) {
+        return el('li', { class: 'm-order' }, [
+          el('div', { class: 'row-between' }, [el('b', { text: o.order_id + ' • ' + peso(o.subtotal) }), statusChip(o.status)]),
+          el('p', { class: 'small', text: (o.items || []).map(function (x) { return x.qty + ' × ' + x.name; }).join(', ') }),
+          el('p', { class: 'muted small', text: 'For ' + (o.name || 'a traveler') + (o.area ? ' in ' + o.area : '') + ' • ' + fmtWhen(o.created) + (o.rider_name ? ' • Rider: ' + o.rider_name.split(' ')[0] : '') + (o.notes ? ' • Note: ' + o.notes : '') }),
+          el('div', { class: 'btn-row' }, [
+            o.status === 'paid' ? act(o, 'preparing', 'Accept and prepare', 'green') : null,
+            o.status === 'preparing' ? act(o, 'ready', 'Ready for pickup', 'blue') : null,
+            (o.status === 'paid' || o.status === 'preparing') && !o.rider_name ? act(o, 'cancelled', 'Cancel', 'light') : null
+          ])
+        ]);
+      })) : el('p', { class: 'muted small', text: 'No online orders yet. Share your shop with travelers!' }),
+      el('h3', { class: 'portal-h', text: 'How you get paid' }),
+      el('p', { class: 'muted small', text: 'Earnings from delivered orders are paid weekly by the post office' + (on.platform_fee_pct ? ', minus a ' + on.platform_fee_pct + '% SMILE fee' : '') + '.' }),
+      el('div', { class: 'seg', role: 'group', 'aria-label': 'Payout method' }, segs), pmFields, saveP,
+      on.payouts.length ? el('ul', { class: 'sale-list' }, on.payouts.map(function (x) { return el('li', null, [el('b', { text: peso(x.amount) }), el('span', { text: x.date + ' • ' + x.orders + ' order' + (x.orders === 1 ? '' : 's') + ' • ' + (x.method === 'paymongo' ? 'PayMongo payout' : 'post office') + (x.ref ? ' • ' + x.ref : '') })]); })) : null
+    ]);
+  }
+
+  // ---- riders ----
+  var RIDER_KEY = 'smile.riderCode';
+  function renderRider(token) {
+    var box = el('div', { class: 'stack-lg' });
+    var code = storageGet(RIDER_KEY) || '';
+    var applyForm = function () {
+      var nm = el('input', { id: 'rd-name', type: 'text', maxlength: '60', autocomplete: 'name' });
+      var ph = el('input', { id: 'rd-phone', type: 'tel', maxlength: '20', autocomplete: 'tel', placeholder: 'e.g. 0918 765 4321' });
+      var pv = el('select', { id: 'rd-prov' }, PROVINCES.map(function (p) { return el('option', { value: p.id, text: p.name }); })); pv.value = currentProvince() || 'iloilo';
+      var area = el('input', { id: 'rd-area', type: 'text', maxlength: '80', placeholder: 'Town or city you cover, e.g. Iloilo City' });
+      var veh = el('select', { id: 'rd-veh' }, ['Motorcycle', 'Bicycle', 'E-bike', 'Tricycle', 'Car'].map(function (v) { return el('option', { value: v, text: v }); }));
+      var plate = el('input', { id: 'rd-plate', type: 'text', maxlength: '15', placeholder: 'Optional' });
+      var ok = el('input', { id: 'rd-ok', type: 'checkbox' });
+      var trap = el('input', { type: 'text', name: 'website', tabindex: '-1', autocomplete: 'off', class: 'hp-field', 'aria-hidden': 'true' });
+      var out = outputBox(), send = button('Apply as Rider', 'bike', { type: 'submit', block: true, variant: 'glow' });
+      var codeIn = el('input', { id: 'rd-code', type: 'text', maxlength: '12', autocapitalize: 'characters', placeholder: 'RD-XXXXXX' });
+      box.textContent = '';
+      appendChildren(box, [
+        el('form', { class: 'card stack', onsubmit: function (e) {
+          e.preventDefault();
+          if (!ok.checked) { toast('Please tick the box to confirm.'); return; }
+          setBusy(send, true, 'Sending…');
+          Api.riderApply({ name: nm.value.trim(), phone: ph.value.trim(), province: pv.value, area: area.value.trim(), vehicle: veh.value, plate: plate.value.trim(), confirm: true, website: trap.value })
+            .then(function (r) { if (r.rider_code) { storageSet(RIDER_KEY, r.rider_code); code = r.rider_code; } out.show(r.message || 'Application sent.', 'ok'); setTimeout(function () { if (token === renderToken) console_(); }, 1800); },
+              function (err) { out.show(friendlyError(err), 'error'); }).then(function () { setBusy(send, false); });
+        } }, [
+          el('h2', { class: 'card__title', text: 'Deliver for SMILE' }),
+          el('p', { class: 'muted', text: 'Bring Nano-Shop orders to travelers in your town. You earn the delivery fee, settled daily in cash at the post office.' }),
+          formField('rd-name', 'Full name', nm), formField('rd-phone', 'Mobile number', ph), formField('rd-prov', 'Province', pv), formField('rd-area', 'Area you cover', area),
+          formField('rd-veh', 'Vehicle', veh), formField('rd-plate', 'Plate number', plate), trap,
+          el('label', { class: 'check-row', for: 'rd-ok' }, [ok, el('span', { text: 'I have a valid ID (and driver’s license for motor vehicles) and will show them at the post office for approval.' })]),
+          send, out
+        ]),
+        el('form', { class: 'card stack', onsubmit: function (e) { e.preventDefault(); var c = codeIn.value.trim().toUpperCase(); if (!/^RD-[A-Z0-9]{6}$/.test(c)) { toast('Type your rider code, e.g. RD-1A2B3C.'); return; } storageSet(RIDER_KEY, c); code = c; console_(); } }, [
+          el('h2', { class: 'card__title', text: 'Already a SMILE rider?' }), formField('rd-code', 'Rider code', codeIn), button('Open my rider app', 'bike', { type: 'submit', variant: 'blue' })
+        ])
+      ]);
+    };
+    var console_ = function () {
+      box.textContent = ''; box.appendChild(el('p', { class: 'muted', text: 'Opening your rider app…' }));
+      Api.riderMe(code).then(function (r) {
+        if (token !== renderToken) return;
+        var rd = r.rider; box.textContent = '';
+        var head = el('section', { class: 'card stack' }, [
+          el('div', { class: 'row-between' }, [el('div', null, [el('p', { class: 'eyebrow', text: 'SMILE rider • ' + rd.vehicle }), el('h2', { class: 'card__title', text: rd.name })]),
+            button('Sign out', 'close', { small: true, variant: 'light', onclick: function () { try { window.localStorage.removeItem(RIDER_KEY); } catch (e) { /* ignore */ } code = ''; applyForm(); } })]),
+          el('p', { class: 'muted small', text: provinceName(rd.province) + (rd.area ? ' • ' + rd.area : '') + ' • Code ' + code })
+        ]);
+        if (rd.status !== 'approved') {
+          appendChildren(box, [head, el('div', { class: 'card stack center' }, [el('span', { class: 'state__icon' }, icon('alert')),
+            el('h2', { class: 'card__title', text: rd.status === 'pending' ? 'Waiting for approval' : 'Account ' + rd.status }),
+            el('p', { class: 'muted', text: rd.status === 'pending' ? 'Bring your valid ID and license to the post office. Once approved, orders appear here.' : 'Please talk to the post office.' }),
+            button('Check again', 'refresh', { variant: 'light', onclick: console_ })])]);
+          return;
+        }
+        var e = r.earnings;
+        var doAct = function (o, act, label, variant) {
+          return button(label, act === 'claim' ? 'bike' : 'check', { small: true, variant: variant || 'blue', onclick: function (ev) {
+            var b = ev.currentTarget; setBusy(b, true, '…');
+            Api.riderAction(code, o.order_id, act).then(function () { toast(act === 'delivered' ? 'Delivered. Salamat!' : 'Updated.'); console_(); }, function (err) { toast(friendlyError(err)); setBusy(b, false); });
+          } });
+        };
+        appendChildren(box, [
+          head,
+          el('section', { class: 'card stack' }, [
+            el('div', { class: 'kpis kpis--3' }, [
+              el('div', { class: 'kpi' }, [el('b', { text: peso(e.today) }), el('span', { text: 'Earned today' })]),
+              el('div', { class: 'kpi' }, [el('b', { text: String(e.deliveries_today) }), el('span', { text: 'Deliveries today' })]),
+              el('div', { class: 'kpi' }, [el('b', { text: peso(e.balance) }), el('span', { text: 'To collect at the post office' })])
+            ]),
+            el('p', { class: 'muted small', text: 'Settled daily in cash at the post office. Bring your rider code.' })
+          ]),
+          el('section', { class: 'card stack' }, [
+            el('div', { class: 'row-between' }, [el('h2', { class: 'card__title', text: 'My deliveries' }), button('Refresh', 'refresh', { small: true, variant: 'light', onclick: console_ })]),
+            r.mine.length ? el('ul', { class: 'm-orders' }, r.mine.map(function (o) {
+              return el('li', { class: 'm-order' }, [
+                el('div', { class: 'row-between' }, [el('b', { text: o.order_id + ' • ' + o.shop_name }), statusChip(o.status)]),
+                el('p', { class: 'small', text: (o.items || []).map(function (x) { return x.qty + ' × ' + x.name; }).join(', ') }),
+                el('p', { class: 'small' }, [el('b', { text: 'Deliver to: ' }), o.name + ', ' + o.address + (o.notes ? ' (' + o.notes + ')' : '')]),
+                el('div', { class: 'btn-row' }, [
+                  o.shop_lat ? routeButton(button('Route to shop', 'route', { small: true, variant: 'light', href: '#', target: '_blank' }), o.shop_lat + ',' + o.shop_lng) : null,
+                  routeButton(button('Route to traveler', 'route', { small: true, variant: 'light', href: '#', target: '_blank' }), o.lat + ',' + o.lng),
+                  o.phone ? button('Call', 'phone', { small: true, variant: 'light', href: telHref(o.phone) }) : null,
+                  o.status !== 'picked_up' ? doAct(o, 'picked_up', 'Picked up', 'blue') : doAct(o, 'delivered', 'Delivered', 'green'),
+                  o.status !== 'picked_up' ? doAct(o, 'release', 'Give back', 'light') : null
+                ])
+              ]);
+            })) : el('p', { class: 'muted small', text: 'No active deliveries. Take one below.' })
+          ]),
+          el('section', { class: 'card stack' }, [
+            el('h2', { class: 'card__title', text: 'Orders waiting for a rider' }),
+            r.available.length ? el('ul', { class: 'm-orders' }, r.available.map(function (o) {
+              return el('li', { class: 'm-order' }, [
+                el('div', { class: 'row-between' }, [el('b', { text: o.shop_name + (o.shop_area ? ' (' + o.shop_area + ')' : '') }), el('b', { text: 'Earn ' + peso(o.earn) })]),
+                el('p', { class: 'muted small', text: 'To ' + (o.area || 'a traveler') + (o.km != null ? ' • about ' + o.km + ' km' : '') + ' • ' + (ORDER_LABEL[o.status] || o.status) }),
+                doAct(o, 'claim', 'Take this delivery', 'glow')
+              ]);
+            })) : el('p', { class: 'muted small', text: 'No orders waiting in ' + provinceName(rd.province) + ' right now.' })
+          ]),
+          r.settlements.length ? el('section', { class: 'card stack' }, [el('h2', { class: 'card__title', text: 'Settlements' }),
+            el('ul', { class: 'sale-list' }, r.settlements.map(function (x) { return el('li', null, [el('b', { text: peso(x.amount) }), el('span', { text: x.date + ' • ' + x.orders + ' deliver' + (x.orders === 1 ? 'y' : 'ies') + (x.ref ? ' • ' + x.ref : '') })]); }))]) : null
+        ]);
+      }, function (err) {
+        if (token !== renderToken) return;
+        try { window.localStorage.removeItem(RIDER_KEY); } catch (e) { /* ignore */ }
+        code = ''; applyForm(); toast(friendlyError(err));
+      });
+    };
+    setView(el('section', { class: 'section section--narrow stack-lg' }, [pageHead('bike', '#FF6A03', 'SMILE Riders', 'Deliver Nano-Shop orders to travelers and earn every day.'), box]));
+    focusHeading();
+    if (code) console_(); else applyForm();
+  }
+
+  // ---- Post Office admin portal ----
+  function renderPostOffice(token) {
+    var head = pageHead('mailbox', '#0057D9', 'Post Office admin', 'Orders, riders, merchant payouts (weekly) and rider settlements (daily).');
+    if (!Auth.user()) { setView(el('section', { class: 'section section--narrow' }, [head, signInCard('Sign in with your Post Office admin account.')])); focusHeading(); return; }
+    var box = el('div', { class: 'stack-lg' }, el('p', { class: 'muted', text: 'Loading…' }));
+    var filter = 'active';
+    var load = function () {
+      Api.adminOverview(Auth.token()).then(function (d) { if (token === renderToken) show(d); }, function (err) {
+        if (token !== renderToken) return;
+        if (err && err.code === 'SIGNED_OUT') { Auth.clear(); route(); return; }
+        box.textContent = ''; box.appendChild(el('div', { class: 'card stack center' }, [el('span', { class: 'state__icon' }, icon('alert')),
+          el('p', { text: err && err.code === 'NOT_ADMIN' ? 'This account is not a Post Office admin. The SMILE team sets "admin" in column L of the Accounts sheet.' : friendlyError(err) })]));
+      });
+    };
+    var settleBtn = function (type, party, label, method) {
+      return button(label, 'check', { small: true, variant: 'green', onclick: function (e) {
+        var ref = window.prompt('Reference for this payout (receipt number or PayMongo payout ID):', '');
+        if (ref === null) return;
+        var b = e.currentTarget; setBusy(b, true, '…');
+        Api.adminSettle(Auth.token(), { type: type, party_id: party, method: method, ref: ref }).then(function (r) { toast('Paid ' + peso(r.amount) + ' for ' + r.orders + ' order' + (r.orders === 1 ? '' : 's') + '.'); load(); },
+          function (err) { toast(friendlyError(err)); setBusy(b, false); });
+      } });
+    };
+    var show = function (d) {
+      var k = d.kpis;
+      var orders = d.orders.filter(function (o) { return filter === 'all' || (filter === 'active' ? ['paid', 'preparing', 'ready', 'picked_up', 'pending_payment'].indexOf(o.status) > -1 : o.status === filter); });
+      var fSel = el('select', { 'aria-label': 'Order filter' }, [['active', 'Active orders'], ['delivered', 'Delivered'], ['cancelled', 'Cancelled'], ['all', 'All orders']].map(function (x) { return el('option', { value: x[0], text: x[1] }); }));
+      fSel.value = filter; fSel.addEventListener('change', function () { filter = fSel.value; show(d); });
+      var pendingR = d.riders.filter(function (r) { return r.status === 'pending'; }), activeR = d.riders.filter(function (r) { return r.status !== 'pending'; });
+      box.textContent = '';
+      appendChildren(box, [
+        el('section', { class: 'card stack' }, [
+          el('div', { class: 'row-between' }, [el('h2', { class: 'card__title', text: 'Today' }), el('div', { class: 'btn-row' }, [
+            el('span', { class: 'chip chip--sm', style: '--c:' + (d.payments_live ? '#02A04F' : '#E09A00'), text: d.payments_live ? 'PayMongo live' : 'PayMongo test mode' }),
+            button('Refresh', 'refresh', { small: true, variant: 'light', onclick: load })])]),
+          el('div', { class: 'kpis portal-kpis' }, [['Orders today', String(k.orders_today)], ['Sales, 7 days', peso(k.sales_7d)], ['Delivery fees, 7 days', peso(k.fees_7d)],
+            ['To prepare', String(k.to_prepare)], ['On the road', String(k.on_the_road)], ['Waiting payment', String(k.waiting_payment)]]
+            .map(function (x) { return el('div', { class: 'kpi' }, [el('b', { text: x[1] }), el('span', { text: x[0] })]); }))
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('div', { class: 'row-between' }, [el('h2', { class: 'card__title', text: 'Orders' }), fSel]),
+          orders.length ? el('div', { class: 'table-wrap' }, el('table', { class: 'admin-table' }, [
+            el('thead', null, el('tr', null, ['Order', 'Shop', 'Traveler', 'Total', 'Rider', 'Status', ''].map(function (h) { return el('th', { text: h }); }))),
+            el('tbody', null, orders.map(function (o) {
+              return el('tr', null, [
+                el('td', null, [el('b', { text: o.order_id }), el('br'), el('small', { class: 'muted', text: fmtWhen(o.created) })]),
+                el('td', { text: o.shop_name }),
+                el('td', null, [o.name || '', el('br'), el('small', { class: 'muted', text: (o.phone || '') + (o.address ? ' • ' + o.address : '') })]),
+                el('td', { text: peso(o.total) }),
+                el('td', { text: o.rider_name || '—' }),
+                el('td', null, statusChip(o.status)),
+                el('td', null, ['delivered', 'cancelled'].indexOf(o.status) < 0 ? button('Cancel', 'close', { small: true, variant: 'light', onclick: function (e) {
+                  if (!window.confirm('Cancel ' + o.order_id + '? Refund the traveler in your PayMongo dashboard if they paid.')) return;
+                  var b = e.currentTarget; setBusy(b, true, '…');
+                  Api.adminOrderCancel(Auth.token(), o.order_id).then(function (r) { toast(r.note || 'Cancelled.'); load(); }, function (err) { toast(friendlyError(err)); setBusy(b, false); });
+                } }) : null)
+              ]);
+            }))
+          ])) : el('p', { class: 'muted small', text: 'No orders here.' })
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title', text: 'Riders' }),
+          pendingR.length ? el('div', { class: 'stack' }, [el('h3', { class: 'portal-h', text: 'Waiting for approval (check ID and license)' })].concat(pendingR.map(function (r) {
+            return el('div', { class: 'm-order' }, [
+              el('b', { text: r.name + ' • ' + r.vehicle + (r.plate ? ' ' + r.plate : '') }), el('p', { class: 'muted small', text: r.phone + ' • ' + provinceName(r.province) + (r.area ? ', ' + r.area : '') + ' • applied ' + r.created }),
+              el('div', { class: 'btn-row' }, [
+                button('Approve', 'check', { small: true, variant: 'green', onclick: function () { Api.adminRiderSet(Auth.token(), r.rider_id, 'approved').then(function () { toast('Rider approved.'); load(); }, function (err) { toast(friendlyError(err)); }); } }),
+                button('Reject', 'close', { small: true, variant: 'light', onclick: function () { Api.adminRiderSet(Auth.token(), r.rider_id, 'rejected').then(function () { load(); }, function (err) { toast(friendlyError(err)); }); } })
+              ])
+            ]);
+          }))) : null,
+          el('h3', { class: 'portal-h', text: 'Daily settlement' }),
+          activeR.length ? el('ul', { class: 'm-orders' }, activeR.map(function (r) {
+            return el('li', { class: 'm-order' }, [
+              el('div', { class: 'row-between' }, [el('b', { text: r.name }), el('span', { class: 'chip chip--sm', style: '--c:' + (r.status === 'approved' ? '#02A04F' : '#5B6478'), text: r.status })]),
+              el('p', { class: 'muted small', text: provinceName(r.province) + ' • ' + r.vehicle + ' • ' + r.deliveries + ' unsettled deliver' + (r.deliveries === 1 ? 'y' : 'ies') }),
+              el('div', { class: 'btn-row' }, [el('b', { text: peso(r.balance) }),
+                r.balance > 0 ? settleBtn('rider', r.rider_id, 'Settle in cash', 'post_office') : null,
+                r.status === 'approved' ? button('Suspend', 'close', { small: true, variant: 'light', onclick: function () { Api.adminRiderSet(Auth.token(), r.rider_id, 'suspended').then(load, function (err) { toast(friendlyError(err)); }); } })
+                  : button('Re-approve', 'check', { small: true, variant: 'light', onclick: function () { Api.adminRiderSet(Auth.token(), r.rider_id, 'approved').then(load, function (err) { toast(friendlyError(err)); }); } })])
+            ]);
+          })) : el('p', { class: 'muted small', text: 'No approved riders yet.' })
+        ]),
+        el('section', { class: 'card stack' }, [
+          el('h2', { class: 'card__title', text: 'Merchant payouts (weekly)' }),
+          d.merchants.length ? el('ul', { class: 'm-orders' }, d.merchants.map(function (m) {
+            return el('li', { class: 'm-order' }, [
+              el('div', { class: 'row-between' }, [el('b', { text: m.name }), el('b', { text: peso(m.balance) })]),
+              el('p', { class: 'muted small', text: provinceName(m.province) + ' • ' + m.orders + ' delivered order' + (m.orders === 1 ? '' : 's') + ' unpaid • ' +
+                (m.method === 'paymongo' ? 'PayMongo payout to ' + m.provider + ' ' + m.account + ' (' + m.payout_name + ')' : 'Cash at the post office') }),
+              m.balance > 0 ? settleBtn('merchant', m.shop_id, m.method === 'paymongo' ? 'Mark PayMongo payout sent' : 'Mark paid in cash', m.method) : null
+            ]);
+          })) : el('p', { class: 'muted small', text: 'No Nano-Shops yet.' })
+        ]),
+        d.payouts.length ? el('section', { class: 'card stack' }, [el('h2', { class: 'card__title', text: 'Payout history' }),
+          el('ul', { class: 'sale-list' }, d.payouts.map(function (x) { return el('li', null, [el('b', { text: peso(x.amount) }), el('span', { text: x.date + ' • ' + x.type + ': ' + x.name + ' • ' + x.orders + ' order' + (x.orders === 1 ? '' : 's') + ' • ' + (x.method === 'paymongo' ? 'PayMongo' : 'cash') + (x.ref ? ' • ' + x.ref : '') })]); }))]) : null
+      ]);
+    };
+    setView(el('section', { class: 'section stack-lg admin-page' }, [head, box]));
+    focusHeading();
+    load();
+  }
 
   // ---------------------------------------------------------------------------
   // LGU / DOT Partner portal (#/partners): same sign-in as travelers; totals only, never names.
@@ -4253,6 +4824,11 @@ el('article', { class: 'card stack reveal' }, [
     me: renderMe,
     partner: renderPartner,
     partners: renderPartners,
+    cart: renderCart,
+    checkout: renderCheckout,
+    orders: renderOrders,
+    rider: renderRider,
+    postoffice: renderPostOffice,
     journal: renderJournal,
     hub: renderHub
   };
@@ -4308,11 +4884,20 @@ el('article', { class: 'card stack reveal' }, [
       history.replaceState(null, '', location.pathname + '#/checkin?' + q.toString());
     }
 
+    // Back from PayMongo: ?order=…&k=… opens the order tracker.
+    try {
+      var sp0 = new URLSearchParams(location.search);
+      if (sp0.get('order') && sp0.get('k')) {
+        var dest = '#/orders?id=' + encodeURIComponent(sp0.get('order')) + '&k=' + encodeURIComponent(sp0.get('k')) + (sp0.get('cancelled') ? '&cancelled=1' : '');
+        history.replaceState(null, '', location.pathname + dest);
+      }
+    } catch (e) { /* old browser */ }
     window.addEventListener('hashchange', route);
     route();
     setTimeout(hideSplash, prefersReducedMotion() ? 0 : 2600);
     loadPlaces();
     loadMedia();
+    Cart.paint();
     Auth.paint();
     var hb = $('#hotline-btn');
     if (hb) hb.addEventListener('click', function () { Hotline.open(); });

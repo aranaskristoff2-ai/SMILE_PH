@@ -9,7 +9,10 @@ on the postcard at each landmark to collect stamps and rank up from E to SSS, an
 nearest post office, where they pick a random postcard from the SMILE box, adopt it and follow that
 traveler's journey. They keep a spoken travel journal and share it on the SMILE Hub. Local shops and
 nano entrepreneurs sell postcards and pasalubong, with product photos and promo videos checked by
-Meta's SAM 3.1. A Hotline button keeps emergency numbers and the nearest police, hospitals, clinics,
+Meta's SAM 3.1. Home-based makers with no physical store run **Nano-Shops**: travelers add their handicrafts
+and delicacies to a cart, pay with GCash, Maya or card through PayMongo, and a SMILE rider delivers to where
+they are staying while an order tracker shows each step. The post office settles riders daily and
+merchants weekly. A Hotline button keeps emergency numbers and the nearest police, hospitals, clinics,
 vets and drugstores one tap away.
 
 - **Live app:** https://aranaskristoff2-ai.github.io/SMILE_PH/
@@ -71,6 +74,17 @@ model training.
 | **Write with AI.** Product listings in English and Hiligaynon from a few words. | Muse Spark |
 | **Shop dashboard.** Opened with the shop code: 30-day views, photo and video opens, directions, contact taps and shares, SMILE postcard sales, uploads, **Record a sale** (amount, item, local or foreign tourist; feeds the partner portal's area totals), and three selling tips. | Muse Spark |
 
+### Nano-Shops: order online, delivered by SMILE riders
+
+| Feature | Meta model |
+|---|---|
+| **Nano-Shops.** Shops tab shows online-only makers first (handicrafts, hablon and patadyong weaves, Capiz shell, buri, piaya, muscovado, budbud, dried mango), each item with a price and **Add to cart**. Nine sample shops (labeled "Sample shop") are seeded for the demo. A maker becomes a Nano-Shop by ticking "Online-only Nano-Shop" when signing up. | |
+| **Cart and PayMongo checkout.** One shop per order. The traveler shares their location (or types the address), sees the delivery fee by distance, and pays on PayMongo's hosted checkout page (GCash, Maya, card). SMILE never sees card details; payment is confirmed by asking PayMongo for the checkout session. | |
+| **Order tracker** (`#/orders`). Paid → Preparing → Ready for pickup → On the way → Delivered, refreshed every 20 seconds, with the rider's first name and a Call button once the order is on its way. "My orders" keeps every order on the phone. | |
+| **Merchant online orders.** The shop dashboard of a Nano-Shop lists paid orders (first name and area only) with Accept and prepare, Ready for pickup and Cancel; sales, balance and payout history; and the payout choice: **cash at the post office weekly** or **weekly PayMongo payout to a GCash, Maya or bank account**. | |
+| **Apply as Rider** (`#/rider`, header tab). Riders apply with their vehicle and area and get a rider code. Once the post office approves them, they see ready orders nearby, claim one (only then do they see the traveler's address and phone), get blue-route Directions to the shop and to the traveler, and mark it picked up and delivered. Earnings are settled **daily** in cash at the post office. | |
+| **Post Office portal** (`#/postoffice`, admin account). Every order with filters and cancel, KPIs (orders, sales, deliveries, amounts owed), rider approvals and suspensions, daily rider settlement, weekly merchant payouts with a reference number, and the payout history. | |
+
 ### For PhilPost, LGUs and the SMILE team
 
 | Feature | Meta model |
@@ -100,6 +114,11 @@ model training.
 | `#/tools` | Caption and merchant AI tools, link to the Partner portal |
 | `#/partners` | LGU and DOT Partner portal (partner accounts) |
 | `#/media` | Media manager for the SMILE team (passcode) |
+| `#/cart` | Cart (Nano-Shop items) |
+| `#/checkout` | Delivery address and location, delivery fee, pay with PayMongo |
+| `#/orders` | Order tracker and My orders |
+| `#/rider` | Apply as Rider, rider console (claim, route, picked up, delivered, settlements) |
+| `#/postoffice` | Post Office portal for the admin (orders, riders, daily and weekly payouts) |
 | `#/partner` | Police, tanod, fire, DRRMO, health offices, hospitals, clinics, vets and drugstores list their hotline |
 
 ## Architecture
@@ -111,9 +130,10 @@ Phone (GitHub Pages PWA: index.html, app.js, api.js, sw.js)
    ▼
 Google Apps Script web app (backend/Code.gs)
    ├──► Meta Model API: Muse Spark, Muse Image, SAM 3.1, Muse Voice Transcribe
+   ├──► PayMongo Checkout API (hosted payment page; secret key only on the server)
    ├──► Google Sheets: Places, Users, Accounts, Sessions, Checkins, Postcards, Batches, Merchants,
    │                   Journey, Challenges, Photobooth, Shops (with GPS pins), ShopItems, ShopStats, Media, Journal,
-   │                   Products, Hotlines, Sales
+   │                   Products, Hotlines, Sales, Orders, Riders, Payouts
    └──► Google Drive: "SMILE Media" (shop and place photos and videos), "SMILE Journal" (journal photos, clips
                        and profile photos)
 ```
@@ -130,6 +150,9 @@ Google Apps Script web app (backend/Code.gs)
 - "Near me" asks for the phone's location only when the traveler taps the pin. It is sent with that one question to work out distances and is never stored.
 - Public Hub posts pass a Muse Spark safety check; anything flagged waits for a person to review it.
 - Merchant shops, products and media appear only after approval.
+- Nano-Shop orders follow the Data Privacy Act: the merchant sees the traveler's first name and area only;
+  the full address and phone go only to the rider who claims the order. PayMongo handles all card and wallet
+  details; SMILE stores only the checkout session ID.
 - Journal photos and clips are shared from Drive by link only; the link is not listed anywhere for private posts.
 
 ## Scaling plan
@@ -156,6 +179,23 @@ the backend moves to Google Cloud:
 The app on the phone does not change: it talks to the backend through one URL in `config.js` with the same
 actions (`chat`, `checkin`, `mail_postcard`…), so moving the backend means pointing that URL to Cloud Run.
 
+## Partnership and next steps
+
+SMILE was built solo in this hackathon, and it is ready to grow beyond a demo. I am open to partnering with
+Meta and with tourism, postal and local government partners to bring SMILE to all eight provinces of Western
+Visayas and the Negros Island Region, and later to the rest of the Philippines.
+
+What would help most:
+
+- **Funding and Meta Model API credits** to run Muse Spark, Muse Image, SAM 3.1 and Muse Voice Transcribe
+  for thousands of travelers a day, and to move the backend to Google Cloud as described in the Scaling plan.
+- **Mentorship and introductions** to tourism offices, the Philippine postal service and payment partners,
+  so postcards, post office settlement and Nano-Shop payouts can go live.
+- **A pilot** in one province (Iloilo first) with real merchants, riders and a post office, to measure
+  tourist engagement and the income that reaches nano entrepreneurs.
+
+Contact: Kristoffer P. Aranas, CodeSphere PH · codesphereph@gmail.com
+
 ## Run it yourself
 
 1. Create a Google Sheet and an Apps Script project. Paste `backend/Code.gs` and set `SS_ID` to your sheet's ID.
@@ -165,6 +205,8 @@ actions (`chat`, `checkin`, `mail_postcard`…), so moving the backend means poi
    |---|---|---|
    | `META_API_KEY` | Yes | Key from dev.meta.ai for all four Meta models |
    | `ADMIN_CODE` | For `#/media` | Passcode for the team's media manager |
+   | `PAYMONGO_SECRET_KEY` | For Nano-Shop payments | `sk_test_…` for testing, `sk_live_…` once PayMongo approves the business. Without it, checkout runs as a labeled demo payment. |
+   | `PAYMONGO_METHODS`, `APP_URL`, `DELIVERY_BASE`, `DELIVERY_PER_KM`, `DELIVERY_MAX_KM`, `RIDER_SHARE`, `PLATFORM_FEE_PCT` | No | Payment methods (default gcash, card, paymaya), return address, delivery fee (₱50 + ₱10/km, up to 40 km), rider share of the fee (all), SMILE's commission (0%) |
    | `MUSE_TEXT_MODEL`, `MUSE_VISION_MODEL`, `MUSE_IMAGE_MODEL`, `SAM_MODEL`, `VOICE_MODEL` | No | Override the default model versions |
 
 3. Run `setup` (creates every sheet and the built-in places and shops), then check each model:
@@ -172,6 +214,7 @@ actions (`chat`, `checkin`, `mail_postcard`…), so moving the backend means poi
    `testVoice` (Muse Voice Transcribe).
 4. Deploy as a web app (Execute as: Me, Who has access: Anyone) and put the `/exec` URL in `config.js`.
 5. Publish this repository with GitHub Pages (branch `main`, root folder).
+6. For the Post Office portal, sign up an account in the app and set its **role** (Accounts sheet, column L) to `admin`.
 
 ## Known limits
 
@@ -181,6 +224,10 @@ actions (`chat`, `checkin`, `mail_postcard`…), so moving the backend means poi
 - Festival dates are set by each city or province every year; the calendar shows the usual schedule.
 - Built-in shop locations are approximate (town or district level) until a merchant pins the exact spot. SMILE has no hotel list yet, so "Inns" shows nearby stay spots plus a Google Maps search for inns near the traveler.
 - "Near me" works while the app is open; SMILE does not track anyone in the background.
+- Nano-Shop payments run in PayMongo **test mode** until the business is verified; live payouts to merchants
+  through PayMongo also need PayMongo's approval. Refunds are made from the PayMongo dashboard, and the
+  post office marks payouts as paid by hand (with the reference number). Riders' live location is not
+  tracked; the tracker shows the order's step and the rider's name and phone.
 - Place descriptions and map pins are written by the team and should be checked locally before launch.
 
 ## License

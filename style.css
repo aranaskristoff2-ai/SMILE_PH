@@ -859,3 +859,47 @@ body.has-cam { overflow: hidden; }
 .split { display: grid; gap: 4px; }
 .portal-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 520px) { .portal-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- Nano-Shops store, riders, Post Office admin (v16.0) ---------- */
+.rider-btn, .cart-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 10px; border-radius: 999px; text-decoration: none; font-weight: 900; font-size: 13px; }
+.rider-btn { color: #fff; background: linear-gradient(135deg, var(--orange), var(--yellow)); box-shadow: 0 4px 12px rgba(255, 106, 3, .3); }
+.cart-btn { color: #fff; background: var(--green); box-shadow: 0 4px 12px rgba(2, 160, 79, .3); }
+.cart-btn[hidden] { display: none; }
+.rider-btn .icon, .cart-btn .icon { width: 18px; height: 18px; }
+.cart-btn__n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: #fff; color: var(--green); font-size: 12px; display: grid; place-items: center; }
+@media (max-width: 420px) { .rider-btn__text { display: none; } .rider-btn { padding: 0 9px; } }
+@media (min-width: 900px) { .rider-btn { display: none; } }
+.nano-section { display: grid; gap: 10px; padding: 16px; border-radius: 24px; background: linear-gradient(135deg, #F6F0FF, #FFF8EC); border: 2px solid #E6D9FF; }
+.nano-card__head { display: flex; gap: 10px; align-items: center; }
+.nano-card__head .card__title { margin: 0; }
+.nano-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.nano-item { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px dashed var(--line); font-size: 14px; }
+.nano-item__price { font-weight: 900; color: var(--green); white-space: nowrap; }
+.cart-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cart-line { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; }
+.cart-line__sum { min-width: 70px; text-align: right; }
+.qty { display: inline-flex; align-items: center; gap: 6px; }
+.qty output { min-width: 22px; text-align: center; font-weight: 900; }
+.qty .btn { width: 34px; height: 34px; padding: 0; justify-content: center; }
+.qty .btn .btn__text:empty { display: none; }
+.cart-total { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; }
+.cart-total--big { font-size: 18px; padding-top: 6px; border-top: 2px solid var(--line); }
+.tracker { list-style: none; margin: 4px 0; padding: 0; display: grid; gap: 10px; }
+.tracker__step { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+.tracker__dot { flex: 0 0 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #F1ECE2; font-weight: 900; font-size: 13px; }
+.tracker__dot .icon { width: 16px; height: 16px; }
+.tracker__step.is-done { color: var(--ink); }
+.tracker__step.is-done .tracker__dot { background: var(--green); color: #fff; }
+.tracker__step.is-now .tracker__dot { background: var(--orange); box-shadow: 0 0 0 5px rgba(255, 106, 3, .2); animation: glowPulse 1.6s ease-in-out infinite; }
+.rider-box { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 14px; background: #FFF4E8; }
+.rider-box .btn { margin-left: auto; }
+.order-row { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+.order-row > div { flex: 1; min-width: 0; }
+.m-orders { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.m-order { padding: 12px; border-radius: 14px; border: 1px solid var(--line); background: #fff; display: grid; gap: 6px; }
+.m-order p { margin: 0; }
+.table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.admin-table th, .admin-table td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.admin-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.admin-page .section__inner, .admin-page { max-width: 1100px; margin-left: auto; margin-right: auto; }
